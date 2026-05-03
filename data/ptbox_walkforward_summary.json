@@ -1,0 +1,93 @@
+{
+  "generated": "2026-04-27T13:22:00.805563",
+  "data_range": {
+    "start": "2021-01-04",
+    "end": "2026-04-10",
+    "trading_days": 1368
+  },
+  "quarters_tested": 19,
+  "session_quarters": 54,
+  "per_session": {
+    "Asia": {
+      "total_pnl": -624.7,
+      "n_quarters": 16,
+      "n_pass": 2,
+      "pass_rate_pct": 12.5,
+      "avg_pnl_per_q": -39.0,
+      "median_pnl_per_q": -27.8,
+      "std_pnl": 52.2,
+      "sharpe_quarterly": -0.75,
+      "avg_winrate": 7.6,
+      "best_quarter": {
+        "label": "Q3 2025",
+        "pnl": 35.5
+      },
+      "worst_quarter": {
+        "label": "Q3 2025",
+        "pnl": -181.0
+      }
+    },
+    "London": {
+      "total_pnl": -1638.3,
+      "n_quarters": 19,
+      "n_pass": 3,
+      "pass_rate_pct": 15.8,
+      "avg_pnl_per_q": -86.2,
+      "median_pnl_per_q": -81.2,
+      "std_pnl": 97.0,
+      "sharpe_quarterly": -0.89,
+      "avg_winrate": 13.5,
+      "best_quarter": {
+        "label": "Q4 2022",
+        "pnl": 117.8
+      },
+      "worst_quarter": {
+        "label": "Q4 2022",
+        "pnl": -240.5
+      }
+    },
+    "NY": {
+      "total_pnl": -235.4,
+      "n_quarters": 19,
+      "n_pass": 8,
+      "pass_rate_pct": 42.1,
+      "avg_pnl_per_q": -12.4,
+      "median_pnl_per_q": -7.3,
+      "std_pnl": 72.5,
+      "sharpe_quarterly": -0.17,
+      "avg_winrate": 29.5,
+      "best_quarter": {
+        "label": "Q1 2023",
+        "pnl": 118.7
+      },
+      "worst_quarter": {
+        "label": "Q1 2023",
+        "pnl": -198.9
+      }
+    }
+  },
+  "config": {
+    "sl_pts": 3.0,
+    "max_attempts": 3,
+    "tp_per_session": {
+      "Asia": {
+        "tp1": 15,
+        "tp2": 30
+      },
+      "London": {
+        "tp1": 18,
+        "tp2": 36
+      },
+      "NY": {
+        "tp1": 9,
+        "tp2": 18
+      }
+    },
+    "durations_tested": [
+      3,
+      5,
+      7,
+      10
+    ]
+  }
+}

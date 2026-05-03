@@ -1,0 +1,25 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.Python
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.claude/
+.idea/
+*.swp
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Sensitive trading code (productization IP)
+code/*.mq5
+
+# Large local-only data (optional — uncomment kalau mau exclude)
+# data/ptbox_v6_trades.csv

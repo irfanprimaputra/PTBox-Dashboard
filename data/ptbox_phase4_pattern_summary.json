@@ -1,0 +1,154 @@
+{
+  "generated": "2026-04-27T15:54:33.841866",
+  "angle": "Phase 4 #2 \u2014 Naked Forex Pattern",
+  "baseline_variant": "dyn_sl_tp_baseline",
+  "baseline_pnl": -803.2,
+  "phase4_1_baseline_reference": -803.2,
+  "phase1_baseline_reference": -2498.4,
+  "variants": [
+    {
+      "variant": "dyn_sl_tp_baseline",
+      "session_quarters": 55,
+      "total_pnl": -803.2,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -828.4,
+          "n_quarters": 17,
+          "n_pass": 2,
+          "pass_rate_pct": 11.8,
+          "avg_pnl_per_q": -48.7,
+          "avg_winrate": 13.2,
+          "avg_box_width": 2.37
+        },
+        "London": {
+          "total_pnl": 142.0,
+          "n_quarters": 19,
+          "n_pass": 11,
+          "pass_rate_pct": 57.9,
+          "avg_pnl_per_q": 7.5,
+          "avg_winrate": 29.9,
+          "avg_box_width": 2.07
+        },
+        "NY": {
+          "total_pnl": -116.8,
+          "n_quarters": 19,
+          "n_pass": 9,
+          "pass_rate_pct": 47.4,
+          "avg_pnl_per_q": -6.1,
+          "avg_winrate": 29.2,
+          "avg_box_width": 3.67
+        }
+      },
+      "avg_winrate": 24.5,
+      "quarters_tested": 19
+    },
+    {
+      "variant": "pin_bar_only",
+      "session_quarters": 57,
+      "total_pnl": -640.9,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -539.1,
+          "n_quarters": 19,
+          "n_pass": 3,
+          "pass_rate_pct": 15.8,
+          "avg_pnl_per_q": -28.4,
+          "avg_winrate": 12.2,
+          "avg_box_width": 1.61
+        },
+        "London": {
+          "total_pnl": 57.5,
+          "n_quarters": 19,
+          "n_pass": 9,
+          "pass_rate_pct": 47.4,
+          "avg_pnl_per_q": 3.0,
+          "avg_winrate": 29.0,
+          "avg_box_width": 2.2
+        },
+        "NY": {
+          "total_pnl": -159.3,
+          "n_quarters": 19,
+          "n_pass": 8,
+          "pass_rate_pct": 42.1,
+          "avg_pnl_per_q": -8.4,
+          "avg_winrate": 28.3,
+          "avg_box_width": 3.59
+        }
+      },
+      "avg_winrate": 23.2,
+      "quarters_tested": 19
+    },
+    {
+      "variant": "engulfing_only",
+      "session_quarters": 54,
+      "total_pnl": -717.4,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -361.0,
+          "n_quarters": 16,
+          "n_pass": 2,
+          "pass_rate_pct": 12.5,
+          "avg_pnl_per_q": -22.6,
+          "avg_winrate": 16.6,
+          "avg_box_width": 1.85
+        },
+        "London": {
+          "total_pnl": 103.1,
+          "n_quarters": 19,
+          "n_pass": 11,
+          "pass_rate_pct": 57.9,
+          "avg_pnl_per_q": 5.4,
+          "avg_winrate": 30.6,
+          "avg_box_width": 2.44
+        },
+        "NY": {
+          "total_pnl": -459.5,
+          "n_quarters": 19,
+          "n_pass": 5,
+          "pass_rate_pct": 26.3,
+          "avg_pnl_per_q": -24.2,
+          "avg_winrate": 27.4,
+          "avg_box_width": 3.77
+        }
+      },
+      "avg_winrate": 25.3,
+      "quarters_tested": 19
+    },
+    {
+      "variant": "any_pattern",
+      "session_quarters": 57,
+      "total_pnl": -562.2,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -740.4,
+          "n_quarters": 19,
+          "n_pass": 0,
+          "pass_rate_pct": 0.0,
+          "avg_pnl_per_q": -39.0,
+          "avg_winrate": 10.9,
+          "avg_box_width": 2.09
+        },
+        "London": {
+          "total_pnl": 468.3,
+          "n_quarters": 19,
+          "n_pass": 12,
+          "pass_rate_pct": 63.2,
+          "avg_pnl_per_q": 24.6,
+          "avg_winrate": 30.7,
+          "avg_box_width": 2.42
+        },
+        "NY": {
+          "total_pnl": -290.1,
+          "n_quarters": 19,
+          "n_pass": 3,
+          "pass_rate_pct": 15.8,
+          "avg_pnl_per_q": -15.3,
+          "avg_winrate": 28.6,
+          "avg_box_width": 3.51
+        }
+      },
+      "avg_winrate": 23.4,
+      "quarters_tested": 19
+    }
+  ]
+}

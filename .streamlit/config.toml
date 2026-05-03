@@ -1,0 +1,36 @@
+# Native Streamlit theme — applied BEFORE page render (avoids FOUC).
+# Matches AlignUI Apex Finance dark mode base tokens.
+# Custom CSS in lib/theme.py adds polish on top.
+
+[theme]
+base = "dark"
+
+# Primary accent — AlignUI primary-base = blue-500
+primaryColor = "#335CFF"
+
+# bg-white-0 (dark) = neutral-950
+backgroundColor = "#0E121B"
+
+# bg-weak-50 (dark) = neutral-900 — used for cards/containers
+secondaryBackgroundColor = "#181B25"
+
+# text-strong-950 (dark) = neutral-0
+textColor = "#FFFFFF"
+
+# Inter font (matches CSS injection)
+font = "sans-serif"
+
+[server]
+headless = true
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showSidebarNavigation = true
+showErrorDetails = true
+
+[runner]
+fastReruns = true
+magicEnabled = true

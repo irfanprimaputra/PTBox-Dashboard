@@ -1,0 +1,78 @@
+{
+  "generated": "2026-04-27T15:22:50.690704",
+  "angle": "Phase 4 \u2014 In-sample ceiling check",
+  "walkforward_best": {
+    "control": -2498.4,
+    "dyn_sl_tp": -803.2
+  },
+  "ceilings": {
+    "control": {
+      "variant": "control",
+      "sessions": {
+        "Asia": {
+          "best_time": "22:28",
+          "best_dur": 7,
+          "ceiling_pnl": -285.8,
+          "trades": 267,
+          "winrate": 15.7,
+          "max_dd": -328.4,
+          "avg_box_width": 2.31
+        },
+        "London": {
+          "best_time": "01:00",
+          "best_dur": 5,
+          "ceiling_pnl": -588.8,
+          "trades": 2538,
+          "winrate": 15.9,
+          "max_dd": -1263.1,
+          "avg_box_width": 1.51
+        },
+        "NY": {
+          "best_time": "08:31",
+          "best_dur": 10,
+          "ceiling_pnl": 275.0,
+          "trades": 2240,
+          "winrate": 31.4,
+          "max_dd": -270.1,
+          "avg_box_width": 4.45
+        }
+      },
+      "total_ceiling_pnl": -599.6,
+      "avg_winrate": 21.0
+    },
+    "dyn_sl_tp": {
+      "variant": "dyn_sl_tp",
+      "sessions": {
+        "Asia": {
+          "best_time": "22:45",
+          "best_dur": 5,
+          "ceiling_pnl": -179.8,
+          "trades": 252,
+          "winrate": 24.6,
+          "max_dd": -235.7,
+          "avg_box_width": 1.87
+        },
+        "London": {
+          "best_time": "01:00",
+          "best_dur": 7,
+          "ceiling_pnl": 819.8,
+          "trades": 2537,
+          "winrate": 30.5,
+          "max_dd": -210.4,
+          "avg_box_width": 1.81
+        },
+        "NY": {
+          "best_time": "10:00",
+          "best_dur": 10,
+          "ceiling_pnl": 237.3,
+          "trades": 1885,
+          "winrate": 30.5,
+          "max_dd": -422.5,
+          "avg_box_width": 5.78
+        }
+      },
+      "total_ceiling_pnl": 877.3,
+      "avg_winrate": 28.5
+    }
+  }
+}

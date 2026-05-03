@@ -1,0 +1,86 @@
+{
+  "generated": "2026-04-27T18:06:13.335412",
+  "angle": "Phase 5 #A2 \u2014 Asia A2-fail mean-reversion",
+  "phase1_baseline_reference": -2498.4,
+  "p4_2_registry_best_reference": -562.3,
+  "variants": [
+    {
+      "phase5_variant": "phase5_sanity_any_pattern",
+      "session_quarters": 57,
+      "total_pnl": -562.2,
+      "avg_winrate": 23.4,
+      "quarters_tested": 19,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -740.4,
+          "n_quarters": 19,
+          "n_pass": 0,
+          "pass_rate_pct": 0.0,
+          "avg_pnl_per_q": -39.0,
+          "avg_winrate": 10.9,
+          "avg_box_width": 2.09,
+          "model": "breakout_pullback"
+        },
+        "London": {
+          "total_pnl": 468.3,
+          "n_quarters": 19,
+          "n_pass": 12,
+          "pass_rate_pct": 63.2,
+          "avg_pnl_per_q": 24.6,
+          "avg_winrate": 30.7,
+          "avg_box_width": 2.42,
+          "model": "breakout_pullback"
+        },
+        "NY": {
+          "total_pnl": -290.1,
+          "n_quarters": 19,
+          "n_pass": 3,
+          "pass_rate_pct": 15.8,
+          "avg_pnl_per_q": -15.3,
+          "avg_winrate": 28.6,
+          "avg_box_width": 3.51,
+          "model": "breakout_pullback"
+        }
+      }
+    },
+    {
+      "phase5_variant": "asia_a2_fail",
+      "session_quarters": 57,
+      "total_pnl": 202.1,
+      "avg_winrate": 43.7,
+      "quarters_tested": 19,
+      "sessions": {
+        "Asia": {
+          "total_pnl": 23.9,
+          "n_quarters": 19,
+          "n_pass": 12,
+          "pass_rate_pct": 63.2,
+          "avg_pnl_per_q": 1.3,
+          "avg_winrate": 71.7,
+          "avg_box_width": 3.15,
+          "model": "mean_rev_fail"
+        },
+        "London": {
+          "total_pnl": 468.3,
+          "n_quarters": 19,
+          "n_pass": 12,
+          "pass_rate_pct": 63.2,
+          "avg_pnl_per_q": 24.6,
+          "avg_winrate": 30.7,
+          "avg_box_width": 2.42,
+          "model": "breakout_pullback"
+        },
+        "NY": {
+          "total_pnl": -290.1,
+          "n_quarters": 19,
+          "n_pass": 3,
+          "pass_rate_pct": 15.8,
+          "avg_pnl_per_q": -15.3,
+          "avg_winrate": 28.6,
+          "avg_box_width": 3.51,
+          "model": "breakout_pullback"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "generated": "2026-04-27T14:57:26.741385",
+  "angle": "Phase 4 #1 \u2014 Box Quality",
+  "baseline_pnl": -2498.4,
+  "variants": [
+    {
+      "variant": "control",
+      "session_quarters": 54,
+      "total_pnl": -2498.4,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -624.7,
+          "n_quarters": 16,
+          "n_pass": 2,
+          "pass_rate_pct": 12.5,
+          "avg_pnl_per_q": -39.0,
+          "avg_winrate": 7.6,
+          "avg_box_width": 2.68
+        },
+        "London": {
+          "total_pnl": -1638.3,
+          "n_quarters": 19,
+          "n_pass": 3,
+          "pass_rate_pct": 15.8,
+          "avg_pnl_per_q": -86.2,
+          "avg_winrate": 13.5,
+          "avg_box_width": 2.02
+        },
+        "NY": {
+          "total_pnl": -235.4,
+          "n_quarters": 19,
+          "n_pass": 8,
+          "pass_rate_pct": 42.1,
+          "avg_pnl_per_q": -12.4,
+          "avg_winrate": 29.5,
+          "avg_box_width": 3.14
+        }
+      },
+      "avg_winrate": 17.4,
+      "quarters_tested": 19
+    },
+    {
+      "variant": "dyn_sl_0.5",
+      "session_quarters": 54,
+      "total_pnl": -2465.2,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -624.8,
+          "n_quarters": 16,
+          "n_pass": 2,
+          "pass_rate_pct": 12.5,
+          "avg_pnl_per_q": -39.0,
+          "avg_winrate": 8.1,
+          "avg_box_width": 2.67
+        },
+        "London": {
+          "total_pnl": -1613.7,
+          "n_quarters": 19,
+          "n_pass": 2,
+          "pass_rate_pct": 10.5,
+          "avg_pnl_per_q": -84.9,
+          "avg_winrate": 13.9,
+          "avg_box_width": 2.1
+        },
+        "NY": {
+          "total_pnl": -226.7,
+          "n_quarters": 19,
+          "n_pass": 8,
+          "pass_rate_pct": 42.1,
+          "avg_pnl_per_q": -11.9,
+          "avg_winrate": 30.2,
+          "avg_box_width": 3.17
+        }
+      },
+      "avg_winrate": 17.9,
+      "quarters_tested": 19
+    },
+    {
+      "variant": "dyn_sl_1.0",
+      "session_quarters": 54,
+      "total_pnl": -2746.5,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -736.4,
+          "n_quarters": 16,
+          "n_pass": 2,
+          "pass_rate_pct": 12.5,
+          "avg_pnl_per_q": -46.0,
+          "avg_winrate": 9.9,
+          "avg_box_width": 2.53
+        },
+        "London": {
+          "total_pnl": -1338.6,
+          "n_quarters": 19,
+          "n_pass": 4,
+          "pass_rate_pct": 21.1,
+          "avg_pnl_per_q": -70.5,
+          "avg_winrate": 15.0,
+          "avg_box_width": 1.97
+        },
+        "NY": {
+          "total_pnl": -671.5,
+          "n_quarters": 19,
+          "n_pass": 6,
+          "pass_rate_pct": 31.6,
+          "avg_pnl_per_q": -35.3,
+          "avg_winrate": 32.1,
+          "avg_box_width": 4.15
+        }
+      },
+      "avg_winrate": 19.5,
+      "quarters_tested": 19
+    },
+    {
+      "variant": "dyn_sl_tp",
+      "session_quarters": 55,
+      "total_pnl": -803.2,
+      "sessions": {
+        "Asia": {
+          "total_pnl": -828.4,
+          "n_quarters": 17,
+          "n_pass": 2,
+          "pass_rate_pct": 11.8,
+          "avg_pnl_per_q": -48.7,
+          "avg_winrate": 13.2,
+          "avg_box_width": 2.37
+        },
+        "London": {
+          "total_pnl": 142.0,
+          "n_quarters": 19,
+          "n_pass": 11,
+          "pass_rate_pct": 57.9,
+          "avg_pnl_per_q": 7.5,
+          "avg_winrate": 29.9,
+          "avg_box_width": 2.07
+        },
+        "NY": {
+          "total_pnl": -116.8,
+          "n_quarters": 19,
+          "n_pass": 9,
+          "pass_rate_pct": 47.4,
+          "avg_pnl_per_q": -6.1,
+          "avg_winrate": 29.2,
+          "avg_box_width": 3.67
+        }
+      },
+      "avg_winrate": 24.5,
+      "quarters_tested": 19
+    }
+  ]
+}
