@@ -1,0 +1,66 @@
+{
+  "generated": "2026-05-03T20:13:24.240676",
+  "e14d_baseline": 549.0,
+  "variants": [
+    {
+      "label": "e16a \u00b7 NY direct breakout entry (no pullback)",
+      "total_19q": 691.8000000000001,
+      "total_recent": 904.4000000000001,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": 54.39999999999999
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 468.0,
+        "NY": 294.6
+      }
+    },
+    {
+      "label": "e16b \u00b7 NY direct + pattern-at-breakout (any)",
+      "total_19q": 944.9,
+      "total_recent": 796.7,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 468.0,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e16c \u00b7 London direct breakout",
+      "total_19q": 521.8000000000001,
+      "total_recent": 749.9,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 458.7,
+        "NY": -87.9
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 370.9,
+        "NY": 237.20000000000002
+      }
+    },
+    {
+      "label": "e16d \u00b7 NY Silver Bullet + direct + pattern",
+      "total_19q": 804.0000000000001,
+      "total_recent": 918.2000000000002,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": 166.60000000000002
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 468.0,
+        "NY": 308.40000000000003
+      }
+    }
+  ]
+}

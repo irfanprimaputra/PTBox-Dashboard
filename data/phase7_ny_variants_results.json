@@ -1,0 +1,46 @@
+{
+  "generated": "2026-05-03T19:53:16.814150",
+  "e14d_baseline": 549.0,
+  "variants": [
+    {
+      "label": "e15a \u00b7 NY Silver Bullet (10:15-11:00 EST)",
+      "total": 28.999999999999964,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": -608.4
+      },
+      "elapsed_s": 242.63630890846252
+    },
+    {
+      "label": "e15b \u00b7 NY skip Friday",
+      "total": 252.20000000000002,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": -385.19999999999993
+      },
+      "elapsed_s": 310.3783197402954
+    },
+    {
+      "label": "e15c \u00b7 NY First Candle Range (09:30-10:30 EST)",
+      "total": 553.9000000000001,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": -83.50000000000003
+      },
+      "elapsed_s": 255.49129796028137
+    },
+    {
+      "label": "e15d \u00b7 NY Silver Bullet + Friday skip",
+      "total": 492.29999999999995,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": -145.1
+      },
+      "elapsed_s": 247.25187611579895
+    }
+  ]
+}

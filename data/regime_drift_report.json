@@ -1,0 +1,52 @@
+{
+  "drifts": [
+    {
+      "session": "Asia",
+      "historical_mean_pnl_per_q": 5.9125,
+      "historical_std": 6.323382533633931,
+      "recent_mean_pnl_per_q": 0.8249999999999998,
+      "drift_zscore": -1.6091071425584962,
+      "verdict": "\u26a0\ufe0f  Watch (mild decay)",
+      "n_historical_quarters": 16,
+      "n_recent_quarters": 4,
+      "recent_quarters_list": [
+        "2025Q1",
+        "2025Q2",
+        "2025Q3",
+        "2025Q4"
+      ]
+    },
+    {
+      "session": "London",
+      "historical_mean_pnl_per_q": -10.999999999999998,
+      "historical_std": 34.574402863004494,
+      "recent_mean_pnl_per_q": 16.325,
+      "drift_zscore": 1.580649135620413,
+      "verdict": "OK",
+      "n_historical_quarters": 16,
+      "n_recent_quarters": 4,
+      "recent_quarters_list": [
+        "2025Q1",
+        "2025Q2",
+        "2025Q3",
+        "2025Q4"
+      ]
+    },
+    {
+      "session": "NY",
+      "historical_mean_pnl_per_q": -8.7375,
+      "historical_std": 33.19851151281736,
+      "recent_mean_pnl_per_q": 14.924999999999999,
+      "drift_zscore": 1.4255157187312044,
+      "verdict": "OK",
+      "n_historical_quarters": 16,
+      "n_recent_quarters": 4,
+      "recent_quarters_list": [
+        "2025Q1",
+        "2025Q2",
+        "2025Q3",
+        "2025Q4"
+      ]
+    }
+  ]
+}
