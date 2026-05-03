@@ -64,8 +64,15 @@ chain = load_chain_full()
 trades = load_filtered_trades()
 
 # ───────────────────────────────────────────────────────────
-# 🎯 HERO — Filter Stack Summary
+# 🎯 HERO — Full Stack Summary (V4)
 # ───────────────────────────────────────────────────────────
+has_adaptive = "keep_adaptive" in trades.columns and "keep_v4_adaptive_macro_chain" in trades.columns
+v4_pnl       = trades[trades["keep_v4_adaptive_macro_chain"]]["pnl_pts"].sum() if has_adaptive else None
+v4_count     = trades["keep_v4_adaptive_macro_chain"].sum() if has_adaptive else None
+baseline_pnl = trades["pnl_pts"].sum()
+baseline_wr  = (trades["pnl_pts"] > 0).sum() / len(trades) * 100
+v4_wr        = (trades[trades["keep_v4_adaptive_macro_chain"]]["pnl_pts"] > 0).sum() / v4_count * 100 if has_adaptive and v4_count else 0
+
 st.markdown(f"""
 <div style="
     background: linear-gradient(135deg, rgba(31, 193, 107, 0.08) 0%, rgba(15, 23, 42, 0.5) 60%);
@@ -75,24 +82,24 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Headline · Combined Filter (Macro X-9 + Session Chain)
+        ⭐ Headline · V4 Full Stack (Adaptive + Macro + Chain)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +743 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts saved</span>
+                +{(v4_pnl - baseline_pnl):.0f} <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts saved</span>
             </div>
             <div style="margin-top: 0.5rem; color: {COLORS['text_secondary']}; font-size: 0.9rem;">
-                vs unfiltered baseline · <b style="color: {COLORS['text']};">7,937 trades</b> tested · <b style="color: {COLORS['success']};">+48.7% damage reduction</b>
+                Baseline {baseline_pnl:+.0f} → V4 {v4_pnl:+.0f} · <b style="color: {COLORS['success']};">+{(v4_pnl - baseline_pnl) / abs(baseline_pnl) * 100:.1f}% damage reduction</b>
             </div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.78rem; color: {COLORS['text_secondary']}; text-transform: uppercase;">Win Rate</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">35.2% → 36.9%</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">{baseline_wr:.1f}% → {v4_wr:.1f}%</div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.78rem; color: {COLORS['text_secondary']}; text-transform: uppercase;">Trades Kept</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">4,703 / 7,937 (59%)</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">{v4_count:,} / {len(trades):,} ({v4_count / len(trades) * 100:.0f}%)</div>
         </div>
     </div>
 </div>
@@ -107,23 +114,27 @@ sessions_summary = []
 for sess_name in ["Asia", "London", "NY"]:
     s = trades[trades["session"] == sess_name]
     baseline = s["pnl_pts"].sum()
+    adaptive = s[s["keep_adaptive"]]["pnl_pts"].sum() if "keep_adaptive" in s.columns else baseline
     macro_kept = s[s["filter_macro_keep"]]["pnl_pts"].sum()
     chain_kept = s[s["filter_chain_keep"]]["pnl_pts"].sum()
     both_kept  = s[s["filter_both_keep"]]["pnl_pts"].sum()
+    v4_kept    = s[s["keep_v4_adaptive_macro_chain"]]["pnl_pts"].sum() if "keep_v4_adaptive_macro_chain" in s.columns else both_kept
     sessions_summary.append({
         "session": sess_name,
         "baseline": baseline,
+        "adaptive": adaptive,
         "macro": macro_kept,
         "chain": chain_kept,
         "combined": both_kept,
-        "delta_combined": both_kept - baseline,
+        "v4": v4_kept,
+        "delta_v4": v4_kept - baseline,
     })
 
 # Table card
 c1, c2, c3 = st.columns(3)
 emoji_map = {"Asia": "🟢", "London": "🔵", "NY": "🟡"}
 for col, sd in zip([c1, c2, c3], sessions_summary):
-    delta = sd["delta_combined"]
+    delta = sd["delta_v4"]
     pct = delta / abs(sd["baseline"]) * 100 if sd["baseline"] else 0
     sign_color = COLORS["success"] if delta > 0 else COLORS["danger"]
     with col:
@@ -135,9 +146,9 @@ for col, sd in zip([c1, c2, c3], sessions_summary):
             padding: 1.25rem 1.5rem;
         ">
             <div style="font-size: 1.4rem;">{emoji_map[sd['session']]} <b>{sd['session']}</b></div>
-            <div style="margin-top: 0.5rem; font-size: 0.78rem; color: {COLORS['text_secondary']};">Baseline → Combined</div>
+            <div style="margin-top: 0.5rem; font-size: 0.78rem; color: {COLORS['text_secondary']};">Baseline → V4 Full Stack</div>
             <div style="font-size: 1.6rem; font-weight: 800; color: {COLORS['text']}; margin-top: 0.2rem;">
-                {sd['baseline']:+.0f} → <span style="color: {sign_color};">{sd['combined']:+.0f}</span>
+                {sd['baseline']:+.0f} → <span style="color: {sign_color};">{sd['v4']:+.0f}</span>
             </div>
             <div style="margin-top: 0.4rem; color: {sign_color}; font-size: 0.92rem; font-weight: 600;">
                 Δ {delta:+.1f} pts ({pct:+.1f}%)
@@ -148,11 +159,10 @@ for col, sd in zip([c1, c2, c3], sessions_summary):
 # Bar chart per session per filter
 st.markdown("<h3 style='margin-top: 1.5rem;'>Filter PnL Comparison</h3>", unsafe_allow_html=True)
 
-filter_labels = ["Baseline (no filter)", "Macro Bias only", "Chain only", "Combined (A+B)"]
+filter_labels = ["V0 Baseline", "V1 Adaptive", "V2 Macro", "V3 Adaptive+Macro", "V4 Full Stack"]
 fig_filters = go.Figure()
 for sd in sessions_summary:
-    pnls = [sd["baseline"], sd["macro"], sd["chain"], sd["combined"]]
-    colors = [COLORS["danger"] if p < 0 else COLORS["success"] for p in pnls]
+    pnls = [sd["baseline"], sd["adaptive"], sd["macro"], sd["combined"], sd["v4"]]
     fig_filters.add_trace(go.Bar(
         x=filter_labels,
         y=pnls,
@@ -294,18 +304,26 @@ st.markdown("<h2>📈 Cumulative PnL — Baseline vs Combined Filter</h2>", unsa
 trades_sorted = trades.sort_values("date").copy()
 trades_sorted["cum_baseline"] = trades_sorted["pnl_pts"].cumsum()
 trades_sorted["cum_combined"] = (trades_sorted["pnl_pts"] * trades_sorted["filter_both_keep"].astype(int)).cumsum()
+if "keep_v4_adaptive_macro_chain" in trades_sorted.columns:
+    trades_sorted["cum_v4"] = (trades_sorted["pnl_pts"] * trades_sorted["keep_v4_adaptive_macro_chain"].astype(int)).cumsum()
 
 fig_cum = go.Figure()
 fig_cum.add_trace(go.Scatter(
     x=trades_sorted["date"], y=trades_sorted["cum_baseline"],
     mode="lines", line=dict(color=COLORS["danger"], width=1.5),
-    name="Baseline (no filter)",
+    name="V0 Baseline (no filter)",
 ))
 fig_cum.add_trace(go.Scatter(
     x=trades_sorted["date"], y=trades_sorted["cum_combined"],
-    mode="lines", line=dict(color=COLORS["success"], width=1.5),
-    name="Combined Filter (A+B)",
+    mode="lines", line=dict(color=COLORS["warning"], width=1.5),
+    name="V3 Combined (Macro+Chain)",
 ))
+if "cum_v4" in trades_sorted.columns:
+    fig_cum.add_trace(go.Scatter(
+        x=trades_sorted["date"], y=trades_sorted["cum_v4"],
+        mode="lines", line=dict(color=COLORS["success"], width=1.5),
+        name="V4 Full Stack (Adaptive+Macro+Chain)",
+    ))
 fig_cum.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
 fig_cum.update_layout(**plotly_layout(
     height=420,
@@ -322,12 +340,18 @@ st.divider()
 # ───────────────────────────────────────────────────────────
 st.markdown("<h2>📋 Recent 50 Trades — With Filter Decisions</h2>", unsafe_allow_html=True)
 recent = trades.sort_values("date", ascending=False).head(50).copy()
+extra_cols = []
+if "keep_adaptive" in recent.columns: extra_cols.append("keep_adaptive")
+if "keep_v4_adaptive_macro_chain" in recent.columns: extra_cols.append("keep_v4_adaptive_macro_chain")
 display_cols = ["date", "session", "direction", "pnl_pts", "bias_score", "bias_label",
-                "NY_prev", "Asia", "London", "filter_macro_keep", "filter_chain_keep", "filter_both_keep"]
+                "NY_prev", "Asia", "London", "filter_macro_keep", "filter_chain_keep"] + extra_cols
 recent_d = recent[display_cols].copy()
 recent_d["date"] = recent_d["date"].dt.strftime("%Y-%m-%d")
-recent_d.columns = ["Date", "Session", "Dir", "PnL", "Bias", "Label", "NY[t-1]", "Asia", "London",
-                    "Keep Macro", "Keep Chain", "Keep Both"]
+new_cols = ["Date", "Session", "Dir", "PnL", "Bias", "Label", "NY[t-1]", "Asia", "London",
+            "Keep Macro", "Keep Chain"]
+if "keep_adaptive" in extra_cols: new_cols.append("Keep Adaptive")
+if "keep_v4_adaptive_macro_chain" in extra_cols: new_cols.append("Keep V4")
+recent_d.columns = new_cols
 st.dataframe(recent_d, hide_index=True, use_container_width=True, height=400)
 
 st.caption("`Keep` columns = True kalau filter menyimpan trade, False = filter skip. Run `python3 scripts/apply_filters_to_trades.py` untuk refresh.")
