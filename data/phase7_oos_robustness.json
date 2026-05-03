@@ -1,0 +1,79 @@
+{
+  "generated": "2026-05-03T22:42:02.828769",
+  "train_period": [
+    "2021-01-04",
+    "2023-12-29"
+  ],
+  "test_period": [
+    "2024-01-01",
+    "2026-04-10"
+  ],
+  "locked_params": {
+    "Asia": {
+      "bh": 20,
+      "bm": 55,
+      "dur": 10,
+      "train_pnl": 69.3,
+      "train_trades": 463,
+      "train_wr": 73.2
+    },
+    "London": {
+      "bh": 4,
+      "bm": 38,
+      "dur": 3,
+      "train_pnl": 447.2,
+      "train_trades": 1134,
+      "train_wr": 31.4
+    },
+    "NY": {
+      "bh": 10,
+      "bm": 0,
+      "dur": 7,
+      "train_pnl": 416.4,
+      "train_trades": 629,
+      "train_wr": 47.2
+    }
+  },
+  "oos_results": {
+    "Asia": {
+      "test_pnl": 63.5,
+      "test_trades": 462,
+      "test_wr": 68.8,
+      "bh": 20,
+      "bm": 55,
+      "dur": 10,
+      "train_pnl": 69.3,
+      "train_trades": 463,
+      "train_wr": 73.2
+    },
+    "London": {
+      "test_pnl": 154.5,
+      "test_trades": 1063,
+      "test_wr": 31.4,
+      "bh": 4,
+      "bm": 38,
+      "dur": 3,
+      "train_pnl": 447.2,
+      "train_trades": 1134,
+      "train_wr": 31.4
+    },
+    "NY": {
+      "test_pnl": 987.7,
+      "test_trades": 730,
+      "test_wr": 55.8,
+      "bh": 10,
+      "bm": 0,
+      "dur": 7,
+      "train_pnl": 416.4,
+      "train_trades": 629,
+      "train_wr": 47.2
+    }
+  },
+  "walkforward_recent_reference": {
+    "Asia": 141.8,
+    "London": 468.0,
+    "NY": 186.9
+  },
+  "total_oos": 1205.7,
+  "total_walkforward_recent": 796.6999999999999
+}
