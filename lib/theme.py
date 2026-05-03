@@ -416,10 +416,24 @@ def apply_theme():
         border-color: {COLORS['stroke_sub_300']} !important;
     }}
 
-    /* Sidebar — AlignUI nav style */
+    /* Sidebar — AlignUI nav style + STICKY (always visible) */
     [data-testid="stSidebar"] {{
         background: {COLORS['bg_white_0']} !important;
         border-right: 1px solid {COLORS['stroke_soft_200']} !important;
+        /* Force always visible — prevent accidental hide */
+        min-width: 244px !important;
+        max-width: 244px !important;
+        transform: translateX(0) !important;
+        visibility: visible !important;
+    }}
+    /* Hide the collapse-sidebar button so it can't be accidentally clicked */
+    [data-testid="stSidebarCollapseButton"],
+    button[kind="headerNoPadding"][data-testid="baseButton-headerNoPadding"] {{
+        display: none !important;
+    }}
+    /* Adjust main content area to account for sticky sidebar */
+    [data-testid="stMain"] {{
+        margin-left: 0 !important;
     }}
     [data-testid="stSidebarNav"] li a {{
         font-size: 0.875rem !important;      /* label-sm */
