@@ -1,0 +1,67 @@
+{
+  "generated": "2026-05-04T00:06:33.284623",
+  "e16b_baseline_asia": 151.0,
+  "target_asia": 300.0,
+  "variants": [
+    {
+      "label": "e19a \u00b7 Asia + pattern-at-fade-entry (any)",
+      "total_19q": 792.1000000000001,
+      "total_recent": 651.6,
+      "asia_pnl": -1.7999999999999985,
+      "asia_delta": -152.8,
+      "by_session": {
+        "Asia": -1.7999999999999985,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e19b \u00b7 Asia + min_displacement 0.5",
+      "total_19q": 793.9,
+      "total_recent": 654.9000000000001,
+      "asia_pnl": 0.0,
+      "asia_delta": -151.0,
+      "by_session": {
+        "Asia": 0.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e19c \u00b7 Asia + TP=0.7\u00d7mid (tighter)",
+      "total_19q": 880.4,
+      "total_recent": 748.7,
+      "asia_pnl": 86.5,
+      "asia_delta": -64.5,
+      "by_session": {
+        "Asia": 86.5,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e19d \u00b7 Asia + TP=1.5\u00d7mid (overshoot)",
+      "total_19q": 927.0000000000001,
+      "total_recent": 751.8,
+      "asia_pnl": 133.1,
+      "asia_delta": -17.900000000000006,
+      "by_session": {
+        "Asia": 133.1,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e19e \u00b7 Asia COMBO: pattern + min_disp 0.3",
+      "total_19q": 793.9,
+      "total_recent": 654.9000000000001,
+      "asia_pnl": 0.0,
+      "asia_delta": -151.0,
+      "by_session": {
+        "Asia": 0.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    }
+  ]
+}
