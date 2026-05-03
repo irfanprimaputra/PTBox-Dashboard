@@ -1,0 +1,67 @@
+{
+  "generated": "2026-05-04T00:35:28.847581",
+  "e16b_baseline_asia": 151.0,
+  "target_asia": 300.0,
+  "variants": [
+    {
+      "label": "e20a \u00b7 Asia tighter SL (box_edge)",
+      "total_19q": 818.9000000000001,
+      "asia_pnl": 24.999999999999996,
+      "asia_delta": -126.0,
+      "total_recent": 701.6,
+      "by_session": {
+        "Asia": 24.999999999999996,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e20b \u00b7 Asia opposite-edge TP (full reversion)",
+      "total_19q": 793.9,
+      "asia_pnl": 0.0,
+      "asia_delta": -151.0,
+      "total_recent": 654.9000000000001,
+      "by_session": {
+        "Asia": 0.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e20c \u00b7 Asia non-adaptive max_att=3",
+      "total_19q": 944.9,
+      "asia_pnl": 151.0,
+      "asia_delta": 0.0,
+      "total_recent": 796.7,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e20d \u00b7 Asia late-window 21-23 ET",
+      "total_19q": 975.7000000000002,
+      "asia_pnl": 181.8,
+      "asia_delta": 30.80000000000001,
+      "total_recent": 807.6000000000001,
+      "by_session": {
+        "Asia": 181.8,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e20e \u00b7 Asia COMBO: tighter SL + opposite TP",
+      "total_19q": 793.9,
+      "asia_pnl": 0.0,
+      "asia_delta": -151.0,
+      "total_recent": 654.9000000000001,
+      "by_session": {
+        "Asia": 0.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    }
+  ]
+}

@@ -12,11 +12,29 @@ DATA_DIR = Path(__file__).parent / "data"
 
 
 def load_phase7_baseline():
-    """Load e16b baseline from Phase 7 results if available, else None."""
+    """Load latest baseline — checks e20d → e16b in priority order."""
+    # Try e20d first (newest baseline as of 2026-05-04)
+    try:
+        with open(DATA_DIR / "phase7_e20_results.json") as f:
+            data = json.load(f)
+        for v in data.get("variants", []):
+            if "e20d" in v.get("label", ""):
+                return {
+                    "experiment_id": "e20d",
+                    "label": "Asia late-window 21-23 ET + e16b NY/London (current best)",
+                    "total_pnl": v["total_19q"],
+                    "asia_pnl": v["by_session"]["Asia"],
+                    "london_pnl": v["by_session"]["London"],
+                    "ny_pnl": v["by_session"]["NY"],
+                    "recent_pnl": v.get("total_recent", 0),
+                    "phase": "Phase 7 (e20d)",
+                }
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    # Fallback: e16b
     try:
         with open(DATA_DIR / "phase7_e16_results.json") as f:
             data = json.load(f)
-        # Find e16b
         for v in data.get("variants", []):
             if "e16b" in v.get("label", ""):
                 return {
