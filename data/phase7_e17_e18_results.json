@@ -1,0 +1,111 @@
+{
+  "generated": "2026-05-03T23:15:14.240249",
+  "e16b_baseline": 945.0,
+  "variants": [
+    {
+      "label": "e17a \u00b7 London pin_bar only",
+      "total_19q": 504.40000000000003,
+      "total_recent": 476.6,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 45.900000000000006,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 147.89999999999998,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e17b \u00b7 London engulfing only",
+      "total_19q": 523.9000000000001,
+      "total_recent": 480.70000000000005,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 65.40000000000002,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 152.0,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e17c \u00b7 London killzone 02:00-04:00 ET",
+      "total_19q": 568.7999999999998,
+      "total_recent": 647.3000000000001,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 110.30000000000001,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 318.6,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e17d \u00b7 London direct + pattern-at-breakout",
+      "total_19q": 603.2,
+      "total_recent": 647.4,
+      "by_session": {
+        "Asia": 151.0,
+        "London": 144.70000000000002,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 141.8,
+        "London": 318.7,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e18a \u00b7 Asia Tokyo open only (19:00-21:00 ET)",
+      "total_19q": 734.6,
+      "total_recent": 608.0,
+      "by_session": {
+        "Asia": -59.3,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": -46.9,
+        "London": 468.0,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e18b \u00b7 Asia min_box_width=3",
+      "total_19q": 895.1000000000001,
+      "total_recent": 760.4000000000001,
+      "by_session": {
+        "Asia": 101.2,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 105.5,
+        "London": 468.0,
+        "NY": 186.9
+      }
+    },
+    {
+      "label": "e18c \u00b7 Asia min_box_width=5",
+      "total_19q": 849.8999999999999,
+      "total_recent": 710.9,
+      "by_session": {
+        "Asia": 56.0,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      },
+      "recent_by_session": {
+        "Asia": 56.0,
+        "London": 468.0,
+        "NY": 186.9
+      }
+    }
+  ]
+}
