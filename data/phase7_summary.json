@@ -1,0 +1,26 @@
+{
+  "generated": "2026-05-03T19:05:02.200898",
+  "experiment_id": "e014_filtered",
+  "description": "e013 deploy config + V4 filter (Macro + Chain + Adaptive) walk-forward 19Q",
+  "total_pnl": -92.9,
+  "total_trades": 3330,
+  "e013_baseline": 375.0,
+  "delta_vs_e013": -467.9,
+  "per_session": {
+    "Asia": {
+      "pnl": 97.89999999999999,
+      "trades": 597,
+      "avg_wr": 68.81
+    },
+    "London": {
+      "pnl": -110.69999999999999,
+      "trades": 1500,
+      "avg_wr": 28.514999999999997
+    },
+    "NY": {
+      "pnl": -80.1,
+      "trades": 1233,
+      "avg_wr": 29.355
+    }
+  }
+}
