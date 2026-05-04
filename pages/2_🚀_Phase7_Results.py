@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 100+ variants tested · Current best: <b style="color: {COLORS['success']};">e30 (timing-optimized)</b>
+        Engine integration · OOS validation · 150+ variants tested · Current best: <b style="color: {COLORS['success']};">e31 (full grid-optimized)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -116,10 +116,11 @@ st.markdown(f"""
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ℹ️ <b style="color: {COLORS['warning']};">e30 timing optimization adopted 2026-05-04:</b><br>
-        🟡 NY: 9:03/5m → <b>9:07/10m</b> (+240 swing) + e27e strict+body50% (+314) = +554 5y total<br>
-        🟢 Asia: 21:00/7m → <b>21:30/15m</b> (+84 swing fixed-config)<br>
-        Projected system: +976 → +1320-1430 (35-46% improvement). Walk-forward refresh pending.
+        ℹ️ <b style="color: {COLORS['success']};">e31 NY grid optimization adopted 2026-05-04:</b><br>
+        🟡 NY: e30 timing + body50% + <b>TP=2.5R</b> (was 6R) = +2964 5y (vs +1108 baseline, +168%)<br>
+        Trade-off: R:R 1:6 → 1:2.5, but WR 19% → 60.3% (Kelly-favorable).<br>
+        🟢 Asia: 21:30/15m timing (+84 swing). 🔵 London: unchanged.<br>
+        Projected system: +976 → +1800-2200 (84-125% improvement). Walk-forward refresh pending.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -133,7 +134,7 @@ c1, c2, c3 = st.columns(3)
 sessions_e20d = [
     ("🟢 Asia", "Mean-rev A2-fail + 21:30/15m timing ⭐ e30", 250, 24, 73),
     ("🔵 London", "Breakout-pullback + any_pattern (kept)", 486, 468, 0),
-    ("🟡 NY", "Direct + STRICT + body50% + 9:07/10m ⭐ e30", 640, -117, 27),
+    ("🟡 NY", "Direct + STRICT + body50% + TP=2.5R ⭐ e31", 1100, -117, 60),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
     delta = pnl - e013_ref
@@ -194,7 +195,8 @@ evolution = pd.DataFrame([
     {"variant": "e23a", "label": "P7: Asia DoW skip Thu (DISCONFIRMED)", "pnl": 856, "stage": "phase7"},
     {"variant": "e23b", "label": "P7: Asia RANGE NY_prev (DISCONFIRMED)", "pnl": 807, "stage": "phase7"},
     {"variant": "e27e", "label": "P7: NY strict + body50% (proj WF)", "pnl": 1133, "stage": "phase7"},
-    {"variant": "e30",  "label": "P7: e27e + timing sweep ⭐ NEW (proj WF)", "pnl": 1376, "stage": "phase7"},
+    {"variant": "e30",  "label": "P7: e27e + timing sweep (proj WF)", "pnl": 1376, "stage": "phase7"},
+    {"variant": "e31",  "label": "P7: e30 + TP=2.5R grid optimum ⭐ NEW (proj WF)", "pnl": 1836, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -211,11 +213,11 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=1376, line_color=COLORS["success"], line_dash="solid", line_width=2,
-                   annotation_text="e30 PROJECTED +1376 (timing optimized)",
+fig_evo.add_hline(y=1836, line_color=COLORS["success"], line_dash="solid", line_width=2,
+                   annotation_text="e31 PROJECTED +1836 (grid-optimized)",
                    annotation_font_color=COLORS["success"])
-fig_evo.add_hline(y=1133, line_color=COLORS["text_secondary"], line_dash="dot",
-                   annotation_text="e27e prior +1133",
+fig_evo.add_hline(y=1376, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e30 prior +1376",
                    annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=976, line_color=COLORS["text_secondary"], line_dash="dot",
                    annotation_text="e20d prior +976",

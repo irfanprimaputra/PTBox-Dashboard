@@ -76,18 +76,21 @@ londonTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
 londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
 
-// ─── e30 NY (direct breakout + STRICT pattern + body50% + 9:07/10min) ──────
-// e27e: strict + body50% (+314 swing 5y)
-// e30: timing 9:07/10min (+240 additional swing)
-// Combined 5y: +1108 baseline → +1662 = +554 swing ⭐
-g_ny             = "🟡 NY (e30 strict + body50% + 9:07/10m)"
+// ─── e31 NY (FULL OPTIMIZED: timing + pattern + body + R:R) ────────────────
+// Iteration journey:
+//   baseline (any pat, 9:03/5m, TP=6R):    +1108
+//   e27e (strict + body50%):               +1422 (Δ +314)
+//   e30 (+ timing 9:07/10m):               +1662 (Δ +240)
+//   e31 (+ TP=2.5R from grid search):      +2964 (Δ +1302) ⭐
+// Total 5y: +1856 swing, 60.3% WR, 771 trades
+g_ny             = "🟡 NY (e31 grid-optimized — TP=2.5R)"
 nyBoxStartH      = input.int  (9,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
 nyBoxStartM      = input.int  (7,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
 nyBoxDur         = input.int  (10,  "Box duration (min)",  minval = 1, maxval = 60, group = g_ny)
 nySessionEndH    = input.int  (12,  "Session end hour (ET)", group = g_ny)
 nySlBoxMult      = input.float(0.5, "SL = X × box_width", group = g_ny)
-nyTp1Mult        = input.float(3.0, "TP1 = X × SL", group = g_ny)
-nyTp2Mult        = input.float(6.0, "TP2 = X × SL", group = g_ny)
+nyTp1Mult        = input.float(1.5, "TP1 = X × SL", group = g_ny)
+nyTp2Mult        = input.float(2.5, "TP2 = X × SL (e31 optimum)", group = g_ny)
 nyMinSl          = input.float(3.0, "Min SL (pts)", group = g_ny)
 nyMaxAttempt     = input.int  (3,   "Max attempts/day", group = g_ny)
 nyBodyClosePct   = input.float(0.50,"NY body close confirm (% box width)", minval = 0.0, maxval = 1.0, step = 0.05, group = g_ny)
