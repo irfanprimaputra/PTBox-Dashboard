@@ -38,7 +38,17 @@ def load_phase7_data():
         with open(DATA_DIR / "phase7_e16_results.json") as f: data["e16"] = json.load(f)
     if (DATA_DIR / "phase7_e17_e18_results.json").exists():
         with open(DATA_DIR / "phase7_e17_e18_results.json") as f: data["e17_e18"] = json.load(f)
-    if (DATA_DIR / "phase7_oos_robustness.json").exists():
+    # Prefer e37 OOS validation (2026-05-04, retention 316%) over old e16b OOS
+    if (DATA_DIR / "phase7_e37_oos_validation.json").exists():
+        with open(DATA_DIR / "phase7_e37_oos_validation.json") as f:
+            e37_oos = json.load(f)
+        data["oos"] = {
+            "total_oos": e37_oos["oos_pnl"],
+            "retention_pct": e37_oos["retention_pct"],
+            "verdict": e37_oos["verdict"],
+            "yearly": e37_oos.get("oos_per_yr", 2795),
+        }
+    elif (DATA_DIR / "phase7_oos_robustness.json").exists():
         with open(DATA_DIR / "phase7_oos_robustness.json") as f: data["oos"] = json.load(f)
     return data
 
@@ -68,7 +78,7 @@ regime = load_regime_data()
 # ───────────────────────────────────────────────────────────
 # 🏆 HERO — Current Best Baseline
 # ───────────────────────────────────────────────────────────
-oos_total = data.get("oos", {}).get("total_oos", 1206) if "oos" in data else 1206
+oos_total = data.get("oos", {}).get("total_oos", 6428) if "oos" in data else 6428
 
 st.markdown(f"""
 <div style="
