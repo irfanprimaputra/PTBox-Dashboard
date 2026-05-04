@@ -302,6 +302,28 @@ if newDayET
     nyTodayAtt      := 0
     nyHadEntry      := false
 
+    // Defensive: reset box state to prevent cross-day leak
+    // Bug observed in replay mode: tmp accumulators sometimes carry
+    // stale value from previous day if exact "box close" minute (e.g. 9:08 ET)
+    // is missed due to data gap, holiday, or replay quirk.
+    asiaBxHiTmp := na
+    asiaBxLoTmp := na
+    asiaBoxHi   := na
+    asiaBoxLo   := na
+    asiaBoxBar  := na
+
+    londonBxHiTmp := na
+    londonBxLoTmp := na
+    londonBoxHi   := na
+    londonBoxLo   := na
+    londonBoxBar  := na
+
+    nyBxHiTmp := na
+    nyBxLoTmp := na
+    nyBoxHi   := na
+    nyBoxLo   := na
+    nyBoxBar  := na
+
 // ─── Process open trades: extend SL/TP lines + move labels + check exit ───
 processOpenTrades(arr, sessionTag) =>
     int win    = 0
