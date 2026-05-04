@@ -722,10 +722,14 @@ if showStatsPanel
     table.cell(stats, 2, 2, str.tostring(londonL_d), text_color = color.red, text_size = size.tiny)
     table.cell(stats, 3, 2, str.tostring(nyL_d),     text_color = color.red, text_size = size.tiny)
 
-    table.cell(stats, 0, 3, "Chop Days", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 3, str.tostring(asiaChopDays),   text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 2, 3, str.tostring(londonChopDays), text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 3, 3, str.tostring(nyChopDays),     text_color = color.yellow, text_size = size.tiny)
+    // Chop in TODAY mode = is today's session already chopped (session passed, no entry)
+    asiaChopShow   = isToday ? (mod >= asiaSessionEndH   * 60 and not asiaHadEntry   ? 1 : 0) : asiaChopDays
+    londonChopShow = isToday ? (mod >= londonSessionEndH * 60 and not londonHadEntry ? 1 : 0) : londonChopDays
+    nyChopShow     = isToday ? (mod >= nySessionEndH     * 60 and not nyHadEntry     ? 1 : 0) : nyChopDays
+    table.cell(stats, 0, 3, isToday ? "Chop Today" : "Chop Days", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 3, str.tostring(asiaChopShow),   text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 2, 3, str.tostring(londonChopShow), text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 3, 3, str.tostring(nyChopShow),     text_color = color.yellow, text_size = size.tiny)
 
     asiaWR   = asiaW_d   + asiaL_d   > 0 ? 100.0 * asiaW_d   / (asiaW_d   + asiaL_d)   : 0.0
     londonWR = londonW_d + londonL_d > 0 ? 100.0 * londonW_d / (londonW_d + londonL_d) : 0.0
