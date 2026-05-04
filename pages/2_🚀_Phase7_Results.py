@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 200+ variants tested · Current best: <b style="color: {COLORS['success']};">e32 (Wyckoff pre-session)</b>
+        Engine integration · OOS validation · 250+ variants tested · Current best: <b style="color: {COLORS['success']};">e33 (full optimum NY +263% vs baseline)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -79,7 +79,7 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e32 (Wyckoff pre-session boxes — Phase B detection)
+        ⭐ Current Best · e33 (Wyckoff pre-session + regrid optimum)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
@@ -134,7 +134,7 @@ c1, c2, c3 = st.columns(3)
 sessions_e20d = [
     ("🟢 Asia", "Pre-Tokyo 19:00/30m + mean-rev A2-fail ⭐ e32", 261, 24, 68),
     ("🔵 London", "Breakout-pullback + any_pattern (kept)", 486, 468, 0),
-    ("🟡 NY", "Pre-NY 07:00/60m + STRICT + body50% + TP=2.5R ⭐ e32", 3691, -117, 62),
+    ("🟡 NY", "Pre-NY 07:00/60m + ANY + body30% + TP=2.5R ⭐ e33", 4025, -117, 58),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
     delta = pnl - e013_ref
@@ -197,7 +197,8 @@ evolution = pd.DataFrame([
     {"variant": "e27e", "label": "P7: NY strict + body50% (proj WF)", "pnl": 1133, "stage": "phase7"},
     {"variant": "e30",  "label": "P7: e27e + timing sweep (proj WF)", "pnl": 1376, "stage": "phase7"},
     {"variant": "e31",  "label": "P7: e30 + TP=2.5R grid optimum (5y fixed)", "pnl": 1836, "stage": "phase7"},
-    {"variant": "e32",  "label": "P7: e31 + Wyckoff pre-session ⭐ NEW (proj WF)", "pnl": 3100, "stage": "phase7"},
+    {"variant": "e32",  "label": "P7: e31 + Wyckoff pre-session (5y fixed)", "pnl": 3100, "stage": "phase7"},
+    {"variant": "e33",  "label": "P7: e32 + regrid (any+body30+TP2.5) ⭐ NEW (proj WF)", "pnl": 3370, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -214,11 +215,11 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=3100, line_color=COLORS["success"], line_dash="solid", line_width=2,
-                   annotation_text="e32 PROJECTED +3100 (Wyckoff pre-session)",
+fig_evo.add_hline(y=3370, line_color=COLORS["success"], line_dash="solid", line_width=2,
+                   annotation_text="e33 PROJECTED +3370 (full optimum)",
                    annotation_font_color=COLORS["success"])
-fig_evo.add_hline(y=1836, line_color=COLORS["text_secondary"], line_dash="dot",
-                   annotation_text="e31 prior +1836",
+fig_evo.add_hline(y=3100, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e32 prior +3100",
                    annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=976, line_color=COLORS["text_secondary"], line_dash="dot",
                    annotation_text="e20d prior +976",

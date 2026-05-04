@@ -77,16 +77,17 @@ londonTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
 londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
 
-// ─── e32 NY (PRE-NY 07:00/60m + e31 strict+body50%+TP2.5R) ─────────────────
+// ─── e33 NY (07:00/60m + ANY pattern + body30% + TP=2.5R) ──────────────────
 // Iteration journey:
 //   baseline (any pat, 9:03/5m, TP=6R):    +1108
 //   e27e (strict + body50%):               +1422 (Δ +314)
 //   e30 (+ timing 9:07/10m):               +1662 (Δ +240)
 //   e31 (+ TP=2.5R from grid search):      +2964 (Δ +1302)
-//   e32 (+ pre-NY 07:00/60m box):          +3691 (Δ +727) ⭐
-// Total 5y: +2583 swing, 61.6% WR, 743 trades
-// Wyckoff: 07:00 ET = London-NY overlap, Phase B cause-building before NY surge
-g_ny             = "🟡 NY (e32 pre-NY 07:00/60m + e31 inherit)"
+//   e32 (+ pre-NY 07:00/60m box):          +3691 (Δ +727)
+//   e33 (+ any pattern + body30%):         +4025 (Δ +334) ⭐
+// Total 5y: +2917 swing (+263% vs original baseline)
+// 57.8% WR, 881 trades — Wyckoff Phase B + relaxed pattern at big box
+g_ny             = "🟡 NY (e33 07:00/60m + any + body30% + TP2.5)"
 nyBoxStartH      = input.int  (7,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
 nyBoxStartM      = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
 nyBoxDur         = input.int  (60,  "Box duration (min)",  minval = 1, maxval = 120, group = g_ny)
@@ -96,8 +97,8 @@ nyTp1Mult        = input.float(1.5, "TP1 = X × SL", group = g_ny)
 nyTp2Mult        = input.float(2.5, "TP2 = X × SL (e31 optimum)", group = g_ny)
 nyMinSl          = input.float(3.0, "Min SL (pts)", group = g_ny)
 nyMaxAttempt     = input.int  (3,   "Max attempts/day", group = g_ny)
-nyBodyClosePct   = input.float(0.50,"NY body close confirm (% box width)", minval = 0.0, maxval = 1.0, step = 0.05, group = g_ny)
-nyStrictPattern  = input.bool (true,"NY strict pattern (no inside_bar)", group = g_ny)
+nyBodyClosePct   = input.float(0.30,"NY body close confirm (% box width) — e33 optimum", minval = 0.0, maxval = 1.0, step = 0.05, group = g_ny)
+nyStrictPattern  = input.bool (false,"NY strict pattern — e33: any pattern beats strict on 07:00/60m timing", group = g_ny)
 
 // ─── Pattern detection ─────────────────────────────────────────────────────
 isBullPin(o, h, l, c) =>
