@@ -316,8 +316,11 @@ st.divider()
 st.markdown("<h2>📋 Raw Trade Log</h2>", unsafe_allow_html=True)
 st.caption(f"Showing {len(df):,} trades. Latest first.")
 
-display_cols = ["date", "day_of_week", "session", "direction", "entry_time", "exit_time",
-                "entry_price", "exit_price", "hit_type", "pnl_pts", "box_width"]
+# Display columns flexible — handle e37 (no exit_price) and legacy v6 schema
+candidate_cols = ["date", "day_of_week", "session", "direction", "entry_time", "exit_time",
+                  "entry_price", "exit_price", "sl_price", "tp_price", "tp1_price", "tp2_price",
+                  "hit_type", "pnl_pts", "box_width", "sl_distance"]
+display_cols = [c for c in candidate_cols if c in df.columns]
 df_display = df[display_cols].sort_values("date", ascending=False).head(500)
 st.dataframe(df_display, hide_index=True, use_container_width=True, height=400)
 
