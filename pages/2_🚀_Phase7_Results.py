@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 500+ variants tested · Current best: <b style="color: {COLORS['success']};">e37 (extended session windows)</b>
+        Engine integration · ✅ OOS PASSED 316% retention · 500+ variants · Current best: <b style="color: {COLORS['success']};">e37 (live-ready)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -79,7 +79,7 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e37 (e36 + extended session windows)
+        ⭐ Current Best · e37 (e36 + extended session windows) — OOS PASSED ✅ 316% retention
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
@@ -100,10 +100,10 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                124%
+                316%
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
-                OOS retention vs WF
+                OOS retention (10/10 Q ✅)
             </div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">

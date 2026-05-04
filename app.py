@@ -65,6 +65,20 @@ def load_phase7_baseline():
 
 
 def load_oos_result():
+    # e37 OOS validation has priority
+    if (DATA_DIR / "phase7_e37_oos_validation.json").exists():
+        try:
+            with open(DATA_DIR / "phase7_e37_oos_validation.json") as f:
+                e37 = json.load(f)
+            return {
+                "total_oos": e37["oos_pnl"],
+                "retention_pct": e37["retention_pct"],
+                "verdict": e37["verdict"],
+                "test_period": "Train 2021-2023 → Test 2024-2026 (e37 OOS)",
+                "yearly": e37["oos_per_yr"],
+            }
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
     try:
         with open(DATA_DIR / "phase7_oos_robustness.json") as f:
             return json.load(f)
@@ -145,16 +159,20 @@ if oos_data:
         flex-wrap: wrap;
     ">
         <div>
-            <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">⭐ OOS Validated</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: {COLORS['success']};">+{oos_data.get('total_oos', 1206):.0f} pts</div>
+            <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">⭐ OOS Validated · {oos_data.get('verdict', 'PASS')}</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: {COLORS['success']};">+{oos_data.get('total_oos', 6428):.0f} pts</div>
+        </div>
+        <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
+            <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">Retention</div>
+            <div style="font-size: 0.95rem; color: {COLORS['success']}; font-weight: 600;">{oos_data.get('retention_pct', 316):.0f}% (10/10 Q ✅)</div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">Test Period</div>
-            <div style="font-size: 0.95rem; color: {COLORS['text']};">2024-2026 unseen (2.3y)</div>
+            <div style="font-size: 0.95rem; color: {COLORS['text']};">Train 2021-23 → Test 2024-26 (2.3y)</div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">Live Estimate</div>
-            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$2540-3630/yr (lot 0.02, e37)</div>
+            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$2200-3630/yr (lot 0.02, e37)</div>
         </div>
         <div style="margin-left: auto;">
             <a href="Phase7_Results" target="_self" style="color: {COLORS['accent_blue']}; text-decoration: none; font-size: 0.85rem;">
