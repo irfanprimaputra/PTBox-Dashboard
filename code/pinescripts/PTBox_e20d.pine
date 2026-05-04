@@ -48,8 +48,8 @@ minimalLabels  = input.bool(false, "Minimal label mode (less crowded)", group = 
 g_risk           = "💰 Risk Management (LIVE)"
 useMaxSlFilter   = input.bool(true,  "Enable max-SL filter (skip wide-SL trades)",       group = g_risk)
 asiaMaxSlPts     = input.float(30,   "Asia max SL (pts) — only catch wonky outliers",    minval = 3, group = g_risk)
-londonMaxSlPts   = input.float(10,   "London max SL (pts) — tight, breakout model",      minval = 3, group = g_risk)
-nyMaxSlPts       = input.float(10,   "NY max SL (pts) — tight, breakout model",          minval = 3, group = g_risk)
+londonMaxSlPts   = input.float(15,   "London max SL (pts) — breakout box-width based",   minval = 3, group = g_risk)
+nyMaxSlPts       = input.float(15,   "NY max SL (pts) — breakout box-width based",       minval = 3, group = g_risk)
 capUsd           = input.float(200,  "Account capital (USD)",                            group = g_risk)
 riskPerTradeUsd  = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
 showLotSuggest   = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
