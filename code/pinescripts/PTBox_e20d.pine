@@ -44,13 +44,15 @@ panelLookback  = input.int (90,    "Cumulative lookback (days)", minval = 1, max
 boxOpacity     = input.int (92,    "Box fill transparency (90=dark, 95=subtle)", minval = 80, maxval = 99, group = g_disp)
 minimalLabels  = input.bool(false, "Minimal label mode (less crowded)", group = g_disp)
 
-// ─── 💰 Risk Management (LIVE filter — does NOT affect backtest engine) ────
-g_risk          = "💰 Risk Management (LIVE)"
-useMaxSlFilter  = input.bool(true,  "Enable max-SL filter (skip wide-SL trades)",       group = g_risk)
-maxSlPts        = input.float(10,   "Max SL distance allowed (pts)", minval = 3,        group = g_risk)
-capUsd          = input.float(200,  "Account capital (USD)",                            group = g_risk)
-riskPerTradeUsd = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
-showLotSuggest  = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
+// ─── 💰 Risk Management (LIVE filter — minimal divergence from engine) ────
+g_risk           = "💰 Risk Management (LIVE)"
+useMaxSlFilter   = input.bool(true,  "Enable max-SL filter (skip wide-SL trades)",       group = g_risk)
+asiaMaxSlPts     = input.float(30,   "Asia max SL (pts) — only catch wonky outliers",    minval = 3, group = g_risk)
+londonMaxSlPts   = input.float(10,   "London max SL (pts) — tight, breakout model",      minval = 3, group = g_risk)
+nyMaxSlPts       = input.float(10,   "NY max SL (pts) — tight, breakout model",          minval = 3, group = g_risk)
+capUsd           = input.float(200,  "Account capital (USD)",                            group = g_risk)
+riskPerTradeUsd  = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
+showLotSuggest   = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
 
 // ─── e20d Asia (mean-rev A2-fail, late-window 21-23 ET) ────────────────────
 g_asia          = "🟢 Asia (e20d late-window)"
@@ -520,7 +522,7 @@ riskInfo(slDist) =>
 drawSkipLabel(slDist, sessionTag, ypos, isLong) =>
     if showSignals
         label.new(x = bar_index, y = ypos,
-             text  = "🚫 SKIP " + sessionTag + "\nSL " + str.tostring(slDist, "#.#") + "pt > " + str.tostring(maxSlPts, "#.#") + "pt max",
+             text  = "🚫 SKIP " + sessionTag + "\nSL " + str.tostring(slDist, "#.#") + "pt > max",
              color = color.new(color.red, 30), textcolor = color.white,
              style = isLong ? label.style_label_up : label.style_label_down,
              size  = size.tiny)
@@ -547,7 +549,7 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
                 slPx   = asiaExtreme + asiaSlBuffer
                 tpPx   = boxMid
                 slDist = math.abs(close - slPx)
-                if useMaxSlFilter and slDist > maxSlPts
+                if useMaxSlFilter and slDist > asiaMaxSlPts
                     drawSkipLabel(slDist, "Asia", high, false)
                 else
                     asiaTodayAtt += 1
@@ -566,7 +568,7 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
                 slPx   = asiaExtreme - asiaSlBuffer
                 tpPx   = boxMid
                 slDist = math.abs(close - slPx)
-                if useMaxSlFilter and slDist > maxSlPts
+                if useMaxSlFilter and slDist > asiaMaxSlPts
                     drawSkipLabel(slDist, "Asia", low, true)
                 else
                     asiaTodayAtt += 1
@@ -596,7 +598,7 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 tp1Px  = close + londonTp1Mult * slDist
                 tp2Px  = close + londonTp2Mult * slDist
                 slDistFromEntry = math.abs(close - slPx)
-                if useMaxSlFilter and slDistFromEntry > maxSlPts
+                if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
                     drawSkipLabel(slDistFromEntry, "London", low, true)
                 else
                     londonTodayAtt += 1
@@ -615,7 +617,7 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 tp1Px  = close - londonTp1Mult * slDist
                 tp2Px  = close - londonTp2Mult * slDist
                 slDistFromEntry = math.abs(close - slPx)
-                if useMaxSlFilter and slDistFromEntry > maxSlPts
+                if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
                     drawSkipLabel(slDistFromEntry, "London", high, false)
                 else
                     londonTodayAtt += 1
@@ -635,7 +637,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         tp1Px  = close + nyTp1Mult  * slDist
         tp2Px  = close + nyTp2Mult  * slDist
         slDistFromEntry = math.abs(close - slPx)
-        if useMaxSlFilter and slDistFromEntry > maxSlPts
+        if useMaxSlFilter and slDistFromEntry > nyMaxSlPts
             drawSkipLabel(slDistFromEntry, "NY", low, true)
         else
             nyTodayAtt += 1
@@ -652,7 +654,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         tp1Px  = close - nyTp1Mult  * slDist
         tp2Px  = close - nyTp2Mult  * slDist
         slDistFromEntry = math.abs(close - slPx)
-        if useMaxSlFilter and slDistFromEntry > maxSlPts
+        if useMaxSlFilter and slDistFromEntry > nyMaxSlPts
             drawSkipLabel(slDistFromEntry, "NY", high, false)
         else
             nyTodayAtt += 1

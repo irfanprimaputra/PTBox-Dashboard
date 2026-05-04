@@ -1,0 +1,91 @@
+{
+  "generated": "2026-05-04T17:04:01.297668",
+  "pinescript_v11_defaults": {
+    "asia": 20.0,
+    "london": 10.0,
+    "ny": 10.0
+  },
+  "asia_filter_sweep": [
+    {
+      "asia_max_sl": 5,
+      "pnl": 43.22649999999112,
+      "trades": 425,
+      "wins": 264,
+      "losses": 161,
+      "wr": 62.11764705882353,
+      "skipped": 275
+    },
+    {
+      "asia_max_sl": 8,
+      "pnl": -10.028500000011263,
+      "trades": 455,
+      "wins": 283,
+      "losses": 172,
+      "wr": 62.1978021978022,
+      "skipped": 116
+    },
+    {
+      "asia_max_sl": 10,
+      "pnl": -17.666000000010627,
+      "trades": 464,
+      "wins": 292,
+      "losses": 172,
+      "wr": 62.93103448275862,
+      "skipped": 73
+    },
+    {
+      "asia_max_sl": 15,
+      "pnl": 0.3189999999876818,
+      "trades": 467,
+      "wins": 301,
+      "losses": 166,
+      "wr": 64.45396145610279,
+      "skipped": 26
+    },
+    {
+      "asia_max_sl": 20,
+      "pnl": -25.557500000010805,
+      "trades": 470,
+      "wins": 303,
+      "losses": 167,
+      "wr": 64.46808510638297,
+      "skipped": 16
+    },
+    {
+      "asia_max_sl": 25,
+      "pnl": 10.927499999988868,
+      "trades": 471,
+      "wins": 307,
+      "losses": 164,
+      "wr": 65.18046709129511,
+      "skipped": 11
+    },
+    {
+      "asia_max_sl": 30,
+      "pnl": 30.051999999988766,
+      "trades": 470,
+      "wins": 308,
+      "losses": 162,
+      "wr": 65.53191489361703,
+      "skipped": 4
+    },
+    {
+      "asia_max_sl": 50,
+      "pnl": 74.33299999998871,
+      "trades": 469,
+      "wins": 309,
+      "losses": 160,
+      "wr": 65.88486140724947,
+      "skipped": 1
+    },
+    {
+      "asia_max_sl": 999,
+      "pnl": 78.56399999998848,
+      "trades": 468,
+      "wins": 309,
+      "losses": 159,
+      "wr": 66.02564102564102,
+      "skipped": 0
+    }
+  ]
+}
