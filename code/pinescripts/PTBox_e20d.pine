@@ -54,16 +54,23 @@ capUsd           = input.float(200,  "Account capital (USD)",                   
 riskPerTradeUsd  = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
 showLotSuggest   = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
 
-// ─── e32 Asia (PRE-Tokyo cause-building 19:00 / 30min) ────────────────────
-// e32 Wyckoff Phase B: box BEFORE official Tokyo open captures cause-building
-// 19:00/30m = +261 (was +175 at 21:30/15m), Δ +86 fixed-config
-g_asia          = "🟢 Asia (e32 Wyckoff Phase B pre-Tokyo)"
-asiaBoxStartH   = input.int  (19,  "Box start hour (ET)", minval = 0, maxval = 23, group = g_asia)
-asiaBoxStartM   = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_asia)
-asiaBoxDur      = input.int  (30,  "Box duration (min)",  minval = 1, maxval = 60, group = g_asia)
-asiaSessionEndH = input.int  (23,  "Session end hour (ET)", minval = 0, maxval = 23, group = g_asia)
-asiaSlBuffer    = input.float(1.0, "SL buffer (pts) above breakout extreme", group = g_asia)
-asiaMaxAttempt  = input.int  (5,   "Max attempts (adaptive 1W or 2L stops)", group = g_asia)
+// ─── e36 Asia (DIRECT model + 18:00/90m + body0% + SL=0.7 + TP=1.5R) ───────
+// e36 BREAKTHROUGH: Switch from mean-rev to DIRECT model
+// 5y fixed: +1667 (was +266 mean-rev), Δ +1401 swing
+// 62% WR, 531 trades, R:R 1:1.5
+g_asia            = "🟢 Asia (e36 DIRECT @ 18:00/90m)"
+asiaBoxStartH     = input.int  (18,  "Box start hour (ET)", minval = 0, maxval = 23, group = g_asia)
+asiaBoxStartM     = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_asia)
+asiaBoxDur        = input.int  (90,  "Box duration (min)",  minval = 1, maxval = 180, group = g_asia)
+asiaSessionEndH   = input.int  (23,  "Session end hour (ET)", minval = 0, maxval = 23, group = g_asia)
+asiaSlBuffer      = input.float(1.0, "SL buffer (pts) — legacy mean-rev", group = g_asia)
+asiaMaxAttempt    = input.int  (5,   "Max attempts (adaptive 1W or 2L stops)", group = g_asia)
+asiaSlBoxMult     = input.float(0.7, "Asia SL = X × box_width (e36)", group = g_asia)
+asiaTp1Mult       = input.float(1.0, "Asia TP1 = X × SL", group = g_asia)
+asiaTp2Mult       = input.float(1.5, "Asia TP2 = X × SL (e36 optimum)", group = g_asia)
+asiaBodyClosePct  = input.float(0.0, "Asia body close confirm (% box width)", minval = 0.0, maxval = 1.0, step = 0.05, group = g_asia)
+asiaUseDirectModel = input.bool(true,"Asia DIRECT breakout (e36) instead of mean-rev fade", group = g_asia)
+asiaMinSl         = input.float(3.0, "Asia min SL (pts)", group = g_asia)
 
 // ─── e35 London (DIRECT breakout @ 00:00/60m + body30% + TP=2.5R) ──────────
 // Hypothesis: London also benefits from Wyckoff pre-session + direct model
@@ -76,10 +83,10 @@ londonBoxDur      = input.int  (60,  "Box duration (min)",  minval = 1, maxval =
 londonSessionEndH = input.int  (5,   "Session end hour (ET)", group = g_london)
 londonSlBoxMult   = input.float(0.5, "SL = X × box_width", minval = 0.1, maxval = 2.0, step = 0.05, group = g_london)
 londonTp1Mult     = input.float(1.5, "TP1 = X × SL", group = g_london)
-londonTp2Mult     = input.float(2.5, "TP2 = X × SL (e35 optimum)", group = g_london)
+londonTp2Mult     = input.float(2.0, "TP2 = X × SL (e36 optimum)", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
 londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
-londonBodyClosePct = input.float(0.30,"London body close confirm (% box width) — e35", minval = 0.0, maxval = 1.0, step = 0.05, group = g_london)
+londonBodyClosePct = input.float(0.20,"London body close confirm (% box width) — e36", minval = 0.0, maxval = 1.0, step = 0.05, group = g_london)
 londonUseDirectModel = input.bool(true,"London DIRECT breakout (e35) instead of pullback", group = g_london)
 
 // ─── e33 NY (07:00/60m + ANY pattern + body30% + TP=2.5R) ──────────────────
@@ -554,13 +561,50 @@ drawSkipLabel(slDist, sessionTag, ypos, isLong) =>
              style = isLong ? label.style_label_up : label.style_label_down,
              size  = size.tiny)
 
-// ─── Asia entry: A2-fail mean-reversion ────────────────────────────────────
-if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
+// ─── e36 Asia DIRECT entry (default) — direct breakout + body close + pattern ─
+if showAsia and asiaUseDirectModel and inAsiaSessionRange and not na(asiaBoxHi) and asiaTodayAtt < asiaMaxAttempt
+    bw_asia       = asiaBoxHi - asiaBoxLo
+    bodyThreshAs  = asiaBodyClosePct * bw_asia
+    if close > asiaBoxHi and (close - asiaBoxHi) >= bodyThreshAs and anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+        slDist = math.max(asiaMinSl, asiaSlBoxMult * bw_asia)
+        slPx   = asiaBoxLo - slDist
+        tp1Px  = close + asiaTp1Mult * slDist
+        tp2Px  = close + asiaTp2Mult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if useMaxSlFilter and slDistFromEntry > asiaMaxSlPts
+            drawSkipLabel(slDistFromEntry, "Asia", low, true)
+            asiaTodayAtt += 1
+        else
+            asiaTodayAtt += 1
+            asiaHadEntry := true
+            [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+            array.push(asiaOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+            drawEntryMarker(true, color.green)
+            alert("🟢 BUY Asia Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
+    else if close < asiaBoxLo and (asiaBoxLo - close) >= bodyThreshAs and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+        slDist = math.max(asiaMinSl, asiaSlBoxMult * bw_asia)
+        slPx   = asiaBoxHi + slDist
+        tp1Px  = close - asiaTp1Mult * slDist
+        tp2Px  = close - asiaTp2Mult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if useMaxSlFilter and slDistFromEntry > asiaMaxSlPts
+            drawSkipLabel(slDistFromEntry, "Asia", high, false)
+            asiaTodayAtt += 1
+        else
+            asiaTodayAtt += 1
+            asiaHadEntry := true
+            [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+            array.push(asiaOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+            drawEntryMarker(false, color.green)
+            alert("🔴 SELL Asia Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
+
+// ─── LEGACY Asia A2-fail mean-reversion (only if asiaUseDirectModel = false) ─
+if showAsia and not asiaUseDirectModel and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
     asiaSessionDone := asiaTodayAtt >= asiaMaxAttempt or
                        (asiaTodayAtt > 0 and asiaW > 0) or
                        asiaL >= 2 ? true : asiaSessionDone
 
-if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
+if showAsia and not asiaUseDirectModel and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
     if asiaBkDir == 0
         if close > asiaBoxHi
             asiaBkDir   := 1

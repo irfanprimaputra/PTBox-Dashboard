@@ -16,11 +16,11 @@ def load_phase7_baseline():
     # e33 = current best (Wyckoff pre-session + regrid optimum, 2026-05-04)
     if (DATA_DIR / "phase7_e33_ny_regrid_e32.json").exists():
         return {
-            "experiment_id": "e35",
-            "label": "Wyckoff pre-session ALL 3 sessions: Asia 19:00/30m, London 00:00/60m direct, NY 07:00/60m",
-            "total_pnl": 5086,  # Asia 261 + London 800 + NY 4025 (e35)
-            "asia_pnl": 261,
-            "london_pnl": 800,
+            "experiment_id": "e36",
+            "label": "e36 ALL DIRECT: Asia 18:00/90m, London 00:00/60m, NY 07:00/60m — all DIRECT model",
+            "total_pnl": 8192,  # Asia 261 + London 800 + NY 4025 (e35)
+            "asia_pnl": 1667,
+            "london_pnl": 2500,
             "ny_pnl": 4025,
             "recent_pnl": 1206,  # OOS reference
             "phase": "Phase 7 (e33 · Wyckoff pre-session)",
@@ -154,7 +154,7 @@ if oos_data:
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">Live Estimate</div>
-            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$1450-2030/yr (lot 0.02, e35)</div>
+            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$2300-3300/yr (lot 0.02, e36)</div>
         </div>
         <div style="margin-left: auto;">
             <a href="Phase7_Results" target="_self" style="color: {COLORS['accent_blue']}; text-decoration: none; font-size: 0.85rem;">
