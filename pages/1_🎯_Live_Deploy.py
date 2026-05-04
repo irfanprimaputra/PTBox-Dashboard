@@ -208,9 +208,15 @@ with c1:
     5. Click **Add to chart**
     6. Right-click chart → Settings → Timezone → **New York (UTC-4)**
 
-    **🆕 2026-05-04 v6 update:** fixed 500-bar `xloc.bar_index` error,
-    upgraded to Pine v6, added **live stats panel** (W/L/Chop/WR/PnL/RR/Attempt/Dir/InTrade
-    per session). If you have v5 from before — delete & re-paste latest.
+    **🆕 2026-05-04 v10 update:** added **risk management filter**:
+    - `maxSlPts` filter (default 10pt) — auto-skip wide-SL trades for $200 cap protection
+    - **Suggested lot** in entry label based on risk budget
+    - Today vs Cumulative stats mode toggle
+    - W/L exit markers + auto label cleanup on exit
+    - Cross-day box state leak fix (replay mode)
+
+    Always pull latest from GitHub raw to get all v10 features:
+    [PTBox_e20d.pine raw](https://raw.githubusercontent.com/irfanprimaputra/PTBox-Dashboard/main/code/pinescripts/PTBox_e20d.pine)
     """)
 
 with c2:
@@ -291,6 +297,8 @@ st.markdown(f"""
 6. <b style="color: {COLORS['text']};">NEVER trade outside alert signal</b> — no FOMO, no gambling<br>
 7. <b style="color: {COLORS['text']};">NEVER trade without journal</b> — every entry documented<br>
 8. <b style="color: {COLORS['text']};">Drift z &lt; -1</b> → reduce size 50% next session<br>
+9. <b style="color: {COLORS['warning']};">🆕 maxSlPts filter ON (default 10pt)</b> → skip wide-SL trades automatically (Pinescript v10)<br>
+10. <b style="color: {COLORS['text']};">Wonky-box trade defense:</b> see "🚫 SKIP" label = DON'T enter (cap protection)<br>
 </div>
 """, unsafe_allow_html=True)
 
