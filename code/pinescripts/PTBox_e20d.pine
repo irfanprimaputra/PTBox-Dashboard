@@ -65,17 +65,22 @@ asiaSessionEndH = input.int  (23,  "Session end hour (ET)", minval = 0, maxval =
 asiaSlBuffer    = input.float(1.0, "SL buffer (pts) above breakout extreme", group = g_asia)
 asiaMaxAttempt  = input.int  (5,   "Max attempts (adaptive 1W or 2L stops)", group = g_asia)
 
-// ─── London (breakout-pullback + any pattern) ──────────────────────────────
-g_london          = "🔵 London (breakout-pullback)"
-londonBoxStartH   = input.int  (1,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_london)
-londonBoxStartM   = input.int  (43,  "Box start minute",    minval = 0, maxval = 59, group = g_london)
-londonBoxDur      = input.int  (3,   "Box duration (min)",  minval = 1, maxval = 60, group = g_london)
+// ─── e35 London (DIRECT breakout @ 00:00/60m + body30% + TP=2.5R) ──────────
+// Hypothesis: London also benefits from Wyckoff pre-session + direct model
+// Test 5y: pullback model -601, DIRECT model 00:00/60m + body30 + TP2.5 = +800 ⭐
+// Same e33-pattern that worked for NY transferred to London
+g_london          = "🔵 London (e35 direct + 00:00/60m + body30%)"
+londonBoxStartH   = input.int  (0,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_london)
+londonBoxStartM   = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_london)
+londonBoxDur      = input.int  (60,  "Box duration (min)",  minval = 1, maxval = 120, group = g_london)
 londonSessionEndH = input.int  (5,   "Session end hour (ET)", group = g_london)
 londonSlBoxMult   = input.float(0.5, "SL = X × box_width", minval = 0.1, maxval = 2.0, step = 0.05, group = g_london)
-londonTp1Mult     = input.float(3.0, "TP1 = X × SL", group = g_london)
-londonTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_london)
+londonTp1Mult     = input.float(1.5, "TP1 = X × SL", group = g_london)
+londonTp2Mult     = input.float(2.5, "TP2 = X × SL (e35 optimum)", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
 londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
+londonBodyClosePct = input.float(0.30,"London body close confirm (% box width) — e35", minval = 0.0, maxval = 1.0, step = 0.05, group = g_london)
+londonUseDirectModel = input.bool(true,"London DIRECT breakout (e35) instead of pullback", group = g_london)
 
 // ─── e33 NY (07:00/60m + ANY pattern + body30% + TP=2.5R) ──────────────────
 // Iteration journey:
@@ -602,8 +607,48 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
             asiaBkDir   := 0
             asiaExtreme := na
 
-// ─── London entry: breakout-pullback + any pattern ─────────────────────────
-if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt
+// ─── London entry: e35 DIRECT model (default) OR pullback (legacy) ─────────
+// e35: direct breakout + body close + pattern at breakout candle = +800 5y fixed
+// (vs pullback model -601 5y fixed). Toggle via londonUseDirectModel input.
+
+if showLondon and londonUseDirectModel and inLondonSessionRange and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt
+    bw_lon       = londonBoxHi - londonBoxLo
+    bodyThreshLon = londonBodyClosePct * bw_lon
+    if close > londonBoxHi and (close - londonBoxHi) >= bodyThreshLon and anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+        slDist = math.max(londonMinSl, londonSlBoxMult * bw_lon)
+        slPx   = londonBoxLo - slDist
+        tp1Px  = close + londonTp1Mult * slDist
+        tp2Px  = close + londonTp2Mult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
+            drawSkipLabel(slDistFromEntry, "London", low, true)
+            londonTodayAtt += 1
+        else
+            londonTodayAtt += 1
+            londonHadEntry := true
+            [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+            array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+            drawEntryMarker(true, color.blue)
+            alert("🟢 BUY London Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
+    else if close < londonBoxLo and (londonBoxLo - close) >= bodyThreshLon and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+        slDist = math.max(londonMinSl, londonSlBoxMult * bw_lon)
+        slPx   = londonBoxHi + slDist
+        tp1Px  = close - londonTp1Mult * slDist
+        tp2Px  = close - londonTp2Mult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
+            drawSkipLabel(slDistFromEntry, "London", high, false)
+            londonTodayAtt += 1
+        else
+            londonTodayAtt += 1
+            londonHadEntry := true
+            [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+            array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+            drawEntryMarker(false, color.blue)
+            alert("🔴 SELL London Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
+
+// LEGACY: London PULLBACK model (only if londonUseDirectModel = false)
+if showLondon and not londonUseDirectModel and inLondonSessionRange and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt
     if londonBkDir == 0
         if close > londonBoxHi
             londonBkDir := 1

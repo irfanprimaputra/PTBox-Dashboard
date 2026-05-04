@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 250+ variants tested · Current best: <b style="color: {COLORS['success']};">e33 (full optimum NY +263% vs baseline)</b>
+        Engine integration · OOS validation · 300+ variants tested · Current best: <b style="color: {COLORS['success']};">e35 (Wyckoff direct ALL 3 sessions)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -79,7 +79,7 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e33 (Wyckoff pre-session + regrid optimum)
+        ⭐ Current Best · e35 (Wyckoff direct ALL 3 sessions)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
@@ -133,7 +133,7 @@ st.markdown("<h2>📍 Per-Session Breakdown (e20d)</h2>", unsafe_allow_html=True
 c1, c2, c3 = st.columns(3)
 sessions_e20d = [
     ("🟢 Asia", "Pre-Tokyo 19:00/30m + mean-rev A2-fail ⭐ e32", 261, 24, 68),
-    ("🔵 London", "Breakout-pullback + any_pattern (kept)", 486, 468, 0),
+    ("🔵 London", "Pre-London 00:00/60m + DIRECT + body30% + TP=2.5R ⭐ e35", 800, 468, 55),
     ("🟡 NY", "Pre-NY 07:00/60m + ANY + body30% + TP=2.5R ⭐ e33", 4025, -117, 58),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
