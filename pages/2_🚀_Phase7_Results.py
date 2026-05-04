@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 400+ variants tested · Current best: <b style="color: {COLORS['success']};">e36 (Asia DIRECT breakthrough)</b>
+        Engine integration · OOS validation · 500+ variants tested · Current best: <b style="color: {COLORS['success']};">e37 (extended session windows)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -79,12 +79,12 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e36 (ALL DIRECT — Asia switches from mean-rev)
+        ⭐ Current Best · e37 (e36 + extended session windows)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +8192 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
+                +9084 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
                 Fixed-config 5y (2021-2026) · projected WF +3500-3800
@@ -108,7 +108,7 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                ~$2300-3300/yr
+                ~$2540-3630/yr
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
                 $200 cap, lot 0.02 (e35, 70-100% live retention)
