@@ -600,6 +600,7 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 slDistFromEntry = math.abs(close - slPx)
                 if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
                     drawSkipLabel(slDistFromEntry, "London", low, true)
+                    londonTodayAtt += 1  // count toward max attempts to prevent cascade
                 else
                     londonTodayAtt += 1
                     londonHadEntry := true
@@ -619,6 +620,7 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 slDistFromEntry = math.abs(close - slPx)
                 if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
                     drawSkipLabel(slDistFromEntry, "London", high, false)
+                    londonTodayAtt += 1  // count toward max attempts to prevent cascade
                 else
                     londonTodayAtt += 1
                     londonHadEntry := true
@@ -639,6 +641,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         slDistFromEntry = math.abs(close - slPx)
         if useMaxSlFilter and slDistFromEntry > nyMaxSlPts
             drawSkipLabel(slDistFromEntry, "NY", low, true)
+            nyEntered := true  // mark NY done — fire-or-skip-once semantic
         else
             nyTodayAtt += 1
             nyHadEntry := true
@@ -656,6 +659,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         slDistFromEntry = math.abs(close - slPx)
         if useMaxSlFilter and slDistFromEntry > nyMaxSlPts
             drawSkipLabel(slDistFromEntry, "NY", high, false)
+            nyEntered := true  // mark NY done — fire-or-skip-once semantic
         else
             nyTodayAtt += 1
             nyHadEntry := true
