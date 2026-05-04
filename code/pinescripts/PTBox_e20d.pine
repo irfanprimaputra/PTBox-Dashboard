@@ -44,6 +44,14 @@ panelLookback  = input.int (90,    "Cumulative lookback (days)", minval = 1, max
 boxOpacity     = input.int (92,    "Box fill transparency (90=dark, 95=subtle)", minval = 80, maxval = 99, group = g_disp)
 minimalLabels  = input.bool(false, "Minimal label mode (less crowded)", group = g_disp)
 
+// ─── 💰 Risk Management (LIVE filter — does NOT affect backtest engine) ────
+g_risk          = "💰 Risk Management (LIVE)"
+useMaxSlFilter  = input.bool(true,  "Enable max-SL filter (skip wide-SL trades)",       group = g_risk)
+maxSlPts        = input.float(10,   "Max SL distance allowed (pts)", minval = 3,        group = g_risk)
+capUsd          = input.float(200,  "Account capital (USD)",                            group = g_risk)
+riskPerTradeUsd = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
+showLotSuggest  = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
+
 // ─── e20d Asia (mean-rev A2-fail, late-window 21-23 ET) ────────────────────
 g_asia          = "🟢 Asia (e20d late-window)"
 asiaBoxStartH   = input.int  (21,  "Box start hour (ET)", minval = 0, maxval = 23, group = g_asia)
@@ -492,6 +500,31 @@ drawEntryLabel(txt, ypos, isLong, col) =>
              style = isLong ? label.style_label_up : label.style_label_down,
              size = size.small)
 
+// ─── Risk filter helpers ───────────────────────────────────────────────────
+// Compute suggested lot size based on risk budget + SL distance
+// XAUUSD: 1 lot × 1pt = $100 PnL → suggested_lot = riskUsd / slPts / 100
+suggestedLot(slDist) =>
+    raw = riskPerTradeUsd / slDist / 100
+    math.max(0.01, math.round(raw * 100) / 100)  // round to 0.01 broker step
+
+// Build risk-info string for entry label
+riskInfo(slDist) =>
+    lossUsd = slDist * 0.02 * 100  // assuming current 0.02 lot
+    pctCap  = lossUsd / capUsd * 100
+    sugLot  = suggestedLot(slDist)
+    sugLotLossUsd = slDist * sugLot * 100
+    "💰 @ 0.02 lot = -$" + str.tostring(lossUsd, "#.##") + " (" + str.tostring(pctCap, "#.#") + "% cap)" +
+         (showLotSuggest ? "\n📐 Sug lot " + str.tostring(sugLot, "#.##") + " = -$" + str.tostring(sugLotLossUsd, "#.##") : "")
+
+// Draw "🚫 SKIP" label when SL exceeds max
+drawSkipLabel(slDist, sessionTag, ypos, isLong) =>
+    if showSignals
+        label.new(x = bar_index, y = ypos,
+             text  = "🚫 SKIP " + sessionTag + "\nSL " + str.tostring(slDist, "#.#") + "pt > " + str.tostring(maxSlPts, "#.#") + "pt max",
+             color = color.new(color.red, 30), textcolor = color.white,
+             style = isLong ? label.style_label_up : label.style_label_down,
+             size  = size.tiny)
+
 // ─── Asia entry: A2-fail mean-reversion ────────────────────────────────────
 if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
     asiaSessionDone := asiaTodayAtt >= asiaMaxAttempt or
@@ -510,30 +543,38 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
         asiaExtreme := math.max(asiaExtreme, high)
         if close < asiaBoxHi and close > asiaBoxLo
             if asiaTodayAtt < asiaMaxAttempt
-                asiaTodayAtt += 1
-                asiaHadEntry := true
                 boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
                 slPx   = asiaExtreme + asiaSlBuffer
                 tpPx   = boxMid
-                [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
-                array.push(asiaOpen, Trade.new(close, slPx, tpPx, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                drawEntryLabel("🔴 SELL · Asia Fade ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), high, false, color.green)
-                alert("🔴 SELL Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx), alert.freq_once_per_bar)
+                slDist = math.abs(close - slPx)
+                if useMaxSlFilter and slDist > maxSlPts
+                    drawSkipLabel(slDist, "Asia", high, false)
+                else
+                    asiaTodayAtt += 1
+                    asiaHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
+                    array.push(asiaOpen, Trade.new(close, slPx, tpPx, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryLabel("🔴 SELL · Asia Fade ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##") + "\n" + riskInfo(slDist), high, false, color.green)
+                    alert("🔴 SELL Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx) + " | Lot " + str.tostring(suggestedLot(slDist), "#.##"), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
     else if asiaBkDir == -1
         asiaExtreme := math.min(asiaExtreme, low)
         if close > asiaBoxLo and close < asiaBoxHi
             if asiaTodayAtt < asiaMaxAttempt
-                asiaTodayAtt += 1
-                asiaHadEntry := true
                 boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
                 slPx   = asiaExtreme - asiaSlBuffer
                 tpPx   = boxMid
-                [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
-                array.push(asiaOpen, Trade.new(close, slPx, tpPx, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                drawEntryLabel("🟢 BUY · Asia Fade ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), low, true, color.green)
-                alert("🟢 BUY Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx), alert.freq_once_per_bar)
+                slDist = math.abs(close - slPx)
+                if useMaxSlFilter and slDist > maxSlPts
+                    drawSkipLabel(slDist, "Asia", low, true)
+                else
+                    asiaTodayAtt += 1
+                    asiaHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
+                    array.push(asiaOpen, Trade.new(close, slPx, tpPx, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryLabel("🟢 BUY · Asia Fade ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##") + "\n" + riskInfo(slDist), low, true, color.green)
+                    alert("🟢 BUY Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx) + " | Lot " + str.tostring(suggestedLot(slDist), "#.##"), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
 
@@ -554,12 +595,16 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 slPx   = low - slDist
                 tp1Px  = close + londonTp1Mult * slDist
                 tp2Px  = close + londonTp2Mult * slDist
-                londonTodayAtt += 1
-                londonHadEntry := true
-                [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
-                array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                drawEntryLabel("🟢 BUY · London ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.blue)
-                alert("🟢 BUY London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
+                slDistFromEntry = math.abs(close - slPx)
+                if useMaxSlFilter and slDistFromEntry > maxSlPts
+                    drawSkipLabel(slDistFromEntry, "London", low, true)
+                else
+                    londonTodayAtt += 1
+                    londonHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+                    array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryLabel("🟢 BUY · London ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), low, true, color.blue)
+                    alert("🟢 BUY London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
                 londonBkDir := 0
     else if londonBkDir == -1 and bar_index > londonBkBar
         if high >= londonBoxLo and close < londonBoxLo
@@ -569,12 +614,16 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 slPx   = high + slDist
                 tp1Px  = close - londonTp1Mult * slDist
                 tp2Px  = close - londonTp2Mult * slDist
-                londonTodayAtt += 1
-                londonHadEntry := true
-                [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
-                array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                drawEntryLabel("🔴 SELL · London ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.blue)
-                alert("🔴 SELL London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
+                slDistFromEntry = math.abs(close - slPx)
+                if useMaxSlFilter and slDistFromEntry > maxSlPts
+                    drawSkipLabel(slDistFromEntry, "London", high, false)
+                else
+                    londonTodayAtt += 1
+                    londonHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+                    array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryLabel("🔴 SELL · London ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), high, false, color.blue)
+                    alert("🔴 SELL London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
                 londonBkDir := 0
 
 // ─── NY entry: direct breakout + pattern-at-breakout ───────────────────────
@@ -585,26 +634,34 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         slPx   = nyBoxLo - slDist
         tp1Px  = close + nyTp1Mult  * slDist
         tp2Px  = close + nyTp2Mult  * slDist
-        nyTodayAtt += 1
-        nyHadEntry := true
-        nyEntered  := true
-        [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
-        array.push(nyOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-        drawEntryLabel("🟢 BUY · NY ▲ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.orange)
-        alert("🟢 BUY NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
+        slDistFromEntry = math.abs(close - slPx)
+        if useMaxSlFilter and slDistFromEntry > maxSlPts
+            drawSkipLabel(slDistFromEntry, "NY", low, true)
+        else
+            nyTodayAtt += 1
+            nyHadEntry := true
+            nyEntered  := true
+            [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+            array.push(nyOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+            drawEntryLabel("🟢 BUY · NY ▲ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), low, true, color.orange)
+            alert("🟢 BUY NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
     else if close < nyBoxLo and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
         slDist = math.max(nyMinSl, nySlBoxMult * bw)
         slPx   = nyBoxHi + slDist
         tp1Px  = close - nyTp1Mult  * slDist
         tp2Px  = close - nyTp2Mult  * slDist
-        nyTodayAtt += 1
-        nyHadEntry := true
-        nyEntered  := true
-        [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
-        array.push(nyOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-        drawEntryLabel("🔴 SELL · NY ▼ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.orange)
-        alert("🔴 SELL NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
+        slDistFromEntry = math.abs(close - slPx)
+        if useMaxSlFilter and slDistFromEntry > maxSlPts
+            drawSkipLabel(slDistFromEntry, "NY", high, false)
+        else
+            nyTodayAtt += 1
+            nyHadEntry := true
+            nyEntered  := true
+            [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+            array.push(nyOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+            drawEntryLabel("🔴 SELL · NY ▼ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), high, false, color.orange)
+            alert("🔴 SELL NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
 
 // ─── Stats Panel ───────────────────────────────────────────────────────────
 if showStatsPanel and barstate.islast
