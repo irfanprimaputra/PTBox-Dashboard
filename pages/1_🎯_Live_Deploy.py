@@ -1,4 +1,4 @@
-"""Live Deploy — PT Box e20d deploy guide + today's session schedule.
+"""Live Deploy — PT Box e33 deploy guide + today's session schedule.
 
 Real-time clock showing current WIB/ET, next session countdown, deploy
 checklist, manual execution flow.
@@ -48,7 +48,7 @@ SESSIONS = [
 # ───────────────────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
-    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box e20d</h1>
+    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box e33</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
         Pinescript on TradingView · Manual MT5 execution · Trade journal
     </p>
@@ -204,7 +204,7 @@ with c1:
     1. Buka [PTBox_e20d.pine](https://github.com/irfanprimaputra/PTBox-Dashboard/blob/main/code/pinescripts/PTBox_e20d.pine) → click **Raw** → Cmd+A, Cmd+C
     2. TradingView → chart **XAUUSD** M1
     3. Bottom-right tab **Pine Editor** → paste
-    4. Click **Save** → "PT Box e20d"
+    4. Click **Save** → "PT Box e33"
     5. Click **Add to chart**
     6. Right-click chart → Settings → Timezone → **New York (UTC-4)**
 
@@ -228,7 +228,7 @@ with c2:
     """, unsafe_allow_html=True)
     st.markdown("""
     1. Right-click chart → **Add Alert**
-    2. Condition: **PT Box e20d** → **Any alert() function call**
+    2. Condition: **PT Box e33** → **Any alert() function call**
     3. Frequency: **Once Per Bar Close**
     4. Notifications: ✅ **Push to Phone** (TradingView mobile required)
     5. ✅ **Email** (backup)
@@ -403,4 +403,4 @@ with c3:
     </div>
     """, unsafe_allow_html=True)
 
-st.caption(f"Page reflects current time. Refresh untuk update countdown. Backtest reference: e20d +976 walk-forward, +1,206 OOS validated.")
+st.caption(f"Page reflects current time. Refresh untuk update countdown. Backtest reference: e33 +4772 fixed-config (Wyckoff pre-session), e20d +976 walk-forward, +1,206 OOS validated.")
