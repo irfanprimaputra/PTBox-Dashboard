@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 16+ variants tested · Current best: e16b
+        Engine integration · OOS validation · 24 variants tested · Current best: <b style="color: {COLORS['success']};">e20d</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -79,12 +79,12 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e16b (NY direct breakout + pattern-at-breakout)
+        ⭐ Current Best · e20d (Late-Asia 21-23 ET window restrict, e16b inherit)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +945 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
+                +976 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
                 Walk-forward 19Q (5 years 2021-2026)
@@ -100,7 +100,7 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                151%
+                124%
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
                 OOS retention vs WF
@@ -108,12 +108,15 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                ~$700-800/yr
+                ~$280-390/yr
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
-                $200 cap, lot 0.02 estimate
+                $200 cap, lot 0.02 (60-100% live retention)
             </div>
         </div>
+    </div>
+    <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
+        ℹ️ <b style="color: {COLORS['text']};">Pinescript v14 live filter</b> may diverge ~5% (Asia maxSlPts cap). See Live Deploy page for details.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -121,15 +124,15 @@ st.markdown(f"""
 # ───────────────────────────────────────────────────────────
 # 📊 Per-session breakdown (current best e16b)
 # ───────────────────────────────────────────────────────────
-st.markdown("<h2>📍 Per-Session Breakdown (e16b)</h2>", unsafe_allow_html=True)
+st.markdown("<h2>📍 Per-Session Breakdown (e20d)</h2>", unsafe_allow_html=True)
 
 c1, c2, c3 = st.columns(3)
-sessions_e16b = [
-    ("🟢 Asia", "Mean-rev A2-fail + Adaptive max_attempts", 151, 24, 73),
+sessions_e20d = [
+    ("🟢 Asia", "Mean-rev A2-fail + Late-window 21-23 ET ⭐", 182, 24, 73),
     ("🔵 London", "Breakout-pullback + any_pattern (kept)", 486, 468, 0),
-    ("🟡 NY", "Direct breakout + pattern-at-breakout ⭐", 308, -117, 27),
+    ("🟡 NY", "Direct breakout + pattern-at-breakout", 308, -117, 27),
 ]
-for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e16b):
+for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
     delta = pnl - e013_ref
     delta_color = COLORS["success"] if delta > 0 else COLORS["danger"]
     with col:
@@ -184,6 +187,9 @@ evolution = pd.DataFrame([
     {"variant": "e18a", "label": "P7: Asia Tokyo restrict", "pnl": 735, "stage": "phase7"},
     {"variant": "e18b", "label": "P7: Asia min_box_width=3", "pnl": 895, "stage": "phase7"},
     {"variant": "e18c", "label": "P7: Asia min_box_width=5", "pnl": 850, "stage": "phase7"},
+    {"variant": "e20d", "label": "P7: Asia LATE-window 21-23 ET ⭐ NEW BASELINE", "pnl": 976, "stage": "phase7"},
+    {"variant": "e23a", "label": "P7: Asia DoW skip Thu (DISCONFIRMED)", "pnl": 856, "stage": "phase7"},
+    {"variant": "e23b", "label": "P7: Asia RANGE NY_prev (DISCONFIRMED)", "pnl": 807, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -200,11 +206,14 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=945, line_color=COLORS["success"], line_dash="dot",
-                   annotation_text="e16b BEST +945",
+fig_evo.add_hline(y=976, line_color=COLORS["success"], line_dash="dot",
+                   annotation_text="e20d CURRENT +976",
                    annotation_font_color=COLORS["success"])
+fig_evo.add_hline(y=945, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e16b prior +945",
+                   annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=375, line_color=COLORS["warning"], line_dash="dot",
-                   annotation_text="e013 prior +375",
+                   annotation_text="e013 baseline +375",
                    annotation_font_color=COLORS["warning"])
 fig_evo.update_layout(**plotly_layout(
     height=480,
