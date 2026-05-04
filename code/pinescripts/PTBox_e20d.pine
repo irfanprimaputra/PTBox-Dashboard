@@ -466,28 +466,20 @@ mkEntryViz(slPx, tpPx, entryPx, slCol, tpCol) =>
     // Hide entry midline in minimal mode
     entL = (showLevels and not minimalLabels) ? line.new(bar_index, entryPx, bar_index, entryPx, color = color.new(color.white, 30), width = 1, style = line.style_dotted) : na
 
-    slDist  = math.abs(entryPx - slPx)
-    tpDist  = math.abs(entryPx - tpPx)
-    slWarn  = slDist > 30 ? " ⚠️" : ""
-    // Minimal mode: shorter label text (no distance, no warning)
-    slText = minimalLabels ? "SL " + str.tostring(slPx, "#.##") :
-             "SL " + str.tostring(slPx, "#.##") + " (-" + str.tostring(slDist, "#.#") + "pt loss)" + slWarn
-    tpText = minimalLabels ? "TP " + str.tostring(tpPx, "#.##") :
-             "TP " + str.tostring(tpPx, "#.##") + " (+" + str.tostring(tpDist, "#.#") + "pt gain)"
+    // Clean right-edge labels: price only, follow current bar via processOpenTrades
     slLab = showLevels ? label.new(x = bar_index, y = slPx,
-         text      = slText,
+         text      = "SL " + str.tostring(slPx, "#.##"),
          color     = slCol,
          textcolor = color.white,
          style     = label.style_label_left,
-         size      = minimalLabels ? size.tiny : size.small) : na
+         size      = size.small) : na
     tpLab = showLevels ? label.new(x = bar_index, y = tpPx,
-         text      = tpText,
+         text      = "TP " + str.tostring(tpPx, "#.##"),
          color     = tpCol,
          textcolor = color.white,
          style     = label.style_label_left,
-         size      = minimalLabels ? size.tiny : size.small) : na
-    // Hide entry-price label in minimal mode
-    enLab = (showLevels and not minimalLabels) ? label.new(x = bar_index, y = entryPx,
+         size      = size.small) : na
+    enLab = showLevels ? label.new(x = bar_index, y = entryPx,
          text      = "@ " + str.tostring(entryPx, "#.##"),
          color     = color.gray,
          textcolor = color.white,
@@ -495,12 +487,15 @@ mkEntryViz(slPx, tpPx, entryPx, slCol, tpCol) =>
          size      = size.small) : na
     [slL, tpL, entL, slLab, tpLab, enLab]
 
-drawEntryLabel(txt, ypos, isLong, col) =>
+// Clean entry marker: just BUY/SELL arrow at bar, no text dump
+drawEntryMarker(isLong, col) =>
     if showSignals
-        label.new(x = bar_index, y = ypos, text = txt,
+        label.new(x = bar_index,
+             y = isLong ? low : high,
+             text = isLong ? "BUY" : "SELL",
              color = col, textcolor = color.white,
              style = isLong ? label.style_label_up : label.style_label_down,
-             size = size.small)
+             size = size.normal)
 
 // ─── Risk filter helpers ───────────────────────────────────────────────────
 // Compute suggested lot size based on risk budget + SL distance
@@ -518,11 +513,11 @@ riskInfo(slDist) =>
     "💰 @ 0.02 lot = -$" + str.tostring(lossUsd, "#.##") + " (" + str.tostring(pctCap, "#.#") + "% cap)" +
          (showLotSuggest ? "\n📐 Sug lot " + str.tostring(sugLot, "#.##") + " = -$" + str.tostring(sugLotLossUsd, "#.##") : "")
 
-// Draw "🚫 SKIP" label when SL exceeds max
+// Compact SKIP marker when SL exceeds session cap
 drawSkipLabel(slDist, sessionTag, ypos, isLong) =>
     if showSignals
         label.new(x = bar_index, y = ypos,
-             text  = "🚫 SKIP " + sessionTag + "\nSL " + str.tostring(slDist, "#.#") + "pt > max",
+             text  = "SKIP",
              color = color.new(color.red, 30), textcolor = color.white,
              style = isLong ? label.style_label_up : label.style_label_down,
              size  = size.tiny)
@@ -556,7 +551,7 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
                     asiaHadEntry := true
                     [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
                     array.push(asiaOpen, Trade.new(close, slPx, tpPx, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                    drawEntryLabel("🔴 SELL · Asia Fade ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##") + "\n" + riskInfo(slDist), high, false, color.green)
+                    drawEntryMarker(false, color.green)
                     alert("🔴 SELL Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx) + " | Lot " + str.tostring(suggestedLot(slDist), "#.##"), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
@@ -575,7 +570,7 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
                     asiaHadEntry := true
                     [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
                     array.push(asiaOpen, Trade.new(close, slPx, tpPx, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                    drawEntryLabel("🟢 BUY · Asia Fade ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##") + "\n" + riskInfo(slDist), low, true, color.green)
+                    drawEntryMarker(true, color.green)
                     alert("🟢 BUY Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx) + " | Lot " + str.tostring(suggestedLot(slDist), "#.##"), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
@@ -606,7 +601,7 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                     londonHadEntry := true
                     [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
                     array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                    drawEntryLabel("🟢 BUY · London ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), low, true, color.blue)
+                    drawEntryMarker(true, color.blue)
                     alert("🟢 BUY London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
                 londonBkDir := 0
     else if londonBkDir == -1 and bar_index > londonBkBar
@@ -626,7 +621,7 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                     londonHadEntry := true
                     [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
                     array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-                    drawEntryLabel("🔴 SELL · London ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), high, false, color.blue)
+                    drawEntryMarker(false, color.blue)
                     alert("🔴 SELL London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
                 londonBkDir := 0
 
@@ -648,7 +643,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
             nyEntered  := true
             [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
             array.push(nyOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-            drawEntryLabel("🟢 BUY · NY ▲ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), low, true, color.orange)
+            drawEntryMarker(true, color.orange)
             alert("🟢 BUY NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
     else if close < nyBoxLo and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
@@ -666,7 +661,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
             nyEntered  := true
             [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
             array.push(nyOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
-            drawEntryLabel("🔴 SELL · NY ▼ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##") + "\n" + riskInfo(slDistFromEntry), high, false, color.orange)
+            drawEntryMarker(false, color.orange)
             alert("🔴 SELL NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
 
 // ─── Stats Panel ───────────────────────────────────────────────────────────
