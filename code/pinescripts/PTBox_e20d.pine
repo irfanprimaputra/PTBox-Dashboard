@@ -1,0 +1,373 @@
+//@version=5
+// ═══════════════════════════════════════════════════════════════════════════
+// PT BOX e20d — Final Locked Baseline · Walk-forward +976 / OOS +1206 pts
+// XAUUSD intraday · 3-session model differentiated · 2026-05-04
+//
+// Asia:   Mean-rev A2-fail, late-window 21-23 ET (post-Tokyo, pre-London)
+// London: Breakout-pullback + pattern (pin/engulf/inside) at pullback
+// NY:     Direct breakout + pattern-at-breakout candle (Naked Forex)
+//
+// Setup TradingView:
+//   - Chart timezone: UTC-4 (NY EDT)
+//   - Timeframe: M1 (or M5 for cleaner view)
+//   - Symbol: XAUUSD
+// ═══════════════════════════════════════════════════════════════════════════
+indicator("PT Box e20d (Phase 7 baseline)", overlay=true,
+     max_boxes_count=500, max_lines_count=500, max_labels_count=500,
+     max_bars_back=500)
+
+// ─── Display toggles ──────────────────────────────────────────────────────
+g_disp = "Display"
+showAsia       = input.bool(true,  "Show Asia (mean-rev)",     group=g_disp)
+showLondon     = input.bool(true,  "Show London (breakout-pullback)", group=g_disp)
+showNY         = input.bool(true,  "Show NY (direct breakout)", group=g_disp)
+showSignals    = input.bool(true,  "Show entry signals",       group=g_disp)
+showLevels     = input.bool(true,  "Show SL/TP lines on entry", group=g_disp)
+showInfoPanel  = input.bool(true,  "Show config info panel",   group=g_disp)
+
+// ─── e20d Asia (mean-rev A2-fail, late-window 21-23 ET) ────────────────────
+g_asia = "🟢 Asia (e20d late-window)"
+asiaBoxStartH  = input.int(21, "Box start hour (ET)", minval=0, maxval=23, group=g_asia)
+asiaBoxStartM  = input.int(0,  "Box start minute",   minval=0, maxval=59, group=g_asia)
+asiaBoxDur     = input.int(7,  "Box duration (min)", minval=1, maxval=60, group=g_asia)
+asiaSessionEndH = input.int(23, "Session end hour (ET)", minval=0, maxval=23, group=g_asia)
+asiaSlBuffer   = input.float(1.0, "SL buffer (pts) above breakout extreme", group=g_asia)
+asiaMaxAttempt = input.int(5,  "Max attempts (adaptive 1W or 2L stops)",   group=g_asia)
+
+// ─── London (breakout-pullback + any pattern) ──────────────────────────────
+g_london = "🔵 London (breakout-pullback)"
+londonBoxStartH = input.int(1,  "Box start hour (ET)", minval=0, maxval=23, group=g_london)
+londonBoxStartM = input.int(43, "Box start minute",    minval=0, maxval=59, group=g_london)
+londonBoxDur    = input.int(3,  "Box duration (min)",  minval=1, maxval=60, group=g_london)
+londonSessionEndH = input.int(5, "Session end hour (ET)", group=g_london)
+londonSlBoxMult = input.float(0.5, "SL = X × box_width", minval=0.1, maxval=2.0, step=0.05, group=g_london)
+londonTp1Mult   = input.float(3.0, "TP1 = X × SL", group=g_london)
+londonTp2Mult   = input.float(6.0, "TP2 = X × SL", group=g_london)
+londonMinSl     = input.float(3.0, "Min SL (pts)", group=g_london)
+
+// ─── NY (direct breakout + pattern-at-breakout) ────────────────────────────
+g_ny = "🟡 NY (direct breakout + pattern)"
+nyBoxStartH = input.int(9,  "Box start hour (ET)", minval=0, maxval=23, group=g_ny)
+nyBoxStartM = input.int(3,  "Box start minute",    minval=0, maxval=59, group=g_ny)
+nyBoxDur    = input.int(5,  "Box duration (min)",  minval=1, maxval=60, group=g_ny)
+nySessionEndH = input.int(12, "Session end hour (ET)", group=g_ny)
+nySlBoxMult = input.float(0.5, "SL = X × box_width", group=g_ny)
+nyTp1Mult   = input.float(3.0, "TP1 = X × SL", group=g_ny)
+nyTp2Mult   = input.float(6.0, "TP2 = X × SL", group=g_ny)
+nyMinSl     = input.float(3.0, "Min SL (pts)", group=g_ny)
+
+// ─── Pattern detection (any: pin OR engulfing OR inside_bar) ───────────────
+isBullPin(o, h, l, c) =>
+    rng = h - l
+    body = math.abs(c - o)
+    lowerWick = math.min(o, c) - l
+    rng > 0 and body / rng <= 0.30 and lowerWick / rng >= 0.50
+
+isBearPin(o, h, l, c) =>
+    rng = h - l
+    body = math.abs(c - o)
+    upperWick = h - math.max(o, c)
+    rng > 0 and body / rng <= 0.30 and upperWick / rng >= 0.50
+
+isBullEngulf(po, pc, o, c) =>
+    pc < po and c > o and o <= pc and c >= po
+
+isBearEngulf(po, pc, o, c) =>
+    pc > po and c < o and o >= pc and c <= po
+
+isInsideBar(ph, pl, h, l) =>
+    h < ph and l > pl
+
+anyBullPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBullPin(o, h, l, c) or isBullEngulf(po, pc, o, c) or isInsideBar(ph, pl, h, l)
+
+anyBearPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBearPin(o, h, l, c) or isBearEngulf(po, pc, o, c) or isInsideBar(ph, pl, h, l)
+
+// ─── Time helpers ──────────────────────────────────────────────────────────
+// Returns minute-of-day in ET timezone (chart's session time)
+minuteOfDay() =>
+    hour(time, "America/New_York") * 60 + minute(time, "America/New_York")
+
+// ─── Box state (per session) ───────────────────────────────────────────────
+var float asiaBoxHi = na
+var float asiaBoxLo = na
+var int   asiaBoxBar = na
+var float londonBoxHi = na
+var float londonBoxLo = na
+var int   londonBoxBar = na
+var float nyBoxHi = na
+var float nyBoxLo = na
+var int   nyBoxBar = na
+
+// Box detection: fixed-window aggregation
+detectBox(startH, startM, dur, prevHi, prevLo) =>
+    startMin = startH * 60 + startM
+    endMin   = startMin + dur
+    mod = minuteOfDay()
+    inWindow = mod >= startMin and mod < endMin
+    boxJustClosed = mod == endMin
+    var float bxHi = na
+    var float bxLo = na
+    if inWindow
+        bxHi := na(bxHi) ? high : math.max(bxHi, high)
+        bxLo := na(bxLo) ? low  : math.min(bxLo, low)
+    if boxJustClosed
+        finalHi = bxHi
+        finalLo = bxLo
+        bxHi := na
+        bxLo := na
+        [finalHi, finalLo, true]
+    else
+        [na, na, false]
+
+// Asia box detection
+[asiaBoxHi_new, asiaBoxLo_new, asiaBoxClosed] = detectBox(asiaBoxStartH, asiaBoxStartM, asiaBoxDur, asiaBoxHi, asiaBoxLo)
+if asiaBoxClosed
+    asiaBoxHi := asiaBoxHi_new
+    asiaBoxLo := asiaBoxLo_new
+    asiaBoxBar := bar_index
+
+// London box detection (separate state)
+var float londonBxHi_state = na
+var float londonBxLo_state = na
+londonStart = londonBoxStartH * 60 + londonBoxStartM
+londonEnd = londonStart + londonBoxDur
+londonMod = minuteOfDay()
+londonInWindow = londonMod >= londonStart and londonMod < londonEnd
+londonClosed = londonMod == londonEnd
+if londonInWindow
+    londonBxHi_state := na(londonBxHi_state) ? high : math.max(londonBxHi_state, high)
+    londonBxLo_state := na(londonBxLo_state) ? low  : math.min(londonBxLo_state, low)
+if londonClosed
+    londonBoxHi := londonBxHi_state
+    londonBoxLo := londonBxLo_state
+    londonBoxBar := bar_index
+    londonBxHi_state := na
+    londonBxLo_state := na
+
+// NY box detection
+var float nyBxHi_state = na
+var float nyBxLo_state = na
+nyStart = nyBoxStartH * 60 + nyBoxStartM
+nyEnd = nyStart + nyBoxDur
+nyMod = minuteOfDay()
+nyInWindow = nyMod >= nyStart and nyMod < nyEnd
+nyClosed = nyMod == nyEnd
+if nyInWindow
+    nyBxHi_state := na(nyBxHi_state) ? high : math.max(nyBxHi_state, high)
+    nyBxLo_state := na(nyBxLo_state) ? low  : math.min(nyBxLo_state, low)
+if nyClosed
+    nyBoxHi := nyBxHi_state
+    nyBoxLo := nyBxLo_state
+    nyBoxBar := bar_index
+    nyBxHi_state := na
+    nyBxLo_state := na
+
+// ─── Box visualization ─────────────────────────────────────────────────────
+plotBox(boxHi, boxLo, boxBar, sessionEndH, color, label) =>
+    if not na(boxBar) and bar_index == boxBar
+        endTime = timestamp("America/New_York", year, month, dayofmonth, sessionEndH, 0)
+        box.new(left=time, top=boxHi, right=endTime, bottom=boxLo,
+             border_color=color, bgcolor=color.new(color, 90),
+             border_width=1, text=label, text_color=color, text_size=size.tiny)
+
+// Plot boxes for current bar's box closure
+if showAsia and asiaBoxClosed
+    plotBox(asiaBoxHi, asiaBoxLo, bar_index, asiaSessionEndH, color.green, "Asia (mean-rev)")
+if showLondon and londonClosed
+    plotBox(londonBoxHi, londonBoxLo, bar_index, londonSessionEndH, color.blue, "London")
+if showNY and nyClosed
+    plotBox(nyBoxHi, nyBoxLo, bar_index, nySessionEndH, color.orange, "NY (direct)")
+
+// Plot box edges as horizontal lines for active session
+plot(showAsia and not na(asiaBoxHi) and minuteOfDay() < asiaSessionEndH * 60 ? asiaBoxHi : na,
+     "Asia Box High", color=color.green, style=plot.style_circles, linewidth=1)
+plot(showAsia and not na(asiaBoxLo) and minuteOfDay() < asiaSessionEndH * 60 ? asiaBoxLo : na,
+     "Asia Box Low", color=color.green, style=plot.style_circles, linewidth=1)
+plot(showLondon and not na(londonBoxHi) and minuteOfDay() < londonSessionEndH * 60 ? londonBoxHi : na,
+     "London Box High", color=color.blue, style=plot.style_circles, linewidth=1)
+plot(showLondon and not na(londonBoxLo) and minuteOfDay() < londonSessionEndH * 60 ? londonBoxLo : na,
+     "London Box Low", color=color.blue, style=plot.style_circles, linewidth=1)
+plot(showNY and not na(nyBoxHi) and minuteOfDay() < nySessionEndH * 60 ? nyBoxHi : na,
+     "NY Box High", color=color.orange, style=plot.style_circles, linewidth=1)
+plot(showNY and not na(nyBoxLo) and minuteOfDay() < nySessionEndH * 60 ? nyBoxLo : na,
+     "NY Box Low", color=color.orange, style=plot.style_circles, linewidth=1)
+
+// ─── Asia entry detection: A2-fail mean reversion ──────────────────────────
+// State: track breakout direction and extreme; signal when close re-enters box
+var int asiaBkDir = 0       // 0=none, 1=up, -1=down
+var float asiaExtreme = na
+var int asiaAttempts = 0
+var int asiaWins = 0
+var int asiaLosses = 0
+var bool asiaSessionDone = false
+
+inAsiaSession = minuteOfDay() >= (asiaBoxStartH * 60 + asiaBoxStartM + asiaBoxDur) and minuteOfDay() < asiaSessionEndH * 60
+if minuteOfDay() == 0 // new day reset
+    asiaBkDir := 0
+    asiaExtreme := na
+    asiaAttempts := 0
+    asiaWins := 0
+    asiaLosses := 0
+    asiaSessionDone := false
+
+if showAsia and inAsiaSession and not na(asiaBoxHi) and not asiaSessionDone
+    // Adaptive: stop after 1W or 2L
+    if asiaWins >= 1 or asiaLosses >= 2
+        asiaSessionDone := true
+
+    if not asiaSessionDone
+        // Detect breakout
+        if asiaBkDir == 0
+            if close > asiaBoxHi
+                asiaBkDir := 1
+                asiaExtreme := high
+            else if close < asiaBoxLo
+                asiaBkDir := -1
+                asiaExtreme := low
+        else if asiaBkDir == 1
+            asiaExtreme := math.max(asiaExtreme, high)
+            // Fail: close back inside box → fade SHORT
+            if close < asiaBoxHi and close > asiaBoxLo
+                if asiaAttempts < asiaMaxAttempt
+                    asiaAttempts := asiaAttempts + 1
+                    boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
+                    sl = asiaExtreme + asiaSlBuffer
+                    tp = boxMid
+                    if showSignals
+                        label.new(bar_index, high, "Asia Fade ▼\nSL " + str.tostring(sl, "#.##") + "\nTP " + str.tostring(tp, "#.##"),
+                             color=color.green, textcolor=color.white, style=label.style_label_down, size=size.small)
+                    if showLevels
+                        line.new(bar_index, sl, bar_index + 60, sl, color=color.red, width=1, style=line.style_dashed)
+                        line.new(bar_index, tp, bar_index + 60, tp, color=color.green, width=1, style=line.style_dashed)
+                    alert("Asia FADE SHORT @ " + str.tostring(close) + " | SL " + str.tostring(sl) + " | TP " + str.tostring(tp), alert.freq_once_per_bar)
+                asiaBkDir := 0
+                asiaExtreme := na
+        else if asiaBkDir == -1
+            asiaExtreme := math.min(asiaExtreme, low)
+            if close > asiaBoxLo and close < asiaBoxHi
+                if asiaAttempts < asiaMaxAttempt
+                    asiaAttempts := asiaAttempts + 1
+                    boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
+                    sl = asiaExtreme - asiaSlBuffer
+                    tp = boxMid
+                    if showSignals
+                        label.new(bar_index, low, "Asia Fade ▲\nSL " + str.tostring(sl, "#.##") + "\nTP " + str.tostring(tp, "#.##"),
+                             color=color.green, textcolor=color.white, style=label.style_label_up, size=size.small)
+                    if showLevels
+                        line.new(bar_index, sl, bar_index + 60, sl, color=color.red, width=1, style=line.style_dashed)
+                        line.new(bar_index, tp, bar_index + 60, tp, color=color.green, width=1, style=line.style_dashed)
+                    alert("Asia FADE LONG @ " + str.tostring(close) + " | SL " + str.tostring(sl) + " | TP " + str.tostring(tp), alert.freq_once_per_bar)
+                asiaBkDir := 0
+                asiaExtreme := na
+
+// ─── London entry: breakout-pullback + any pattern ─────────────────────────
+var int londonBkDir = 0
+var int londonBkBar = na
+inLondonSession = minuteOfDay() >= (londonBoxStartH * 60 + londonBoxStartM + londonBoxDur) and minuteOfDay() < londonSessionEndH * 60
+if minuteOfDay() == 0
+    londonBkDir := 0
+    londonBkBar := na
+
+if showLondon and inLondonSession and not na(londonBoxHi)
+    if londonBkDir == 0
+        if close > londonBoxHi
+            londonBkDir := 1
+            londonBkBar := bar_index
+        else if close < londonBoxLo
+            londonBkDir := -1
+            londonBkBar := bar_index
+    else if londonBkDir == 1 and bar_index > londonBkBar
+        // Pullback: low touches box edge, close back above
+        if low <= londonBoxHi and close > londonBoxHi
+            if anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+                bw = londonBoxHi - londonBoxLo
+                sl_dist = math.max(londonMinSl, londonSlBoxMult * bw)
+                sl = low - sl_dist
+                tp1 = close + londonTp1Mult * sl_dist
+                tp2 = close + londonTp2Mult * sl_dist
+                if showSignals
+                    label.new(bar_index, low, "London ▲\nSL " + str.tostring(sl, "#.##") + "\nTP1 " + str.tostring(tp1, "#.##") + "\nTP2 " + str.tostring(tp2, "#.##"),
+                         color=color.blue, textcolor=color.white, style=label.style_label_up, size=size.small)
+                if showLevels
+                    line.new(bar_index, sl, bar_index + 60, sl, color=color.red, width=1, style=line.style_dashed)
+                    line.new(bar_index, tp1, bar_index + 60, tp1, color=color.lime, width=1, style=line.style_dashed)
+                    line.new(bar_index, tp2, bar_index + 60, tp2, color=color.green, width=1, style=line.style_dashed)
+                alert("London LONG @ " + str.tostring(close) + " | SL " + str.tostring(sl) + " | TP1 " + str.tostring(tp1) + " | TP2 " + str.tostring(tp2), alert.freq_once_per_bar)
+                londonBkDir := 0
+    else if londonBkDir == -1 and bar_index > londonBkBar
+        if high >= londonBoxLo and close < londonBoxLo
+            if anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+                bw = londonBoxHi - londonBoxLo
+                sl_dist = math.max(londonMinSl, londonSlBoxMult * bw)
+                sl = high + sl_dist
+                tp1 = close - londonTp1Mult * sl_dist
+                tp2 = close - londonTp2Mult * sl_dist
+                if showSignals
+                    label.new(bar_index, high, "London ▼\nSL " + str.tostring(sl, "#.##") + "\nTP1 " + str.tostring(tp1, "#.##") + "\nTP2 " + str.tostring(tp2, "#.##"),
+                         color=color.blue, textcolor=color.white, style=label.style_label_down, size=size.small)
+                if showLevels
+                    line.new(bar_index, sl, bar_index + 60, sl, color=color.red, width=1, style=line.style_dashed)
+                    line.new(bar_index, tp1, bar_index + 60, tp1, color=color.lime, width=1, style=line.style_dashed)
+                    line.new(bar_index, tp2, bar_index + 60, tp2, color=color.green, width=1, style=line.style_dashed)
+                alert("London SHORT @ " + str.tostring(close) + " | SL " + str.tostring(sl) + " | TP1 " + str.tostring(tp1) + " | TP2 " + str.tostring(tp2), alert.freq_once_per_bar)
+                londonBkDir := 0
+
+// ─── NY entry: direct breakout + pattern-at-breakout candle ────────────────
+inNYSession = minuteOfDay() >= (nyBoxStartH * 60 + nyBoxStartM + nyBoxDur) and minuteOfDay() < nySessionEndH * 60
+var bool nyEntered = false
+if minuteOfDay() == 0
+    nyEntered := false
+
+if showNY and inNYSession and not na(nyBoxHi) and not nyEntered
+    if close > nyBoxHi and anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+        bw = nyBoxHi - nyBoxLo
+        sl_dist = math.max(nyMinSl, nySlBoxMult * bw)
+        sl = nyBoxLo - sl_dist
+        tp1 = close + nyTp1Mult * sl_dist
+        tp2 = close + nyTp2Mult * sl_dist
+        if showSignals
+            label.new(bar_index, low, "NY ▲ DIRECT\nSL " + str.tostring(sl, "#.##") + "\nTP1 " + str.tostring(tp1, "#.##") + "\nTP2 " + str.tostring(tp2, "#.##"),
+                 color=color.orange, textcolor=color.white, style=label.style_label_up, size=size.small)
+        if showLevels
+            line.new(bar_index, sl, bar_index + 60, sl, color=color.red, width=1, style=line.style_dashed)
+            line.new(bar_index, tp1, bar_index + 60, tp1, color=color.lime, width=1, style=line.style_dashed)
+            line.new(bar_index, tp2, bar_index + 60, tp2, color=color.green, width=1, style=line.style_dashed)
+        alert("NY DIRECT LONG @ " + str.tostring(close) + " | SL " + str.tostring(sl) + " | TP1 " + str.tostring(tp1) + " | TP2 " + str.tostring(tp2), alert.freq_once_per_bar)
+        nyEntered := true
+    else if close < nyBoxLo and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+        bw = nyBoxHi - nyBoxLo
+        sl_dist = math.max(nyMinSl, nySlBoxMult * bw)
+        sl = nyBoxHi + sl_dist
+        tp1 = close - nyTp1Mult * sl_dist
+        tp2 = close - nyTp2Mult * sl_dist
+        if showSignals
+            label.new(bar_index, high, "NY ▼ DIRECT\nSL " + str.tostring(sl, "#.##") + "\nTP1 " + str.tostring(tp1, "#.##") + "\nTP2 " + str.tostring(tp2, "#.##"),
+                 color=color.orange, textcolor=color.white, style=label.style_label_down, size=size.small)
+        if showLevels
+            line.new(bar_index, sl, bar_index + 60, sl, color=color.red, width=1, style=line.style_dashed)
+            line.new(bar_index, tp1, bar_index + 60, tp1, color=color.lime, width=1, style=line.style_dashed)
+            line.new(bar_index, tp2, bar_index + 60, tp2, color=color.green, width=1, style=line.style_dashed)
+        alert("NY DIRECT SHORT @ " + str.tostring(close) + " | SL " + str.tostring(sl) + " | TP1 " + str.tostring(tp1) + " | TP2 " + str.tostring(tp2), alert.freq_once_per_bar)
+        nyEntered := true
+
+// ─── Info Panel ────────────────────────────────────────────────────────────
+if showInfoPanel and barstate.islast
+    var table info = table.new(position.top_right, 2, 8, bgcolor=color.new(color.black, 80), border_color=color.gray, border_width=1)
+    table.cell(info, 0, 0, "PT Box e20d", text_color=color.yellow, bgcolor=color.new(color.black, 70))
+    table.cell(info, 1, 0, "+976 / +1206 OOS", text_color=color.lime, bgcolor=color.new(color.black, 70))
+    table.cell(info, 0, 1, "🟢 Asia 21-23 ET", text_color=color.green)
+    table.cell(info, 1, 1, "Mean-rev fade", text_color=color.white)
+    table.cell(info, 0, 2, "🔵 London 1-5 ET", text_color=color.blue)
+    table.cell(info, 1, 2, "Pullback + pattern", text_color=color.white)
+    table.cell(info, 0, 3, "🟡 NY 9-12 ET", text_color=color.orange)
+    table.cell(info, 1, 3, "Direct + pattern", text_color=color.white)
+    table.cell(info, 0, 4, "Asia attempts", text_color=color.gray)
+    table.cell(info, 1, 4, str.tostring(asiaAttempts) + " / " + str.tostring(asiaMaxAttempt), text_color=color.white)
+    table.cell(info, 0, 5, "Asia W / L", text_color=color.gray)
+    table.cell(info, 1, 5, str.tostring(asiaWins) + " / " + str.tostring(asiaLosses), text_color=color.white)
+    table.cell(info, 0, 6, "Timezone", text_color=color.gray)
+    table.cell(info, 1, 6, "UTC-4 (ET)", text_color=color.white)
+    table.cell(info, 0, 7, "Lot size", text_color=color.gray)
+    table.cell(info, 1, 7, "0.02 @ $200 cap", text_color=color.aqua)
