@@ -116,11 +116,11 @@ st.markdown(f"""
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ℹ️ <b style="color: {COLORS['success']};">e36 ALL-DIRECT MODEL adopted 2026-05-04:</b><br>
-        🟢 Asia: <b>switched mean-rev → DIRECT</b> @ 18:00/90m + body0% + SL=0.7×bw + TP=1.5R = <b>+1667</b> ⭐ (was +266)<br>
-        🔵 London: 00:00/60m DIRECT + body20% + TP=2.0R = +2500 (was +800)<br>
-        🟡 NY: 07:00/60m + ANY + body30% + TP=2.5R = +4025 (unchanged e33)<br>
-        Total fixed-config 5y: <b>+8192 (+740% vs e20d baseline +976)</b>
+        ℹ️ <b style="color: {COLORS['success']};">e37 EXTENDED SESSION WINDOWS adopted 2026-05-04:</b><br>
+        🟢 Asia: 18:00/90m DIRECT + session_end=00:00 (was 23:00) = <b>+1839</b> ⭐ (Δ +172)<br>
+        🔵 London: 00:00/60m DIRECT + session_end=08:00 (was 05:00) = <b>+3220</b> ⭐ (Δ +720)<br>
+        🟡 NY: 07:00/60m unchanged = +4025 (at ceiling)<br>
+        Total fixed-config 5y: <b>+9084 (+831% vs e20d baseline +976)</b>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -132,8 +132,8 @@ st.markdown("<h2>📍 Per-Session Breakdown (e20d)</h2>", unsafe_allow_html=True
 
 c1, c2, c3 = st.columns(3)
 sessions_e20d = [
-    ("🟢 Asia", "18:00/90m + DIRECT + body0% + SL=0.7×bw + TP=1.5R ⭐ e36", 1667, 24, 62),
-    ("🔵 London", "00:00/60m + DIRECT + body20% + TP=2.0R ⭐ e36", 2500, 468, 63),
+    ("🟢 Asia", "18:00/90m DIRECT + end-00:00 ⭐ e37", 1839, 24, 61),
+    ("🔵 London", "00:00/60m DIRECT + end-08:00 + body20% ⭐ e37", 3220, 468, 62),
     ("🟡 NY", "07:00/60m + ANY + body30% + TP=2.5R ⭐ e33", 4025, -117, 58),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
@@ -200,7 +200,8 @@ evolution = pd.DataFrame([
     {"variant": "e32",  "label": "P7: e31 + Wyckoff pre-session (5y fixed)", "pnl": 3100, "stage": "phase7"},
     {"variant": "e33",  "label": "P7: e32 + regrid (any+body30+TP2.5) (5y fixed)", "pnl": 3370, "stage": "phase7"},
     {"variant": "e35",  "label": "P7: e33 + London DIRECT 00:00/60m (5y fixed)", "pnl": 3600, "stage": "phase7"},
-    {"variant": "e36",  "label": "P7: ALL DIRECT (Asia/London/NY) ⭐ NEW (proj WF)", "pnl": 5734, "stage": "phase7"},
+    {"variant": "e36",  "label": "P7: ALL DIRECT (Asia/London/NY) (5y fixed)", "pnl": 5734, "stage": "phase7"},
+    {"variant": "e37",  "label": "P7: e36 + extended session windows ⭐ NEW (proj WF)", "pnl": 6360, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -217,11 +218,11 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=5734, line_color=COLORS["success"], line_dash="solid", line_width=2,
-                   annotation_text="e36 PROJECTED +5734 (ALL DIRECT model)",
+fig_evo.add_hline(y=6360, line_color=COLORS["success"], line_dash="solid", line_width=2,
+                   annotation_text="e37 PROJECTED +6360 (extended sessions)",
                    annotation_font_color=COLORS["success"])
-fig_evo.add_hline(y=3600, line_color=COLORS["text_secondary"], line_dash="dot",
-                   annotation_text="e35 prior +3600",
+fig_evo.add_hline(y=5734, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e36 prior +5734",
                    annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=976, line_color=COLORS["text_secondary"], line_dash="dot",
                    annotation_text="e20d prior +976",
