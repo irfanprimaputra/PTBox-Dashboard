@@ -12,8 +12,8 @@
 //   - Timeframe: M1 (preferred) or M5
 //   - Symbol: XAUUSD
 //
-// 2026-05-04 update: v5 → v6, fix xloc.bar_index 500-bar limit error,
-//                    add per-session stats panel (W/L/Chop/WR/PnL/RR/etc)
+// 2026-05-04 v3: dynamic box right-edge extension (bar_index based, no
+//                 weekend/holiday stretch); preserve xloc.bar_time labels/lines
 // ═══════════════════════════════════════════════════════════════════════════
 indicator("PT Box e20d (Phase 7 baseline)", overlay = true,
      max_boxes_count   = 500,
@@ -23,14 +23,14 @@ indicator("PT Box e20d (Phase 7 baseline)", overlay = true,
 
 // ─── Display toggles ──────────────────────────────────────────────────────
 g_disp = "Display"
-showAsia      = input.bool(true, "Show Asia (mean-rev)",            group = g_disp)
-showLondon    = input.bool(true, "Show London (breakout-pullback)", group = g_disp)
-showNY        = input.bool(true, "Show NY (direct breakout)",       group = g_disp)
-showSignals   = input.bool(true, "Show entry signals (labels)",     group = g_disp)
-showLevels    = input.bool(true, "Show SL/TP lines on entry",       group = g_disp)
-showStatsPanel= input.bool(true, "Show stats panel (top-right)",    group = g_disp)
-showInfoPanel = input.bool(false,"Show config info panel (bottom)", group = g_disp)
-panelLookback = input.int (90,   "Stats lookback (days)", minval = 1, maxval = 365, group = g_disp)
+showAsia       = input.bool(true,  "Show Asia (mean-rev)",            group = g_disp)
+showLondon     = input.bool(true,  "Show London (breakout-pullback)", group = g_disp)
+showNY         = input.bool(true,  "Show NY (direct breakout)",       group = g_disp)
+showSignals    = input.bool(true,  "Show entry signals (labels)",     group = g_disp)
+showLevels     = input.bool(true,  "Show SL/TP lines on entry",       group = g_disp)
+showStatsPanel = input.bool(true,  "Show stats panel (top-right)",    group = g_disp)
+showInfoPanel  = input.bool(false, "Show config info panel (bottom)", group = g_disp)
+panelLookback  = input.int (90,    "Stats lookback (days)", minval = 1, maxval = 365, group = g_disp)
 
 // ─── e20d Asia (mean-rev A2-fail, late-window 21-23 ET) ────────────────────
 g_asia          = "🟢 Asia (e20d late-window)"
@@ -65,7 +65,7 @@ nyTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_ny)
 nyMinSl       = input.float(3.0, "Min SL (pts)", group = g_ny)
 nyMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_ny)
 
-// ─── Pattern detection (any: pin OR engulfing OR inside_bar) ───────────────
+// ─── Pattern detection ─────────────────────────────────────────────────────
 isBullPin(o, h, l, c) =>
     rng       = h - l
     body      = math.abs(c - o)
@@ -92,120 +92,152 @@ anyBearPattern(po, ph, pl, pc, o, h, l, c) =>
 minuteOfDayET() => hour(time, "America/New_York") * 60 + minute(time, "America/New_York")
 mod = minuteOfDayET()
 
-// Lookback window for stats panel (only count trades from last N days)
+MS_PER_MIN = 60000
+
 inLookback = (time_close > timenow - panelLookback * 86400000)
 
 // ─── Box state per session ─────────────────────────────────────────────────
 var float asiaBoxHi    = na
 var float asiaBoxLo    = na
 var int   asiaBoxBar   = na
-var float londonBoxHi  = na
-var float londonBoxLo  = na
-var int   londonBoxBar = na
-var float nyBoxHi      = na
-var float nyBoxLo      = na
-var int   nyBoxBar     = na
+var box   asiaBoxObj   = na
+var bool  asiaBoxDrawn = false
 
-// ─── Box detection: incremental aggregation per session ────────────────────
-var float asiaBxHiTmp   = na
-var float asiaBxLoTmp   = na
-asiaStart = asiaBoxStartH * 60 + asiaBoxStartM
-asiaEndW  = asiaStart + asiaBoxDur
-asiaInWin = mod >= asiaStart and mod < asiaEndW
+var float londonBoxHi    = na
+var float londonBoxLo    = na
+var int   londonBoxBar   = na
+var box   londonBoxObj   = na
+var bool  londonBoxDrawn = false
+
+var float nyBoxHi    = na
+var float nyBoxLo    = na
+var int   nyBoxBar   = na
+var box   nyBoxObj   = na
+var bool  nyBoxDrawn = false
+
+// ─── Box detection ─────────────────────────────────────────────────────────
+var float asiaBxHiTmp = na
+var float asiaBxLoTmp = na
+asiaStart      = asiaBoxStartH * 60 + asiaBoxStartM
+asiaEndW       = asiaStart + asiaBoxDur
+asiaInWin      = mod >= asiaStart and mod < asiaEndW
 asiaJustClosed = mod == asiaEndW
 if asiaInWin
     asiaBxHiTmp := na(asiaBxHiTmp) ? high : math.max(asiaBxHiTmp, high)
     asiaBxLoTmp := na(asiaBxLoTmp) ? low  : math.min(asiaBxLoTmp, low)
 if asiaJustClosed
-    asiaBoxHi  := asiaBxHiTmp
-    asiaBoxLo  := asiaBxLoTmp
-    asiaBoxBar := bar_index
+    asiaBoxHi   := asiaBxHiTmp
+    asiaBoxLo   := asiaBxLoTmp
+    asiaBoxBar  := bar_index
     asiaBxHiTmp := na
     asiaBxLoTmp := na
 
 var float londonBxHiTmp = na
 var float londonBxLoTmp = na
-londonStart = londonBoxStartH * 60 + londonBoxStartM
-londonEndW  = londonStart + londonBoxDur
-londonInWin = mod >= londonStart and mod < londonEndW
+londonStart      = londonBoxStartH * 60 + londonBoxStartM
+londonEndW       = londonStart + londonBoxDur
+londonInWin      = mod >= londonStart and mod < londonEndW
 londonJustClosed = mod == londonEndW
 if londonInWin
     londonBxHiTmp := na(londonBxHiTmp) ? high : math.max(londonBxHiTmp, high)
     londonBxLoTmp := na(londonBxLoTmp) ? low  : math.min(londonBxLoTmp, low)
 if londonJustClosed
-    londonBoxHi  := londonBxHiTmp
-    londonBoxLo  := londonBxLoTmp
-    londonBoxBar := bar_index
+    londonBoxHi   := londonBxHiTmp
+    londonBoxLo   := londonBxLoTmp
+    londonBoxBar  := bar_index
     londonBxHiTmp := na
     londonBxLoTmp := na
 
 var float nyBxHiTmp = na
 var float nyBxLoTmp = na
-nyStart = nyBoxStartH * 60 + nyBoxStartM
-nyEndW  = nyStart + nyBoxDur
-nyInWin = mod >= nyStart and mod < nyEndW
+nyStart      = nyBoxStartH * 60 + nyBoxStartM
+nyEndW       = nyStart + nyBoxDur
+nyInWin      = mod >= nyStart and mod < nyEndW
 nyJustClosed = mod == nyEndW
 if nyInWin
     nyBxHiTmp := na(nyBxHiTmp) ? high : math.max(nyBxHiTmp, high)
     nyBxLoTmp := na(nyBxLoTmp) ? low  : math.min(nyBxLoTmp, low)
 if nyJustClosed
-    nyBoxHi  := nyBxHiTmp
-    nyBoxLo  := nyBxLoTmp
-    nyBoxBar := bar_index
+    nyBoxHi   := nyBxHiTmp
+    nyBoxLo   := nyBxLoTmp
+    nyBoxBar  := bar_index
     nyBxHiTmp := na
     nyBxLoTmp := na
 
-// ─── Box visualization (use xloc.bar_time to bypass 500-bar limit) ─────────
-plotBoxBT(boxHi, boxLo, sessionEndH, col, lbl) =>
-    leftT  = time
-    rightT = timestamp("America/New_York", year, month, dayofmonth, sessionEndH, 0)
-    box.new(left = leftT, top = boxHi, right = rightT, bottom = boxLo,
-         xloc          = xloc.bar_time,
-         border_color  = col,
-         bgcolor       = color.new(col, 90),
-         border_width  = 1,
-         text          = lbl,
-         text_color    = col,
-         text_size     = size.tiny)
+// ─── Dynamic Box rendering (bar_index based, extend right per bar) ────────
+// Logic: at box close → create box with right = current bar
+//        every bar within session → extend right edge to current bar
+//        Result: box ALWAYS sticks to candles, no weekend/gap stretch
 
+inAsiaSessionRange   = mod >= asiaStart   and mod < asiaSessionEndH   * 60
+inLondonSessionRange = mod >= londonStart and mod < londonSessionEndH * 60
+inNYSessionRange     = mod >= nyStart     and mod < nySessionEndH     * 60
+
+// Asia
 if showAsia and asiaJustClosed
-    plotBoxBT(asiaBoxHi, asiaBoxLo, asiaSessionEndH, color.green,  "Asia (mean-rev)")
+    asiaBoxObj := box.new(left = bar_index - asiaBoxDur, top = asiaBoxHi,
+         right = bar_index, bottom = asiaBoxLo,
+         border_color = color.green, bgcolor = color.new(color.green, 90),
+         border_width = 1, text = "Asia (mean-rev)", text_color = color.green, text_size = size.tiny)
+    asiaBoxDrawn := true
+if showAsia and asiaBoxDrawn and inAsiaSessionRange and not na(asiaBoxObj)
+    box.set_right(asiaBoxObj, bar_index)
+if asiaBoxDrawn and not inAsiaSessionRange and mod < asiaStart
+    asiaBoxDrawn := false  // reset for next day's box
+
+// London
 if showLondon and londonJustClosed
-    plotBoxBT(londonBoxHi, londonBoxLo, londonSessionEndH, color.blue, "London")
+    londonBoxObj := box.new(left = bar_index - londonBoxDur, top = londonBoxHi,
+         right = bar_index, bottom = londonBoxLo,
+         border_color = color.blue, bgcolor = color.new(color.blue, 90),
+         border_width = 1, text = "London", text_color = color.blue, text_size = size.tiny)
+    londonBoxDrawn := true
+if showLondon and londonBoxDrawn and inLondonSessionRange and not na(londonBoxObj)
+    box.set_right(londonBoxObj, bar_index)
+if londonBoxDrawn and not inLondonSessionRange and mod < londonStart
+    londonBoxDrawn := false
+
+// NY
 if showNY and nyJustClosed
-    plotBoxBT(nyBoxHi, nyBoxLo, nySessionEndH, color.orange, "NY (direct)")
+    nyBoxObj := box.new(left = bar_index - nyBoxDur, top = nyBoxHi,
+         right = bar_index, bottom = nyBoxLo,
+         border_color = color.orange, bgcolor = color.new(color.orange, 90),
+         border_width = 1, text = "NY (direct)", text_color = color.orange, text_size = size.tiny)
+    nyBoxDrawn := true
+if showNY and nyBoxDrawn and inNYSessionRange and not na(nyBoxObj)
+    box.set_right(nyBoxObj, bar_index)
+if nyBoxDrawn and not inNYSessionRange and mod < nyStart
+    nyBoxDrawn := false
 
-// Plot box edges as horizontal line during active session
-plot(showAsia   and not na(asiaBoxHi)   and mod < asiaSessionEndH   * 60 ? asiaBoxHi   : na, "Asia Hi",   color = color.green,  style = plot.style_circles, linewidth = 1)
-plot(showAsia   and not na(asiaBoxLo)   and mod < asiaSessionEndH   * 60 ? asiaBoxLo   : na, "Asia Lo",   color = color.green,  style = plot.style_circles, linewidth = 1)
-plot(showLondon and not na(londonBoxHi) and mod < londonSessionEndH * 60 ? londonBoxHi : na, "London Hi", color = color.blue,   style = plot.style_circles, linewidth = 1)
-plot(showLondon and not na(londonBoxLo) and mod < londonSessionEndH * 60 ? londonBoxLo : na, "London Lo", color = color.blue,   style = plot.style_circles, linewidth = 1)
-plot(showNY     and not na(nyBoxHi)     and mod < nySessionEndH     * 60 ? nyBoxHi     : na, "NY Hi",     color = color.orange, style = plot.style_circles, linewidth = 1)
-plot(showNY     and not na(nyBoxLo)     and mod < nySessionEndH     * 60 ? nyBoxLo     : na, "NY Lo",     color = color.orange, style = plot.style_circles, linewidth = 1)
+// ─── Box edge dotted lines during active session ───────────────────────────
+plot(showAsia   and not na(asiaBoxHi)   and inAsiaSessionRange   ? asiaBoxHi   : na, "Asia Hi",   color = color.green,  style = plot.style_circles, linewidth = 1)
+plot(showAsia   and not na(asiaBoxLo)   and inAsiaSessionRange   ? asiaBoxLo   : na, "Asia Lo",   color = color.green,  style = plot.style_circles, linewidth = 1)
+plot(showLondon and not na(londonBoxHi) and inLondonSessionRange ? londonBoxHi : na, "London Hi", color = color.blue,   style = plot.style_circles, linewidth = 1)
+plot(showLondon and not na(londonBoxLo) and inLondonSessionRange ? londonBoxLo : na, "London Lo", color = color.blue,   style = plot.style_circles, linewidth = 1)
+plot(showNY     and not na(nyBoxHi)     and inNYSessionRange     ? nyBoxHi     : na, "NY Hi",     color = color.orange, style = plot.style_circles, linewidth = 1)
+plot(showNY     and not na(nyBoxLo)     and inNYSessionRange     ? nyBoxLo     : na, "NY Lo",     color = color.orange, style = plot.style_circles, linewidth = 1)
 
-// ─── Live trade tracking helper (simulate W/L on subsequent bars) ──────────
-// State per session: arrays of open trades' SL, TP, dir
+// ─── Trade type ────────────────────────────────────────────────────────────
 type Trade
     float entry
     float sl
     float tp
-    int   dir       // +1 long, -1 short
+    int   dir
     int   barOpen
 
-// Asia stats (mean-rev: TP=mid, single TP)
-var array<Trade> asiaOpen = array.new<Trade>()
+// ─── Per-session stats vars ────────────────────────────────────────────────
+var array<Trade> asiaOpen   = array.new<Trade>()
 var int   asiaTotalWin    = 0
 var int   asiaTotalLoss   = 0
 var int   asiaChopDays    = 0
 var float asiaNetPL       = 0.0
 var int   asiaTodayAtt    = 0
-var int   asiaBkDir       = 0    // 0=none, 1=up, -1=down
+var int   asiaBkDir       = 0
 var float asiaExtreme     = na
 var bool  asiaHadEntry    = false
 var bool  asiaSessionDone = false
 var int   asiaLastDay     = -1
 
-// London stats (TP1/TP2)
 var array<Trade> londonOpen = array.new<Trade>()
 var int   londonTotalWin = 0
 var int   londonTotalLoss= 0
@@ -217,7 +249,6 @@ var int   londonBkBar    = na
 var bool  londonHadEntry = false
 var int   londonLastDay  = -1
 
-// NY stats
 var array<Trade> nyOpen = array.new<Trade>()
 var int   nyTotalWin   = 0
 var int   nyTotalLoss  = 0
@@ -228,10 +259,10 @@ var bool  nyEntered    = false
 var bool  nyHadEntry   = false
 var int   nyLastDay    = -1
 
-curDay = dayofmonth(time, "America/New_York")
-newDayET = mod == 0  // first M1 bar of new ET day
+// ─── New-day reset ─────────────────────────────────────────────────────────
+curDay   = dayofmonth(time, "America/New_York")
+newDayET = mod == 0
 
-// New-day reset (Asia)
 if newDayET
     if asiaLastDay != -1 and not asiaHadEntry
         asiaChopDays += 1
@@ -255,11 +286,11 @@ if newDayET
     nyTodayAtt      := 0
     nyHadEntry      := false
 
-// ─── Simulate close of OPEN trades (check SL/TP hit) ───────────────────────
-processOpenTrades(arr, isMeanRev) =>
-    int win = 0
-    int loss = 0
-    float pl = 0.0
+// ─── Process open trades (SL/TP hit check) ─────────────────────────────────
+processOpenTrades(arr) =>
+    int win    = 0
+    int loss   = 0
+    float pl   = 0.0
     if array.size(arr) > 0
         i = 0
         while i < array.size(arr)
@@ -289,9 +320,9 @@ processOpenTrades(arr, isMeanRev) =>
             i += 1
     [win, loss, pl]
 
-[asiaW, asiaL, asiaP]    = processOpenTrades(asiaOpen,   true)
-[londonW, londonL, londonP] = processOpenTrades(londonOpen, false)
-[nyW, nyL, nyP]          = processOpenTrades(nyOpen,     false)
+[asiaW,   asiaL,   asiaP]   = processOpenTrades(asiaOpen)
+[londonW, londonL, londonP] = processOpenTrades(londonOpen)
+[nyW,     nyL,     nyP]     = processOpenTrades(nyOpen)
 
 if inLookback
     asiaTotalWin   += asiaW
@@ -304,14 +335,34 @@ if inLookback
     nyTotalLoss    += nyL
     nyNetPL        += nyP
 
+// ─── Helper: draw label + SL/TP lines pinned to bar time ───────────────────
+drawLabel(txt, ypos, isLong, col) =>
+    if showSignals
+        label.new(x = time, y = ypos, text = txt,
+             xloc = xloc.bar_time, color = col, textcolor = color.white,
+             style = isLong ? label.style_label_up : label.style_label_down,
+             size = size.small)
+
+drawLevels(slPx, tp1Px, tp2Px, extendMin) =>
+    if showLevels
+        rightT = time + extendMin * MS_PER_MIN
+        line.new(time, slPx,  rightT, slPx,  xloc = xloc.bar_time, color = color.red,   width = 1, style = line.style_dashed)
+        line.new(time, tp1Px, rightT, tp1Px, xloc = xloc.bar_time, color = color.lime,  width = 1, style = line.style_dashed)
+        line.new(time, tp2Px, rightT, tp2Px, xloc = xloc.bar_time, color = color.green, width = 1, style = line.style_dashed)
+
+drawLevelsAsia(slPx, tpPx, extendMin) =>
+    if showLevels
+        rightT = time + extendMin * MS_PER_MIN
+        line.new(time, slPx, rightT, slPx, xloc = xloc.bar_time, color = color.red,   width = 1, style = line.style_dashed)
+        line.new(time, tpPx, rightT, tpPx, xloc = xloc.bar_time, color = color.green, width = 1, style = line.style_dashed)
+
 // ─── Asia entry: A2-fail mean-reversion ────────────────────────────────────
-inAsiaSession = mod >= asiaEndW and mod < asiaSessionEndH * 60
+if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
+    asiaSessionDone := asiaTodayAtt >= asiaMaxAttempt or
+                       (asiaTodayAtt > 0 and asiaW > 0) or
+                       asiaL >= 2 ? true : asiaSessionDone
 
-if showAsia and inAsiaSession and not na(asiaBoxHi) and not asiaSessionDone
-    // Adaptive: stop after 1W or 2L this session
-    asiaSessionDone := asiaTodayAtt >= asiaMaxAttempt or (asiaTodayAtt > 0 and asiaW > 0) or asiaL >= 2 ? true : asiaSessionDone
-
-if showAsia and inAsiaSession and not na(asiaBoxHi) and not asiaSessionDone
+if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
     if asiaBkDir == 0
         if close > asiaBoxHi
             asiaBkDir   := 1
@@ -322,22 +373,16 @@ if showAsia and inAsiaSession and not na(asiaBoxHi) and not asiaSessionDone
     else if asiaBkDir == 1
         asiaExtreme := math.max(asiaExtreme, high)
         if close < asiaBoxHi and close > asiaBoxLo
-            // Fail → fade short
             if asiaTodayAtt < asiaMaxAttempt
                 asiaTodayAtt += 1
                 asiaHadEntry := true
                 boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
                 slPx   = asiaExtreme + asiaSlBuffer
                 tpPx   = boxMid
-                t = Trade.new(close, slPx, tpPx, -1, bar_index)
-                array.push(asiaOpen, t)
-                if showSignals
-                    label.new(bar_index, high, "Asia Fade ▼\nSL "+str.tostring(slPx,"#.##")+"\nTP "+str.tostring(tpPx,"#.##"),
-                         color = color.green, textcolor = color.white, style = label.style_label_down, size = size.small)
-                if showLevels
-                    line.new(bar_index, slPx, bar_index + 30, slPx, color = color.red,   width = 1, style = line.style_dashed)
-                    line.new(bar_index, tpPx, bar_index + 30, tpPx, color = color.green, width = 1, style = line.style_dashed)
-                alert("Asia FADE SHORT @ "+str.tostring(close)+" | SL "+str.tostring(slPx)+" | TP "+str.tostring(tpPx), alert.freq_once_per_bar)
+                array.push(asiaOpen, Trade.new(close, slPx, tpPx, -1, bar_index))
+                drawLabel("Asia Fade ▼\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), high, false, color.green)
+                drawLevelsAsia(slPx, tpPx, 30)
+                alert("Asia FADE SHORT @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
     else if asiaBkDir == -1
@@ -349,22 +394,15 @@ if showAsia and inAsiaSession and not na(asiaBoxHi) and not asiaSessionDone
                 boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
                 slPx   = asiaExtreme - asiaSlBuffer
                 tpPx   = boxMid
-                t = Trade.new(close, slPx, tpPx, 1, bar_index)
-                array.push(asiaOpen, t)
-                if showSignals
-                    label.new(bar_index, low, "Asia Fade ▲\nSL "+str.tostring(slPx,"#.##")+"\nTP "+str.tostring(tpPx,"#.##"),
-                         color = color.green, textcolor = color.white, style = label.style_label_up, size = size.small)
-                if showLevels
-                    line.new(bar_index, slPx, bar_index + 30, slPx, color = color.red,   width = 1, style = line.style_dashed)
-                    line.new(bar_index, tpPx, bar_index + 30, tpPx, color = color.green, width = 1, style = line.style_dashed)
-                alert("Asia FADE LONG @ "+str.tostring(close)+" | SL "+str.tostring(slPx)+" | TP "+str.tostring(tpPx), alert.freq_once_per_bar)
+                array.push(asiaOpen, Trade.new(close, slPx, tpPx, 1, bar_index))
+                drawLabel("Asia Fade ▲\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), low, true, color.green)
+                drawLevelsAsia(slPx, tpPx, 30)
+                alert("Asia FADE LONG @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
 
 // ─── London entry: breakout-pullback + any pattern ─────────────────────────
-inLondonSession = mod >= londonEndW and mod < londonSessionEndH * 60
-
-if showLondon and inLondonSession and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt
+if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt
     if londonBkDir == 0
         if close > londonBoxHi
             londonBkDir := 1
@@ -375,160 +413,123 @@ if showLondon and inLondonSession and not na(londonBoxHi) and londonTodayAtt < l
     else if londonBkDir == 1 and bar_index > londonBkBar
         if low <= londonBoxHi and close > londonBoxHi
             if anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
-                bw      = londonBoxHi - londonBoxLo
-                slDist  = math.max(londonMinSl, londonSlBoxMult * bw)
-                slPx    = low - slDist
-                tp1Px   = close + londonTp1Mult * slDist
-                tp2Px   = close + londonTp2Mult * slDist
+                bw     = londonBoxHi - londonBoxLo
+                slDist = math.max(londonMinSl, londonSlBoxMult * bw)
+                slPx   = low - slDist
+                tp1Px  = close + londonTp1Mult * slDist
+                tp2Px  = close + londonTp2Mult * slDist
                 londonTodayAtt += 1
                 londonHadEntry := true
-                t = Trade.new(close, slPx, tp2Px, 1, bar_index)
-                array.push(londonOpen, t)
-                if showSignals
-                    label.new(bar_index, low, "London ▲\nSL "+str.tostring(slPx,"#.##")+"\nTP1 "+str.tostring(tp1Px,"#.##")+"\nTP2 "+str.tostring(tp2Px,"#.##"),
-                         color = color.blue, textcolor = color.white, style = label.style_label_up, size = size.small)
-                if showLevels
-                    line.new(bar_index, slPx,  bar_index + 30, slPx,  color = color.red,   width = 1, style = line.style_dashed)
-                    line.new(bar_index, tp1Px, bar_index + 30, tp1Px, color = color.lime,  width = 1, style = line.style_dashed)
-                    line.new(bar_index, tp2Px, bar_index + 30, tp2Px, color = color.green, width = 1, style = line.style_dashed)
-                alert("London LONG @ "+str.tostring(close)+" | SL "+str.tostring(slPx)+" | TP1 "+str.tostring(tp1Px)+" | TP2 "+str.tostring(tp2Px), alert.freq_once_per_bar)
+                array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index))
+                drawLabel("London ▲\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.blue)
+                drawLevels(slPx, tp1Px, tp2Px, 60)
+                alert("London LONG @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
                 londonBkDir := 0
     else if londonBkDir == -1 and bar_index > londonBkBar
         if high >= londonBoxLo and close < londonBoxLo
             if anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
-                bw      = londonBoxHi - londonBoxLo
-                slDist  = math.max(londonMinSl, londonSlBoxMult * bw)
-                slPx    = high + slDist
-                tp1Px   = close - londonTp1Mult * slDist
-                tp2Px   = close - londonTp2Mult * slDist
+                bw     = londonBoxHi - londonBoxLo
+                slDist = math.max(londonMinSl, londonSlBoxMult * bw)
+                slPx   = high + slDist
+                tp1Px  = close - londonTp1Mult * slDist
+                tp2Px  = close - londonTp2Mult * slDist
                 londonTodayAtt += 1
                 londonHadEntry := true
-                t = Trade.new(close, slPx, tp2Px, -1, bar_index)
-                array.push(londonOpen, t)
-                if showSignals
-                    label.new(bar_index, high, "London ▼\nSL "+str.tostring(slPx,"#.##")+"\nTP1 "+str.tostring(tp1Px,"#.##")+"\nTP2 "+str.tostring(tp2Px,"#.##"),
-                         color = color.blue, textcolor = color.white, style = label.style_label_down, size = size.small)
-                if showLevels
-                    line.new(bar_index, slPx,  bar_index + 30, slPx,  color = color.red,   width = 1, style = line.style_dashed)
-                    line.new(bar_index, tp1Px, bar_index + 30, tp1Px, color = color.lime,  width = 1, style = line.style_dashed)
-                    line.new(bar_index, tp2Px, bar_index + 30, tp2Px, color = color.green, width = 1, style = line.style_dashed)
-                alert("London SHORT @ "+str.tostring(close)+" | SL "+str.tostring(slPx)+" | TP1 "+str.tostring(tp1Px)+" | TP2 "+str.tostring(tp2Px), alert.freq_once_per_bar)
+                array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index))
+                drawLabel("London ▼\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.blue)
+                drawLevels(slPx, tp1Px, tp2Px, 60)
+                alert("London SHORT @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
                 londonBkDir := 0
 
 // ─── NY entry: direct breakout + pattern-at-breakout ───────────────────────
-inNYSession = mod >= nyEndW and mod < nySessionEndH * 60
-
-if showNY and inNYSession and not na(nyBoxHi) and not nyEntered and nyTodayAtt < nyMaxAttempt
+if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyTodayAtt < nyMaxAttempt
     if close > nyBoxHi and anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
         slDist = math.max(nyMinSl, nySlBoxMult * bw)
         slPx   = nyBoxLo - slDist
-        tp1Px  = close + nyTp1Mult * slDist
-        tp2Px  = close + nyTp2Mult * slDist
+        tp1Px  = close + nyTp1Mult  * slDist
+        tp2Px  = close + nyTp2Mult  * slDist
         nyTodayAtt += 1
         nyHadEntry := true
         nyEntered  := true
-        t = Trade.new(close, slPx, tp2Px, 1, bar_index)
-        array.push(nyOpen, t)
-        if showSignals
-            label.new(bar_index, low, "NY ▲ DIRECT\nSL "+str.tostring(slPx,"#.##")+"\nTP1 "+str.tostring(tp1Px,"#.##")+"\nTP2 "+str.tostring(tp2Px,"#.##"),
-                 color = color.orange, textcolor = color.white, style = label.style_label_up, size = size.small)
-        if showLevels
-            line.new(bar_index, slPx,  bar_index + 30, slPx,  color = color.red,   width = 1, style = line.style_dashed)
-            line.new(bar_index, tp1Px, bar_index + 30, tp1Px, color = color.lime,  width = 1, style = line.style_dashed)
-            line.new(bar_index, tp2Px, bar_index + 30, tp2Px, color = color.green, width = 1, style = line.style_dashed)
-        alert("NY DIRECT LONG @ "+str.tostring(close)+" | SL "+str.tostring(slPx)+" | TP1 "+str.tostring(tp1Px)+" | TP2 "+str.tostring(tp2Px), alert.freq_once_per_bar)
+        array.push(nyOpen, Trade.new(close, slPx, tp2Px, 1, bar_index))
+        drawLabel("NY ▲ DIRECT\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.orange)
+        drawLevels(slPx, tp1Px, tp2Px, 60)
+        alert("NY DIRECT LONG @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
     else if close < nyBoxLo and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
         slDist = math.max(nyMinSl, nySlBoxMult * bw)
         slPx   = nyBoxHi + slDist
-        tp1Px  = close - nyTp1Mult * slDist
-        tp2Px  = close - nyTp2Mult * slDist
+        tp1Px  = close - nyTp1Mult  * slDist
+        tp2Px  = close - nyTp2Mult  * slDist
         nyTodayAtt += 1
         nyHadEntry := true
         nyEntered  := true
-        t = Trade.new(close, slPx, tp2Px, -1, bar_index)
-        array.push(nyOpen, t)
-        if showSignals
-            label.new(bar_index, high, "NY ▼ DIRECT\nSL "+str.tostring(slPx,"#.##")+"\nTP1 "+str.tostring(tp1Px,"#.##")+"\nTP2 "+str.tostring(tp2Px,"#.##"),
-                 color = color.orange, textcolor = color.white, style = label.style_label_down, size = size.small)
-        if showLevels
-            line.new(bar_index, slPx,  bar_index + 30, slPx,  color = color.red,   width = 1, style = line.style_dashed)
-            line.new(bar_index, tp1Px, bar_index + 30, tp1Px, color = color.lime,  width = 1, style = line.style_dashed)
-            line.new(bar_index, tp2Px, bar_index + 30, tp2Px, color = color.green, width = 1, style = line.style_dashed)
-        alert("NY DIRECT SHORT @ "+str.tostring(close)+" | SL "+str.tostring(slPx)+" | TP1 "+str.tostring(tp1Px)+" | TP2 "+str.tostring(tp2Px), alert.freq_once_per_bar)
+        array.push(nyOpen, Trade.new(close, slPx, tp2Px, -1, bar_index))
+        drawLabel("NY ▼ DIRECT\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.orange)
+        drawLevels(slPx, tp1Px, tp2Px, 60)
+        alert("NY DIRECT SHORT @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
 
-// ─── Stats Panel (per session, top-right) ──────────────────────────────────
+// ─── Stats Panel ───────────────────────────────────────────────────────────
 if showStatsPanel and barstate.islast
     var table stats = table.new(position.top_right, 4, 13,
          bgcolor      = color.new(color.black, 70),
          border_color = color.new(color.purple, 50),
          border_width = 1)
 
-    // Header row
-    table.cell(stats, 0, 0, "PT BOX", text_color = color.yellow,  bgcolor = color.new(color.purple, 60), text_size = size.small)
-    table.cell(stats, 1, 0, "ASIA",   text_color = color.lime,    bgcolor = color.new(color.purple, 60), text_size = size.small)
-    table.cell(stats, 2, 0, "LONDON", text_color = color.aqua,    bgcolor = color.new(color.purple, 60), text_size = size.small)
-    table.cell(stats, 3, 0, "NY",     text_color = color.orange,  bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 0, 0, "PT BOX",  text_color = color.yellow, bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 1, 0, "ASIA",    text_color = color.lime,   bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 2, 0, "LONDON",  text_color = color.aqua,   bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 3, 0, "NY",      text_color = color.orange, bgcolor = color.new(color.purple, 60), text_size = size.small)
 
-    // Total Win
-    table.cell(stats, 0, 1, "Total Win",  text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 0, 1, "Total Win", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 1, str.tostring(asiaTotalWin),   text_color = color.lime, text_size = size.tiny)
     table.cell(stats, 2, 1, str.tostring(londonTotalWin), text_color = color.lime, text_size = size.tiny)
     table.cell(stats, 3, 1, str.tostring(nyTotalWin),     text_color = color.lime, text_size = size.tiny)
 
-    // Total Loss
     table.cell(stats, 0, 2, "Total Loss", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 2, str.tostring(asiaTotalLoss),   text_color = color.red, text_size = size.tiny)
     table.cell(stats, 2, 2, str.tostring(londonTotalLoss), text_color = color.red, text_size = size.tiny)
     table.cell(stats, 3, 2, str.tostring(nyTotalLoss),     text_color = color.red, text_size = size.tiny)
 
-    // Chop Days
     table.cell(stats, 0, 3, "Chop Days", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 3, str.tostring(asiaChopDays),   text_color = color.yellow, text_size = size.tiny)
     table.cell(stats, 2, 3, str.tostring(londonChopDays), text_color = color.yellow, text_size = size.tiny)
     table.cell(stats, 3, 3, str.tostring(nyChopDays),     text_color = color.yellow, text_size = size.tiny)
 
-    // Win Rate
-    asiaWR   = asiaTotalWin   + asiaTotalLoss   > 0 ? 100.0 * asiaTotalWin   / (asiaTotalWin   + asiaTotalLoss)   : 0
-    londonWR = londonTotalWin + londonTotalLoss > 0 ? 100.0 * londonTotalWin / (londonTotalWin + londonTotalLoss) : 0
-    nyWR     = nyTotalWin     + nyTotalLoss     > 0 ? 100.0 * nyTotalWin     / (nyTotalWin     + nyTotalLoss)     : 0
+    asiaWR   = asiaTotalWin   + asiaTotalLoss   > 0 ? 100.0 * asiaTotalWin   / (asiaTotalWin   + asiaTotalLoss)   : 0.0
+    londonWR = londonTotalWin + londonTotalLoss > 0 ? 100.0 * londonTotalWin / (londonTotalWin + londonTotalLoss) : 0.0
+    nyWR     = nyTotalWin     + nyTotalLoss     > 0 ? 100.0 * nyTotalWin     / (nyTotalWin     + nyTotalLoss)     : 0.0
     table.cell(stats, 0, 4, "Win Rate", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 4, str.tostring(asiaWR,"#.#")+"%",   text_color = asiaWR   >= 50 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 2, 4, str.tostring(londonWR,"#.#")+"%", text_color = londonWR >= 50 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 3, 4, str.tostring(nyWR,"#.#")+"%",     text_color = nyWR     >= 50 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 1, 4, str.tostring(asiaWR,   "#.#") + "%", text_color = asiaWR   >= 50 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 2, 4, str.tostring(londonWR, "#.#") + "%", text_color = londonWR >= 50 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 3, 4, str.tostring(nyWR,     "#.#") + "%", text_color = nyWR     >= 50 ? color.lime : color.red, text_size = size.tiny)
 
-    // Net P&L (pts)
     table.cell(stats, 0, 5, "Net P&L (pts)", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 5, str.tostring(asiaNetPL,"#.#"),   text_color = asiaNetPL   >= 0 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 2, 5, str.tostring(londonNetPL,"#.#"), text_color = londonNetPL >= 0 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 3, 5, str.tostring(nyNetPL,"#.#"),     text_color = nyNetPL     >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 1, 5, str.tostring(asiaNetPL,   "#.#"), text_color = asiaNetPL   >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 2, 5, str.tostring(londonNetPL, "#.#"), text_color = londonNetPL >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 3, 5, str.tostring(nyNetPL,     "#.#"), text_color = nyNetPL     >= 0 ? color.lime : color.red, text_size = size.tiny)
 
-    // RR (TP2/SL)
     table.cell(stats, 0, 6, "RR (TP/SL)", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 6, "1:1.5",                                    text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 6, "1:"+str.tostring(londonTp2Mult,"#.#"),     text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 6, "1:"+str.tostring(nyTp2Mult,"#.#"),         text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 1, 6, "1:1.5",                                   text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 6, "1:" + str.tostring(londonTp2Mult, "#.#"), text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 6, "1:" + str.tostring(nyTp2Mult,     "#.#"), text_color = color.white, text_size = size.tiny)
 
-    // SL/TP1/TP2
     table.cell(stats, 0, 7, "SL/TP1/TP2", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 7, "ext+1 / mid",                              text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 7, "0.5×bw / 3R / 6R",                         text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 7, "0.5×bw / 3R / 6R",                         text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 1, 7, "ext+1 / mid",      text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 7, "0.5×bw / 3R / 6R", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 7, "0.5×bw / 3R / 6R", text_color = color.white, text_size = size.tiny)
 
-    // Max Attempt
     table.cell(stats, 0, 8, "Max Attempt", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 8, str.tostring(asiaMaxAttempt)+"x",    text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 8, str.tostring(londonMaxAttempt)+"x",  text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 8, str.tostring(nyMaxAttempt)+"x",      text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 1, 8, str.tostring(asiaMaxAttempt)   + "x", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 8, str.tostring(londonMaxAttempt) + "x", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 8, str.tostring(nyMaxAttempt)     + "x", text_color = color.white, text_size = size.tiny)
 
-    // Today Attempt
     table.cell(stats, 0, 9, "Today Attempt", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 9, str.tostring(asiaTodayAtt)+"/"+str.tostring(asiaMaxAttempt),    text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 9, str.tostring(londonTodayAtt)+"/"+str.tostring(londonMaxAttempt),text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 9, str.tostring(nyTodayAtt)+"/"+str.tostring(nyMaxAttempt),        text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 1, 9, str.tostring(asiaTodayAtt)   + "/" + str.tostring(asiaMaxAttempt),   text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 9, str.tostring(londonTodayAtt) + "/" + str.tostring(londonMaxAttempt), text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 9, str.tostring(nyTodayAtt)     + "/" + str.tostring(nyMaxAttempt),     text_color = color.white, text_size = size.tiny)
 
-    // Breakout Dir
     asiaDirStr   = asiaBkDir   == 1 ? "LONG" : asiaBkDir   == -1 ? "SHORT" : "—"
     londonDirStr = londonBkDir == 1 ? "LONG" : londonBkDir == -1 ? "SHORT" : "—"
     nyDirStr     = nyEntered ? "FIRED" : "—"
@@ -537,7 +538,6 @@ if showStatsPanel and barstate.islast
     table.cell(stats, 2, 10, londonDirStr, text_color = londonBkDir == 1 ? color.lime : londonBkDir == -1 ? color.red : color.gray, text_size = size.tiny)
     table.cell(stats, 3, 10, nyDirStr,     text_color = nyEntered ? color.orange : color.gray, text_size = size.tiny)
 
-    // In Trade
     asiaInTrade   = array.size(asiaOpen)   > 0
     londonInTrade = array.size(londonOpen) > 0
     nyInTrade     = array.size(nyOpen)     > 0
@@ -546,13 +546,12 @@ if showStatsPanel and barstate.islast
     table.cell(stats, 2, 11, londonInTrade ? "YES" : "NO", text_color = londonInTrade ? color.lime : color.gray, text_size = size.tiny)
     table.cell(stats, 3, 11, nyInTrade     ? "YES" : "NO", text_color = nyInTrade     ? color.lime : color.gray, text_size = size.tiny)
 
-    // Footer (lookback note)
-    table.cell(stats, 0, 12, "Lookback",                              text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 12, str.tostring(panelLookback)+"d",         text_color = color.aqua, text_size = size.tiny)
-    table.cell(stats, 2, 12, "e20d",                                  text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 3, 12, "+976/+1206",                            text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 0, 12, "Lookback",                        text_color = color.gray,   text_size = size.tiny)
+    table.cell(stats, 1, 12, str.tostring(panelLookback) + "d", text_color = color.aqua,   text_size = size.tiny)
+    table.cell(stats, 2, 12, "e20d",                            text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 3, 12, "+976/+1206",                      text_color = color.lime,   text_size = size.tiny)
 
-// ─── Optional small info panel (bottom-right) ──────────────────────────────
+// ─── Optional info panel (bottom-right) ────────────────────────────────────
 if showInfoPanel and barstate.islast
     var table info = table.new(position.bottom_right, 2, 5,
          bgcolor = color.new(color.black, 80), border_color = color.gray, border_width = 1)
