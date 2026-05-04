@@ -12,9 +12,9 @@
 //   - Timeframe: M1 (preferred) or M5
 //   - Symbol: XAUUSD
 //
-// 2026-05-04 v6: SL/TP labels FOLLOW current bar (always visible)
-//                + show pt distance + ⚠️ warning if SL too wide
-//                + width-3 lines · scroll-anywhere SL/TP visible
+// 2026-05-04 v9: stats panel TODAY mode (realtime, not 90d cumulative)
+//                + de-clutter labels (delete on exit, keep lines + W/L marker)
+//                + minimal-mode toggle for cleaner multi-entry sessions
 //
 // ENTRY TIMING (LIVE):
 //   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
@@ -38,9 +38,11 @@ showLevels     = input.bool(true,  "Show SL/TP lines (dynamic length)", group = 
 showExitMarker = input.bool(true,  "Show W/L exit markers",           group = g_disp)
 hideOldBoxes   = input.bool(false, "Hide boxes after session ends",   group = g_disp)
 showStatsPanel = input.bool(true,  "Show stats panel (top-right)",    group = g_disp)
+statsMode      = input.string("Today", "Stats mode", options = ["Today", "Cumulative"], group = g_disp)
 showInfoPanel  = input.bool(false, "Show config info panel (bottom)", group = g_disp)
-panelLookback  = input.int (90,    "Stats lookback (days)", minval = 1, maxval = 365, group = g_disp)
+panelLookback  = input.int (90,    "Cumulative lookback (days)", minval = 1, maxval = 365, group = g_disp)
 boxOpacity     = input.int (92,    "Box fill transparency (90=dark, 95=subtle)", minval = 80, maxval = 99, group = g_disp)
+minimalLabels  = input.bool(false, "Minimal label mode (less crowded)", group = g_disp)
 
 // ─── e20d Asia (mean-rev A2-fail, late-window 21-23 ET) ────────────────────
 g_asia          = "🟢 Asia (e20d late-window)"
@@ -243,10 +245,13 @@ type Trade
 
 // ─── Per-session stats vars ────────────────────────────────────────────────
 var array<Trade> asiaOpen   = array.new<Trade>()
-var int   asiaTotalWin    = 0
+var int   asiaTotalWin    = 0       // cumulative (lookback)
 var int   asiaTotalLoss   = 0
 var int   asiaChopDays    = 0
 var float asiaNetPL       = 0.0
+var int   asiaTodayWin    = 0       // today-only (resets midnight)
+var int   asiaTodayLoss   = 0
+var float asiaTodayPL     = 0.0
 var int   asiaTodayAtt    = 0
 var int   asiaBkDir       = 0
 var float asiaExtreme     = na
@@ -259,6 +264,9 @@ var int   londonTotalWin = 0
 var int   londonTotalLoss= 0
 var int   londonChopDays = 0
 var float londonNetPL    = 0.0
+var int   londonTodayWin = 0
+var int   londonTodayLoss= 0
+var float londonTodayPL  = 0.0
 var int   londonTodayAtt = 0
 var int   londonBkDir    = 0
 var int   londonBkBar    = na
@@ -270,6 +278,9 @@ var int   nyTotalWin   = 0
 var int   nyTotalLoss  = 0
 var int   nyChopDays   = 0
 var float nyNetPL      = 0.0
+var int   nyTodayWin   = 0
+var int   nyTodayLoss  = 0
+var float nyTodayPL    = 0.0
 var int   nyTodayAtt   = 0
 var bool  nyEntered    = false
 var bool  nyHadEntry   = false
@@ -286,6 +297,9 @@ if newDayET
     asiaBkDir       := 0
     asiaExtreme     := na
     asiaTodayAtt    := 0
+    asiaTodayWin    := 0
+    asiaTodayLoss   := 0
+    asiaTodayPL     := 0.0
     asiaHadEntry    := false
     asiaSessionDone := false
     if londonLastDay != -1 and not londonHadEntry
@@ -294,12 +308,18 @@ if newDayET
     londonBkDir     := 0
     londonBkBar     := na
     londonTodayAtt  := 0
+    londonTodayWin  := 0
+    londonTodayLoss := 0
+    londonTodayPL   := 0.0
     londonHadEntry  := false
     if nyLastDay != -1 and not nyHadEntry
         nyChopDays   += 1
     nyLastDay       := curDay
     nyEntered       := false
     nyTodayAtt      := 0
+    nyTodayWin      := 0
+    nyTodayLoss     := 0
+    nyTodayPL       := 0.0
     nyHadEntry      := false
 
     // Defensive: reset box state to prevent cross-day leak
@@ -376,7 +396,15 @@ processOpenTrades(arr, sessionTag) =>
                     line.set_x2(t.slLine, bar_index)
                 if not na(t.tpLine)
                     line.set_x2(t.tpLine, bar_index)
-                // W/L exit marker
+                // De-clutter: delete SL/TP/Entry labels on exit
+                // (lines stay for historical review; W/L marker added below)
+                if not na(t.slLab)
+                    label.delete(t.slLab)
+                if not na(t.tpLab)
+                    label.delete(t.tpLab)
+                if not na(t.enLab)
+                    label.delete(t.enLab)
+                // W/L exit marker (small, frozen at exit bar)
                 if showExitMarker
                     markerColor = isWin ? color.lime : color.red
                     markerText  = isWin ? "✓ W " + sessionTag : "✗ L " + sessionTag
@@ -385,7 +413,7 @@ processOpenTrades(arr, sessionTag) =>
                          text = markerText,
                          color = markerColor, textcolor = color.white,
                          style = isWin ? label.style_label_left : label.style_label_left,
-                         size = size.small)
+                         size = size.tiny)
                 array.remove(arr, i)
                 continue
             i += 1
@@ -395,6 +423,7 @@ processOpenTrades(arr, sessionTag) =>
 [londonW, londonL, londonP] = processOpenTrades(londonOpen, "L")
 [nyW,     nyL,     nyP]     = processOpenTrades(nyOpen,     "NY")
 
+// Cumulative (lookback-gated)
 if inLookback
     asiaTotalWin   += asiaW
     asiaTotalLoss  += asiaL
@@ -406,6 +435,17 @@ if inLookback
     nyTotalLoss    += nyL
     nyNetPL        += nyP
 
+// Today (always — resets midnight)
+asiaTodayWin    += asiaW
+asiaTodayLoss   += asiaL
+asiaTodayPL     += asiaP
+londonTodayWin  += londonW
+londonTodayLoss += londonL
+londonTodayPL   += londonP
+nyTodayWin      += nyW
+nyTodayLoss     += nyL
+nyTodayPL       += nyP
+
 // ─── Entry helpers ─────────────────────────────────────────────────────────
 // Creates SL line (red, dashed, width 3), TP line (green, solid, width 3),
 // entry midline (white, dotted, width 1), and FOLLOW-CURRENT-BAR labels
@@ -413,25 +453,31 @@ if inLookback
 mkEntryViz(slPx, tpPx, entryPx, slCol, tpCol) =>
     slL  = showLevels ? line.new(bar_index, slPx,   bar_index, slPx,    color = slCol,                       width = 3, style = line.style_dashed) : na
     tpL  = showLevels ? line.new(bar_index, tpPx,   bar_index, tpPx,    color = tpCol,                       width = 3, style = line.style_solid)  : na
-    entL = showLevels ? line.new(bar_index, entryPx, bar_index, entryPx, color = color.new(color.white, 30), width = 1, style = line.style_dotted) : na
+    // Hide entry midline in minimal mode
+    entL = (showLevels and not minimalLabels) ? line.new(bar_index, entryPx, bar_index, entryPx, color = color.new(color.white, 30), width = 1, style = line.style_dotted) : na
 
     slDist  = math.abs(entryPx - slPx)
     tpDist  = math.abs(entryPx - tpPx)
     slWarn  = slDist > 30 ? " ⚠️" : ""
-    // SL always shows -X (loss), TP always shows +X (gain) — P&L direction not price direction
+    // Minimal mode: shorter label text (no distance, no warning)
+    slText = minimalLabels ? "SL " + str.tostring(slPx, "#.##") :
+             "SL " + str.tostring(slPx, "#.##") + " (-" + str.tostring(slDist, "#.#") + "pt loss)" + slWarn
+    tpText = minimalLabels ? "TP " + str.tostring(tpPx, "#.##") :
+             "TP " + str.tostring(tpPx, "#.##") + " (+" + str.tostring(tpDist, "#.#") + "pt gain)"
     slLab = showLevels ? label.new(x = bar_index, y = slPx,
-         text      = "SL " + str.tostring(slPx, "#.##") + " (-" + str.tostring(slDist, "#.#") + "pt loss)" + slWarn,
+         text      = slText,
          color     = slCol,
          textcolor = color.white,
          style     = label.style_label_left,
-         size      = size.small) : na
+         size      = minimalLabels ? size.tiny : size.small) : na
     tpLab = showLevels ? label.new(x = bar_index, y = tpPx,
-         text      = "TP " + str.tostring(tpPx, "#.##") + " (+" + str.tostring(tpDist, "#.#") + "pt gain)",
+         text      = tpText,
          color     = tpCol,
          textcolor = color.white,
          style     = label.style_label_left,
-         size      = size.small) : na
-    enLab = showLevels ? label.new(x = bar_index, y = entryPx,
+         size      = minimalLabels ? size.tiny : size.small) : na
+    // Hide entry-price label in minimal mode
+    enLab = (showLevels and not minimalLabels) ? label.new(x = bar_index, y = entryPx,
          text      = "@ " + str.tostring(entryPx, "#.##"),
          color     = color.gray,
          textcolor = color.white,
@@ -567,38 +613,51 @@ if showStatsPanel and barstate.islast
          border_color = color.new(color.purple, 50),
          border_width = 1)
 
+    // Pick stats source based on mode
+    isToday   = statsMode == "Today"
+    asiaW_d   = isToday ? asiaTodayWin    : asiaTotalWin
+    asiaL_d   = isToday ? asiaTodayLoss   : asiaTotalLoss
+    asiaPL_d  = isToday ? asiaTodayPL     : asiaNetPL
+    londonW_d = isToday ? londonTodayWin  : londonTotalWin
+    londonL_d = isToday ? londonTodayLoss : londonTotalLoss
+    londonPL_d= isToday ? londonTodayPL   : londonNetPL
+    nyW_d     = isToday ? nyTodayWin      : nyTotalWin
+    nyL_d     = isToday ? nyTodayLoss     : nyTotalLoss
+    nyPL_d    = isToday ? nyTodayPL       : nyNetPL
+    modeLabel = isToday ? "TODAY" : str.tostring(panelLookback) + "d"
+
     table.cell(stats, 0, 0, "PT BOX",  text_color = color.yellow, bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 1, 0, "ASIA",    text_color = color.lime,   bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 2, 0, "LONDON",  text_color = color.aqua,   bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 3, 0, "NY",      text_color = color.orange, bgcolor = color.new(color.purple, 60), text_size = size.small)
 
-    table.cell(stats, 0, 1, "Total Win", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 1, str.tostring(asiaTotalWin),   text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 2, 1, str.tostring(londonTotalWin), text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 3, 1, str.tostring(nyTotalWin),     text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 0, 1, "Win", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 1, str.tostring(asiaW_d),   text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 2, 1, str.tostring(londonW_d), text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 3, 1, str.tostring(nyW_d),     text_color = color.lime, text_size = size.tiny)
 
-    table.cell(stats, 0, 2, "Total Loss", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 2, str.tostring(asiaTotalLoss),   text_color = color.red, text_size = size.tiny)
-    table.cell(stats, 2, 2, str.tostring(londonTotalLoss), text_color = color.red, text_size = size.tiny)
-    table.cell(stats, 3, 2, str.tostring(nyTotalLoss),     text_color = color.red, text_size = size.tiny)
+    table.cell(stats, 0, 2, "Loss", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 2, str.tostring(asiaL_d),   text_color = color.red, text_size = size.tiny)
+    table.cell(stats, 2, 2, str.tostring(londonL_d), text_color = color.red, text_size = size.tiny)
+    table.cell(stats, 3, 2, str.tostring(nyL_d),     text_color = color.red, text_size = size.tiny)
 
     table.cell(stats, 0, 3, "Chop Days", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 3, str.tostring(asiaChopDays),   text_color = color.yellow, text_size = size.tiny)
     table.cell(stats, 2, 3, str.tostring(londonChopDays), text_color = color.yellow, text_size = size.tiny)
     table.cell(stats, 3, 3, str.tostring(nyChopDays),     text_color = color.yellow, text_size = size.tiny)
 
-    asiaWR   = asiaTotalWin   + asiaTotalLoss   > 0 ? 100.0 * asiaTotalWin   / (asiaTotalWin   + asiaTotalLoss)   : 0.0
-    londonWR = londonTotalWin + londonTotalLoss > 0 ? 100.0 * londonTotalWin / (londonTotalWin + londonTotalLoss) : 0.0
-    nyWR     = nyTotalWin     + nyTotalLoss     > 0 ? 100.0 * nyTotalWin     / (nyTotalWin     + nyTotalLoss)     : 0.0
+    asiaWR   = asiaW_d   + asiaL_d   > 0 ? 100.0 * asiaW_d   / (asiaW_d   + asiaL_d)   : 0.0
+    londonWR = londonW_d + londonL_d > 0 ? 100.0 * londonW_d / (londonW_d + londonL_d) : 0.0
+    nyWR     = nyW_d     + nyL_d     > 0 ? 100.0 * nyW_d     / (nyW_d     + nyL_d)     : 0.0
     table.cell(stats, 0, 4, "Win Rate", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 4, str.tostring(asiaWR,   "#.#") + "%", text_color = asiaWR   >= 50 ? color.lime : color.red, text_size = size.tiny)
     table.cell(stats, 2, 4, str.tostring(londonWR, "#.#") + "%", text_color = londonWR >= 50 ? color.lime : color.red, text_size = size.tiny)
     table.cell(stats, 3, 4, str.tostring(nyWR,     "#.#") + "%", text_color = nyWR     >= 50 ? color.lime : color.red, text_size = size.tiny)
 
     table.cell(stats, 0, 5, "Net P&L (pts)", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 5, str.tostring(asiaNetPL,   "#.#"), text_color = asiaNetPL   >= 0 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 2, 5, str.tostring(londonNetPL, "#.#"), text_color = londonNetPL >= 0 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 3, 5, str.tostring(nyNetPL,     "#.#"), text_color = nyNetPL     >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 1, 5, str.tostring(asiaPL_d,   "#.#"), text_color = asiaPL_d   >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 2, 5, str.tostring(londonPL_d, "#.#"), text_color = londonPL_d >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 3, 5, str.tostring(nyPL_d,     "#.#"), text_color = nyPL_d     >= 0 ? color.lime : color.red, text_size = size.tiny)
 
     table.cell(stats, 0, 6, "RR (TP/SL)", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 6, "1:1.5",                                   text_color = color.white, text_size = size.tiny)
@@ -636,10 +695,10 @@ if showStatsPanel and barstate.islast
     table.cell(stats, 2, 11, londonInTrade ? "YES" : "NO", text_color = londonInTrade ? color.lime : color.gray, text_size = size.tiny)
     table.cell(stats, 3, 11, nyInTrade     ? "YES" : "NO", text_color = nyInTrade     ? color.lime : color.gray, text_size = size.tiny)
 
-    table.cell(stats, 0, 12, "Lookback",                        text_color = color.gray,   text_size = size.tiny)
-    table.cell(stats, 1, 12, str.tostring(panelLookback) + "d", text_color = color.aqua,   text_size = size.tiny)
-    table.cell(stats, 2, 12, "e20d",                            text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 3, 12, "+976/+1206",                      text_color = color.lime,   text_size = size.tiny)
+    table.cell(stats, 0, 12, "Mode",                  text_color = color.gray,   text_size = size.tiny)
+    table.cell(stats, 1, 12, modeLabel,               text_color = color.aqua,   text_size = size.tiny)
+    table.cell(stats, 2, 12, "e20d",                  text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 3, 12, "+976/+1206",            text_color = color.lime,   text_size = size.tiny)
 
 // ─── Optional info panel (bottom-right) ────────────────────────────────────
 if showInfoPanel and barstate.islast
