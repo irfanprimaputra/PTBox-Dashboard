@@ -12,8 +12,20 @@ DATA_DIR = Path(__file__).parent / "data"
 
 
 def load_phase7_baseline():
-    """Load latest baseline — checks e20d → e16b in priority order."""
-    # Try e20d first (newest baseline as of 2026-05-04)
+    """Load latest baseline — checks e33 → e20d → e16b in priority order."""
+    # e33 = current best (Wyckoff pre-session + regrid optimum, 2026-05-04)
+    if (DATA_DIR / "phase7_e33_ny_regrid_e32.json").exists():
+        return {
+            "experiment_id": "e33",
+            "label": "Wyckoff pre-session NY 07:00/60m + ANY pat + body30% + TP2.5R · Asia 19:00/30m",
+            "total_pnl": 4772,  # Asia 261 + London 486 + NY 4025
+            "asia_pnl": 261,
+            "london_pnl": 486,
+            "ny_pnl": 4025,
+            "recent_pnl": 1206,  # OOS reference
+            "phase": "Phase 7 (e33 · Wyckoff pre-session)",
+        }
+    # Try e20d
     try:
         with open(DATA_DIR / "phase7_e20_results.json") as f:
             data = json.load(f)
@@ -86,14 +98,14 @@ if phase7_best:
         "asia_pnl": phase7_best["asia_pnl"],
         "london_pnl": phase7_best["london_pnl"],
         "ny_pnl": phase7_best["ny_pnl"],
-        "asia_pass_rate": 73.0,
+        "asia_pass_rate": 68.0,
         "london_pass_rate": 31.0,
-        "ny_pass_rate": 27.0,
+        "ny_pass_rate": 58.0,
         "vs_baseline_delta": phase7_best["total_pnl"] - phase1["total_pnl"],
         "vs_baseline_pct": (phase7_best["total_pnl"] - phase1["total_pnl"]) / abs(phase1["total_pnl"]) * 100,
         "variant_label": phase7_best["label"],
         "angle": phase7_best["phase"],
-        "date_run": "2026-05-03",
+        "date_run": "2026-05-04",
         "recent_pnl": phase7_best.get("recent_pnl", 0),
     }
     # use dict-like access pattern
@@ -102,7 +114,7 @@ if phase7_best:
         def __getitem__(self, k): return self._d[k]
         def get(self, k, default=None): return self._d.get(k, default)
     current_best = DictAccess(current_best)
-    total_iterations = max(total_iterations, 24)  # 16+ Phase 7 variants tested
+    total_iterations = max(total_iterations, 250)  # e001..e33 + sweeps
 else:
     current_best = real_iterations.loc[real_iterations["total_pnl"].idxmax()]
 
@@ -142,7 +154,7 @@ if oos_data:
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">Live Estimate</div>
-            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$700-800/yr (lot 0.02)</div>
+            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$1240-1900/yr (lot 0.02, e33)</div>
         </div>
         <div style="margin-left: auto;">
             <a href="Phase7_Results" target="_self" style="color: {COLORS['accent_blue']}; text-decoration: none; font-size: 0.85rem;">
