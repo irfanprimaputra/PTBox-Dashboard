@@ -28,11 +28,16 @@ if trades is None or len(trades) == 0:
     st.error("⚠️ Trade data not found. Run `python3 code/ptbox_v6_trade_export.py` first.")
     st.stop()
 
-st.info(f"""
-**📌 Data context:** Trade simulator pakai **fixed deploy config** (Asia 19:23, London 01:43, NY 09:03)
-across 2015-04-26 → 2026-04-26. **Total PnL TIDAK match e013 (+375)** karena e013 pakai walk-forward
-optimization (timing re-tuned per quarter). Fixed-config menunjukkan REALITY kalau lu deploy timing
-yang sama tanpa adjusting — useful untuk study pattern (day-of-week, monthly seasonality, regime shifts).
+st.warning(f"""
+**⚠️ LEGACY DATA — Pre-e37 Config:** Trade history below uses **OLD fixed config** (Asia 19:23, London 01:43, NY 09:03 — pullback model).
+This is **NOT current e37 config**. Total PnL = -1526 reflects pre-optimization performance.
+
+**For current e37 validated performance** (Asia 18:00/90m DIRECT, London 00:00/60m DIRECT, NY 07:00/60m DIRECT):
+- 5y fixed-config: **+9084 pts** (✅ OOS validated 316% retention)
+- See **Phase7 Results** page for full e37 breakdown
+- Or **Live Deploy** page for current trading windows
+
+This page kept for **historical pattern study only** (day-of-week, monthly seasonality, regime shifts).
 """)
 
 # --- Sidebar filters ---

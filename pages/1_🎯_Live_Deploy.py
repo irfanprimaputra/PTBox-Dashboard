@@ -27,19 +27,19 @@ def now_et(utc):
 def now_wib(utc):
     return utc + timedelta(hours=7)
 
-# Sessions in ET
+# Sessions in ET (e37 Wyckoff pre-session config)
 SESSIONS = [
-    {"name": "Asia", "emoji": "🟢", "et_start": (21, 0), "et_end": (23, 0),
-     "box_window": "21:00-21:07 ET", "model": "Mean-rev A2-fail",
-     "wib_start": (8, 0), "wib_end": (10, 0),
+    {"name": "Asia", "emoji": "🟢", "et_start": (18, 0), "et_end": (24, 0),
+     "box_window": "18:00-19:30 ET (90m)", "model": "DIRECT breakout + body0% + TP=1.5R (e37)",
+     "wib_start": (5, 0), "wib_end": (11, 0),
      "color": COLORS["success"]},
-    {"name": "London", "emoji": "🔵", "et_start": (1, 43), "et_end": (5, 0),
-     "box_window": "01:43-01:46 ET", "model": "Breakout-pullback + pattern",
-     "wib_start": (12, 43), "wib_end": (16, 0),
+    {"name": "London", "emoji": "🔵", "et_start": (0, 0), "et_end": (8, 0),
+     "box_window": "00:00-01:00 ET (60m)", "model": "DIRECT breakout + body20% + TP=2.0R (e37)",
+     "wib_start": (11, 0), "wib_end": (19, 0),
      "color": COLORS["accent_blue"]},
-    {"name": "NY", "emoji": "🟡", "et_start": (9, 3), "et_end": (12, 0),
-     "box_window": "09:03-09:08 ET", "model": "Direct breakout + pattern (Naked Forex)",
-     "wib_start": (20, 3), "wib_end": (24, 0),
+    {"name": "NY", "emoji": "🟡", "et_start": (7, 0), "et_end": (12, 0),
+     "box_window": "07:00-08:00 ET (60m)", "model": "DIRECT breakout + body30% + TP=2.5R (e37)",
+     "wib_start": (18, 0), "wib_end": (23, 0),
      "color": COLORS["warning"]},
 ]
 
@@ -48,7 +48,7 @@ SESSIONS = [
 # ───────────────────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
-    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box e33</h1>
+    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box e37 (OOS PASSED ✅)</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
         Pinescript on TradingView · Manual MT5 execution · Trade journal
     </p>

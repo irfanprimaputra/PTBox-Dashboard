@@ -15,7 +15,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">📋 Iteration Timeline</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Chronological journey e001 → e013 across Phase 4 + Phase 5
+        Chronological journey e001 → e013 (Phase 4-5) · ⚠️ Archive only — current best is e37 (see Phase7 Results)
     </p>
 </div>
 """, unsafe_allow_html=True)
