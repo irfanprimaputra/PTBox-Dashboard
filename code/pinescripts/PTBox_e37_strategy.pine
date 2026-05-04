@@ -1,0 +1,256 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════
+// PT BOX e37 — STRATEGY VERSION (TradingView built-in backtest tester)
+// XAUUSD intraday · 3 sessions DIRECT model · Wyckoff pre-session timing
+//
+// e37 baseline (5y fixed-config):
+//   Asia:   18:00/90m DIRECT  + body0%  + SL=0.7×bw + TP=1.5R = +1839 pts
+//   London: 00:00/60m DIRECT  + body20% + SL=0.5×bw + TP=2.0R = +3220 pts
+//   NY:     07:00/60m DIRECT  + body30% + SL=0.5×bw + TP=2.5R = +4025 pts
+//   TOTAL: +9084 pts/5y · OOS validated 316% retention · 10/10 Q positive
+//
+// USAGE:
+//   1. Paste to TradingView Pine Editor
+//   2. Save as "PT Box e37 Strategy"
+//   3. Add to chart
+//   4. Click "Strategy Tester" tab at bottom — see Performance Summary, Equity Curve
+//   5. Compare TV's built-in backtest to engine truth (+9084 5y)
+//
+// vs INDICATOR version: Strategy adds built-in backtest tester (P&L, max DD,
+// Sharpe ratio, profit factor, etc.). Use this to VALIDATE engine numbers.
+// ═══════════════════════════════════════════════════════════════════════════
+strategy("PT Box e37 Strategy",
+     overlay              = true,
+     initial_capital      = 200,           // $200 cap (matches our risk math)
+     default_qty_type     = strategy.fixed,
+     default_qty_value    = 0.02,          // 0.02 lot XAUUSD
+     pyramiding           = 0,             // No averaging into positions
+     calc_on_every_tick   = false,         // Bar-close evaluation (matches engine)
+     commission_type      = strategy.commission.cash_per_order,
+     commission_value     = 0.12,          // ~$0.06 spread × 2 (entry + exit)
+     slippage             = 2,             // 2 ticks = 0.2 pts XAUUSD
+     process_orders_on_close = true,
+     max_boxes_count      = 500,
+     max_lines_count      = 500,
+     max_labels_count     = 500)
+
+// ─── Display toggles ──────────────────────────────────────────────────────
+g_disp = "Display"
+showAsia       = input.bool(true,  "Show Asia",   group = g_disp)
+showLondon     = input.bool(true,  "Show London", group = g_disp)
+showNY         = input.bool(true,  "Show NY",     group = g_disp)
+showSignals    = input.bool(true,  "Show entry markers", group = g_disp)
+
+// ─── e37 Asia ──────────────────────────────────────────────────────────────
+g_asia          = "🟢 Asia (e37)"
+asiaBoxStartH   = input.int  (18,  "Asia box start hour (ET)", minval=0, maxval=23, group=g_asia)
+asiaBoxStartM   = input.int  (0,   "Asia box start minute", minval=0, maxval=59, group=g_asia)
+asiaBoxDur      = input.int  (90,  "Asia box duration (min)", minval=1, maxval=180, group=g_asia)
+asiaSessionEndH = input.int  (0,   "Asia session end hour (ET, 0=midnight)", minval=0, maxval=23, group=g_asia)
+asiaSlBoxMult   = input.float(0.7, "Asia SL = X × box_width", group=g_asia)
+asiaTpMult      = input.float(1.5, "Asia TP = X × SL", group=g_asia)
+asiaMinSl       = input.float(3.0, "Asia min SL (pts)", group=g_asia)
+asiaBodyPct     = input.float(0.0, "Asia body close %", group=g_asia)
+
+// ─── e37 London ────────────────────────────────────────────────────────────
+g_lon           = "🔵 London (e37)"
+lonBoxStartH    = input.int  (0,   "London box start hour (ET)", minval=0, maxval=23, group=g_lon)
+lonBoxStartM    = input.int  (0,   "London box start minute", minval=0, maxval=59, group=g_lon)
+lonBoxDur       = input.int  (60,  "London box duration (min)", minval=1, maxval=120, group=g_lon)
+lonSessionEndH  = input.int  (8,   "London session end hour (ET)", group=g_lon)
+lonSlBoxMult    = input.float(0.5, "London SL = X × box_width", group=g_lon)
+lonTpMult       = input.float(2.0, "London TP = X × SL", group=g_lon)
+lonMinSl        = input.float(3.0, "London min SL (pts)", group=g_lon)
+lonBodyPct      = input.float(0.20,"London body close %", group=g_lon)
+
+// ─── e37 NY ────────────────────────────────────────────────────────────────
+g_ny            = "🟡 NY (e37)"
+nyBoxStartH     = input.int  (7,   "NY box start hour (ET)", minval=0, maxval=23, group=g_ny)
+nyBoxStartM     = input.int  (0,   "NY box start minute", minval=0, maxval=59, group=g_ny)
+nyBoxDur        = input.int  (60,  "NY box duration (min)", minval=1, maxval=120, group=g_ny)
+nySessionEndH   = input.int  (12,  "NY session end hour (ET)", group=g_ny)
+nySlBoxMult     = input.float(0.5, "NY SL = X × box_width", group=g_ny)
+nyTpMult        = input.float(2.5, "NY TP = X × SL", group=g_ny)
+nyMinSl         = input.float(3.0, "NY min SL (pts)", group=g_ny)
+nyBodyPct       = input.float(0.30,"NY body close %", group=g_ny)
+
+// ─── Risk filter ───────────────────────────────────────────────────────────
+g_risk          = "💰 Risk filter"
+useMaxSl        = input.bool(true, "Skip trades with SL > X pts", group=g_risk)
+asiaMaxSlPts    = input.float(30,  "Asia max SL (pts)", group=g_risk)
+lonMaxSlPts     = input.float(15,  "London max SL (pts)", group=g_risk)
+nyMaxSlPts      = input.float(15,  "NY max SL (pts)", group=g_risk)
+
+// ─── Pattern detection (any: pin OR engulf OR inside) ─────────────────────
+isBullPin(o,h,l,c) =>
+    rng = h - l
+    body = math.abs(c-o)
+    rng > 0 and body/rng <= 0.30 and (math.min(o,c)-l)/rng >= 0.50
+isBearPin(o,h,l,c) =>
+    rng = h - l
+    body = math.abs(c-o)
+    rng > 0 and body/rng <= 0.30 and (h-math.max(o,c))/rng >= 0.50
+isBullEngulf(po,pc,o,c) => pc<po and c>o and o<=pc and c>=po
+isBearEngulf(po,pc,o,c) => pc>po and c<o and o>=pc and c<=po
+isInsideBar(ph,pl,h,l) => h<ph and l>pl
+anyBull(po,ph,pl,pc,o,h,l,c) => isBullPin(o,h,l,c) or isBullEngulf(po,pc,o,c) or isInsideBar(ph,pl,h,l)
+anyBear(po,ph,pl,pc,o,h,l,c) => isBearPin(o,h,l,c) or isBearEngulf(po,pc,o,c) or isInsideBar(ph,pl,h,l)
+
+// ─── Time helpers (ET = America/New_York, auto DST) ───────────────────────
+mod = hour(time, "America/New_York") * 60 + minute(time, "America/New_York")
+
+// ─── Box detection per session ─────────────────────────────────────────────
+var float asiaBoxHi = na, var float asiaBoxLo = na
+var float lonBoxHi = na, var float lonBoxLo = na
+var float nyBoxHi = na, var float nyBoxLo = na
+
+var float asiaBxHiTmp = na, var float asiaBxLoTmp = na
+var float lonBxHiTmp  = na, var float lonBxLoTmp  = na
+var float nyBxHiTmp   = na, var float nyBxLoTmp   = na
+
+asiaStart = asiaBoxStartH * 60 + asiaBoxStartM
+asiaEndW  = asiaStart + asiaBoxDur
+lonStart  = lonBoxStartH * 60 + lonBoxStartM
+lonEndW   = lonStart + lonBoxDur
+nyStart   = nyBoxStartH * 60 + nyBoxStartM
+nyEndW    = nyStart + nyBoxDur
+
+// Cross-day session end for Asia (e37 = 0 = midnight)
+asiaSEffEnd = asiaSessionEndH == 0 ? 24 * 60 : asiaSessionEndH * 60
+
+// Reset at midnight
+if mod == 0
+    asiaBxHiTmp := na
+    asiaBxLoTmp := na
+    asiaBoxHi := na
+    asiaBoxLo := na
+    lonBxHiTmp := na
+    lonBxLoTmp := na
+    lonBoxHi := na
+    lonBoxLo := na
+    nyBxHiTmp := na
+    nyBxLoTmp := na
+    nyBoxHi := na
+    nyBoxLo := na
+
+// Asia box accumulation
+if mod >= asiaStart and mod < asiaEndW
+    asiaBxHiTmp := na(asiaBxHiTmp) ? high : math.max(asiaBxHiTmp, high)
+    asiaBxLoTmp := na(asiaBxLoTmp) ? low  : math.min(asiaBxLoTmp, low)
+if mod == asiaEndW and not na(asiaBxHiTmp)
+    asiaBoxHi := asiaBxHiTmp
+    asiaBoxLo := asiaBxLoTmp
+
+// London box accumulation
+if mod >= lonStart and mod < lonEndW
+    lonBxHiTmp := na(lonBxHiTmp) ? high : math.max(lonBxHiTmp, high)
+    lonBxLoTmp := na(lonBxLoTmp) ? low  : math.min(lonBxLoTmp, low)
+if mod == lonEndW and not na(lonBxHiTmp)
+    lonBoxHi := lonBxHiTmp
+    lonBoxLo := lonBxLoTmp
+
+// NY box accumulation
+if mod >= nyStart and mod < nyEndW
+    nyBxHiTmp := na(nyBxHiTmp) ? high : math.max(nyBxHiTmp, high)
+    nyBxLoTmp := na(nyBxLoTmp) ? low  : math.min(nyBxLoTmp, low)
+if mod == nyEndW and not na(nyBxHiTmp)
+    nyBoxHi := nyBxHiTmp
+    nyBoxLo := nyBxLoTmp
+
+// ─── Box visualization ─────────────────────────────────────────────────────
+plot(showAsia and not na(asiaBoxHi)   and mod >= asiaStart  and mod < asiaSEffEnd   ? asiaBoxHi : na, "Asia Hi",   color=color.green,  style=plot.style_circles, linewidth=1)
+plot(showAsia and not na(asiaBoxLo)   and mod >= asiaStart  and mod < asiaSEffEnd   ? asiaBoxLo : na, "Asia Lo",   color=color.green,  style=plot.style_circles, linewidth=1)
+plot(showLondon and not na(lonBoxHi)  and mod >= lonStart   and mod < lonSessionEndH*60 ? lonBoxHi : na, "Lon Hi", color=color.blue,   style=plot.style_circles, linewidth=1)
+plot(showLondon and not na(lonBoxLo)  and mod >= lonStart   and mod < lonSessionEndH*60 ? lonBoxLo : na, "Lon Lo", color=color.blue,   style=plot.style_circles, linewidth=1)
+plot(showNY and not na(nyBoxHi)       and mod >= nyStart    and mod < nySessionEndH*60  ? nyBoxHi : na, "NY Hi",   color=color.orange, style=plot.style_circles, linewidth=1)
+plot(showNY and not na(nyBoxLo)       and mod >= nyStart    and mod < nySessionEndH*60  ? nyBoxLo : na, "NY Lo",   color=color.orange, style=plot.style_circles, linewidth=1)
+
+// ─── Today entry tracking (1 entry per session per day) ────────────────────
+var bool asiaEnteredToday = false
+var bool lonEnteredToday  = false
+var bool nyEnteredToday   = false
+if mod == 0
+    asiaEnteredToday := false
+    lonEnteredToday := false
+    nyEnteredToday := false
+
+// ─── ASIA entry logic (DIRECT model + body close + pattern) ────────────────
+inAsiaTradingWindow = mod >= asiaStart and mod < asiaSEffEnd
+if showAsia and inAsiaTradingWindow and not na(asiaBoxHi) and not asiaEnteredToday
+    bw       = asiaBoxHi - asiaBoxLo
+    bodyThr  = asiaBodyPct * bw
+    slDist   = math.max(asiaMinSl, asiaSlBoxMult * bw)
+    // BULL breakout
+    if close > asiaBoxHi and (close - asiaBoxHi) >= bodyThr and anyBull(open[1], high[1], low[1], close[1], open, high, low, close)
+        slPx = asiaBoxLo - slDist
+        tpPx = close + asiaTpMult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if not (useMaxSl and slDistFromEntry > asiaMaxSlPts)
+            strategy.entry("Asia L", strategy.long, comment="Asia BUY")
+            strategy.exit("Asia L SL/TP", from_entry="Asia L", stop=slPx, limit=tpPx)
+            asiaEnteredToday := true
+    // BEAR breakout
+    else if close < asiaBoxLo and (asiaBoxLo - close) >= bodyThr and anyBear(open[1], high[1], low[1], close[1], open, high, low, close)
+        slPx = asiaBoxHi + slDist
+        tpPx = close - asiaTpMult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if not (useMaxSl and slDistFromEntry > asiaMaxSlPts)
+            strategy.entry("Asia S", strategy.short, comment="Asia SELL")
+            strategy.exit("Asia S SL/TP", from_entry="Asia S", stop=slPx, limit=tpPx)
+            asiaEnteredToday := true
+
+// ─── LONDON entry logic ────────────────────────────────────────────────────
+inLondonTradingWindow = mod >= lonStart and mod < lonSessionEndH * 60
+if showLondon and inLondonTradingWindow and not na(lonBoxHi) and not lonEnteredToday
+    bw       = lonBoxHi - lonBoxLo
+    bodyThr  = lonBodyPct * bw
+    slDist   = math.max(lonMinSl, lonSlBoxMult * bw)
+    if close > lonBoxHi and (close - lonBoxHi) >= bodyThr and anyBull(open[1], high[1], low[1], close[1], open, high, low, close)
+        slPx = lonBoxLo - slDist
+        tpPx = close + lonTpMult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if not (useMaxSl and slDistFromEntry > lonMaxSlPts)
+            strategy.entry("Lon L", strategy.long, comment="Lon BUY")
+            strategy.exit("Lon L SL/TP", from_entry="Lon L", stop=slPx, limit=tpPx)
+            lonEnteredToday := true
+    else if close < lonBoxLo and (lonBoxLo - close) >= bodyThr and anyBear(open[1], high[1], low[1], close[1], open, high, low, close)
+        slPx = lonBoxHi + slDist
+        tpPx = close - lonTpMult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if not (useMaxSl and slDistFromEntry > lonMaxSlPts)
+            strategy.entry("Lon S", strategy.short, comment="Lon SELL")
+            strategy.exit("Lon S SL/TP", from_entry="Lon S", stop=slPx, limit=tpPx)
+            lonEnteredToday := true
+
+// ─── NY entry logic ────────────────────────────────────────────────────────
+inNYTradingWindow = mod >= nyStart and mod < nySessionEndH * 60
+if showNY and inNYTradingWindow and not na(nyBoxHi) and not nyEnteredToday
+    bw       = nyBoxHi - nyBoxLo
+    bodyThr  = nyBodyPct * bw
+    slDist   = math.max(nyMinSl, nySlBoxMult * bw)
+    if close > nyBoxHi and (close - nyBoxHi) >= bodyThr and anyBull(open[1], high[1], low[1], close[1], open, high, low, close)
+        slPx = nyBoxLo - slDist
+        tpPx = close + nyTpMult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if not (useMaxSl and slDistFromEntry > nyMaxSlPts)
+            strategy.entry("NY L", strategy.long, comment="NY BUY")
+            strategy.exit("NY L SL/TP", from_entry="NY L", stop=slPx, limit=tpPx)
+            nyEnteredToday := true
+    else if close < nyBoxLo and (nyBoxLo - close) >= bodyThr and anyBear(open[1], high[1], low[1], close[1], open, high, low, close)
+        slPx = nyBoxHi + slDist
+        tpPx = close - nyTpMult * slDist
+        slDistFromEntry = math.abs(close - slPx)
+        if not (useMaxSl and slDistFromEntry > nyMaxSlPts)
+            strategy.entry("NY S", strategy.short, comment="NY SELL")
+            strategy.exit("NY S SL/TP", from_entry="NY S", stop=slPx, limit=tpPx)
+            nyEnteredToday := true
+
+// ─── Visual entry markers ──────────────────────────────────────────────────
+if showSignals and strategy.position_size != 0 and strategy.position_size[1] == 0
+    isLong = strategy.position_size > 0
+    label.new(bar_index, isLong ? low : high,
+         text  = isLong ? "BUY" : "SELL",
+         color = isLong ? color.green : color.red,
+         textcolor = color.white,
+         style = isLong ? label.style_label_up : label.style_label_down,
+         size  = size.small)
