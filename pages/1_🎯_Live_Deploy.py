@@ -207,6 +207,10 @@ with c1:
     4. Click **Save** → "PT Box e20d"
     5. Click **Add to chart**
     6. Right-click chart → Settings → Timezone → **New York (UTC-4)**
+
+    **🆕 2026-05-04 v6 update:** fixed 500-bar `xloc.bar_index` error,
+    upgraded to Pine v6, added **live stats panel** (W/L/Chop/WR/PnL/RR/Attempt/Dir/InTrade
+    per session). If you have v5 from before — delete & re-paste latest.
     """)
 
 with c2:
