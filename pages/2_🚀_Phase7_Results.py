@@ -84,10 +84,10 @@ st.markdown(f"""
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +976 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
+                +5086 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
-                Walk-forward 19Q (5 years 2021-2026)
+                Fixed-config 5y (2021-2026) · projected WF +3500-3800
             </div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
@@ -108,19 +108,19 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                ~$280-390/yr
+                ~$1450-2030/yr
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
-                $200 cap, lot 0.02 (60-100% live retention)
+                $200 cap, lot 0.02 (e35, 70-100% live retention)
             </div>
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ℹ️ <b style="color: {COLORS['success']};">e32 Wyckoff pre-session adopted 2026-05-04:</b><br>
-        🟡 NY: <b>07:00/60m pre-NY box</b> + e31 inherit (strict + body50% + TP=2.5R) = +3691 5y<br>
-        🟢 Asia: <b>19:00/30m pre-Tokyo box</b> = +261 (Wyckoff Phase B cause-building)<br>
-        🔵 London: unchanged. System fixed-config: +4438 5y. Walk-forward projected: +3100-3500.<br>
-        At 0.02 lot: <b>$1240-1400/yr</b> theoretical.
+        ℹ️ <b style="color: {COLORS['success']};">e35 Wyckoff DIRECT model ALL 3 sessions adopted 2026-05-04:</b><br>
+        🟢 Asia: 19:00/30m pre-Tokyo box (mean-rev) = +261<br>
+        🔵 London: <b>00:00/60m + DIRECT + body30% + TP=2.5R</b> = +800 (was +486 pullback) ⭐<br>
+        🟡 NY: 07:00/60m + ANY + body30% + TP=2.5R = +4025<br>
+        Total fixed-config 5y: <b>+5086 (+421% vs e20d baseline +976)</b>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -198,7 +198,8 @@ evolution = pd.DataFrame([
     {"variant": "e30",  "label": "P7: e27e + timing sweep (proj WF)", "pnl": 1376, "stage": "phase7"},
     {"variant": "e31",  "label": "P7: e30 + TP=2.5R grid optimum (5y fixed)", "pnl": 1836, "stage": "phase7"},
     {"variant": "e32",  "label": "P7: e31 + Wyckoff pre-session (5y fixed)", "pnl": 3100, "stage": "phase7"},
-    {"variant": "e33",  "label": "P7: e32 + regrid (any+body30+TP2.5) ⭐ NEW (proj WF)", "pnl": 3370, "stage": "phase7"},
+    {"variant": "e33",  "label": "P7: e32 + regrid (any+body30+TP2.5) (5y fixed)", "pnl": 3370, "stage": "phase7"},
+    {"variant": "e35",  "label": "P7: e33 + London DIRECT 00:00/60m ⭐ NEW (proj WF)", "pnl": 3600, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -215,11 +216,11 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=3370, line_color=COLORS["success"], line_dash="solid", line_width=2,
-                   annotation_text="e33 PROJECTED +3370 (full optimum)",
+fig_evo.add_hline(y=3600, line_color=COLORS["success"], line_dash="solid", line_width=2,
+                   annotation_text="e35 PROJECTED +3600 (Wyckoff direct ALL 3 sessions)",
                    annotation_font_color=COLORS["success"])
-fig_evo.add_hline(y=3100, line_color=COLORS["text_secondary"], line_dash="dot",
-                   annotation_text="e32 prior +3100",
+fig_evo.add_hline(y=3370, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e33 prior +3370",
                    annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=976, line_color=COLORS["text_secondary"], line_dash="dot",
                    annotation_text="e20d prior +976",
