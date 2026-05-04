@@ -12,8 +12,14 @@
 //   - Timeframe: M1 (preferred) or M5
 //   - Symbol: XAUUSD
 //
-// 2026-05-04 v4: dynamic-length SL/TP lines (extend entry→exit bar)
-//                + W/L exit markers · trade lifecycle visible on scroll-back
+// 2026-05-04 v5: thicker SL/TP lines + persistent price annotations
+//                + entry price in entry label · clear "where to set SL/TP"
+//
+// ENTRY TIMING (LIVE):
+//   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
+//   - Realistic live entry: OPEN of NEXT candle (1 bar after alert)
+//   - Backtest assumes entry @ close[N] (zero slippage for engine truth)
+//   - Live slippage ~0-2 pts vs backtest is normal
 // ═══════════════════════════════════════════════════════════════════════════
 indicator("PT Box e20d (Phase 7 baseline)", overlay = true,
      max_boxes_count   = 500,
@@ -366,10 +372,33 @@ if inLookback
     nyNetPL        += nyP
 
 // ─── Entry helpers ─────────────────────────────────────────────────────────
-mkEntryLines(slPx, tpPx, slCol, tpCol) =>
-    slL = showLevels ? line.new(bar_index, slPx, bar_index, slPx, color = slCol, width = 1, style = line.style_dashed) : na
-    tpL = showLevels ? line.new(bar_index, tpPx, bar_index, tpPx, color = tpCol, width = 1, style = line.style_solid)  : na
-    entL = showLevels ? line.new(bar_index, (slPx + tpPx) / 2.0, bar_index, (slPx + tpPx) / 2.0, color = color.new(color.gray, 50), width = 1, style = line.style_dotted) : na
+// Creates SL line (red, dashed, width 2), TP line (green, solid, width 2),
+// entry midline (gray, dotted, width 1), and PERSISTENT price annotations
+// at entry bar so SL/TP price levels always visible without hovering label
+mkEntryLines(slPx, tpPx, entryPx, slCol, tpCol) =>
+    slL  = showLevels ? line.new(bar_index, slPx,   bar_index, slPx,    color = slCol,                       width = 2, style = line.style_dashed) : na
+    tpL  = showLevels ? line.new(bar_index, tpPx,   bar_index, tpPx,    color = tpCol,                       width = 2, style = line.style_solid)  : na
+    entL = showLevels ? line.new(bar_index, entryPx, bar_index, entryPx, color = color.new(color.white, 30), width = 1, style = line.style_dotted) : na
+    // Persistent price annotation labels at entry bar
+    if showLevels
+        label.new(x = bar_index, y = slPx,
+             text      = "SL " + str.tostring(slPx, "#.##"),
+             color     = color.new(color.red, 70),
+             textcolor = color.red,
+             style     = label.style_label_left,
+             size      = size.tiny)
+        label.new(x = bar_index, y = tpPx,
+             text      = "TP " + str.tostring(tpPx, "#.##"),
+             color     = color.new(color.green, 70),
+             textcolor = color.green,
+             style     = label.style_label_left,
+             size      = size.tiny)
+        label.new(x = bar_index, y = entryPx,
+             text      = "@ " + str.tostring(entryPx, "#.##"),
+             color     = color.new(color.white, 70),
+             textcolor = color.white,
+             style     = label.style_label_left,
+             size      = size.tiny)
     [slL, tpL, entL]
 
 drawEntryLabel(txt, ypos, isLong, col) =>
@@ -402,9 +431,9 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
                 boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
                 slPx   = asiaExtreme + asiaSlBuffer
                 tpPx   = boxMid
-                [slL, tpL, entL] = mkEntryLines(slPx, tpPx, color.red, color.green)
+                [slL, tpL, entL] = mkEntryLines(slPx, tpPx, close, color.red, color.green)
                 array.push(asiaOpen, Trade.new(close, slPx, tpPx, -1, bar_index, slL, tpL, entL))
-                drawEntryLabel("Asia Fade ▼\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), high, false, color.green)
+                drawEntryLabel("Asia Fade ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), high, false, color.green)
                 alert("Asia FADE SHORT @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
@@ -417,9 +446,9 @@ if showAsia and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
                 boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
                 slPx   = asiaExtreme - asiaSlBuffer
                 tpPx   = boxMid
-                [slL, tpL, entL] = mkEntryLines(slPx, tpPx, color.red, color.green)
+                [slL, tpL, entL] = mkEntryLines(slPx, tpPx, close, color.red, color.green)
                 array.push(asiaOpen, Trade.new(close, slPx, tpPx, 1, bar_index, slL, tpL, entL))
-                drawEntryLabel("Asia Fade ▲\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), low, true, color.green)
+                drawEntryLabel("Asia Fade ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP " + str.tostring(tpPx, "#.##"), low, true, color.green)
                 alert("Asia FADE LONG @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx), alert.freq_once_per_bar)
             asiaBkDir   := 0
             asiaExtreme := na
@@ -443,9 +472,9 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 tp2Px  = close + londonTp2Mult * slDist
                 londonTodayAtt += 1
                 londonHadEntry := true
-                [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, color.red, color.green)
+                [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, close, color.red, color.green)
                 array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL))
-                drawEntryLabel("London ▲\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.blue)
+                drawEntryLabel("London ▲\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.blue)
                 alert("London LONG @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
                 londonBkDir := 0
     else if londonBkDir == -1 and bar_index > londonBkBar
@@ -458,9 +487,9 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
                 tp2Px  = close - londonTp2Mult * slDist
                 londonTodayAtt += 1
                 londonHadEntry := true
-                [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, color.red, color.green)
+                [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, close, color.red, color.green)
                 array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL))
-                drawEntryLabel("London ▼\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.blue)
+                drawEntryLabel("London ▼\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.blue)
                 alert("London SHORT @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
                 londonBkDir := 0
 
@@ -475,9 +504,9 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         nyTodayAtt += 1
         nyHadEntry := true
         nyEntered  := true
-        [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, color.red, color.green)
+        [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, close, color.red, color.green)
         array.push(nyOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL))
-        drawEntryLabel("NY ▲ DIRECT\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.orange)
+        drawEntryLabel("NY ▲ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), low, true, color.orange)
         alert("NY DIRECT LONG @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
     else if close < nyBoxLo and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
@@ -488,9 +517,9 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
         nyTodayAtt += 1
         nyHadEntry := true
         nyEntered  := true
-        [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, color.red, color.green)
+        [slL, tpL, entL] = mkEntryLines(slPx, tp2Px, close, color.red, color.green)
         array.push(nyOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL))
-        drawEntryLabel("NY ▼ DIRECT\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.orange)
+        drawEntryLabel("NY ▼ DIRECT\n@ " + str.tostring(close, "#.##") + "\nSL " + str.tostring(slPx, "#.##") + "\nTP1 " + str.tostring(tp1Px, "#.##") + "\nTP2 " + str.tostring(tp2Px, "#.##"), high, false, color.orange)
         alert("NY DIRECT SHORT @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px), alert.freq_once_per_bar)
 
 // ─── Stats Panel ───────────────────────────────────────────────────────────

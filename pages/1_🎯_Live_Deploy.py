@@ -232,6 +232,9 @@ with c2:
     ```
     NY DIRECT SHORT @ 2360.10 | SL 2363.40 | TP1 2350.20
     ```
+
+    **⏱️ Entry timing:** Signal fires SAAT close confirmation candle.
+    Live entry = OPEN candle berikutnya (1 bar after alert). Slippage 0-2 pts vs backtest is normal.
     """)
 
 st.divider()
