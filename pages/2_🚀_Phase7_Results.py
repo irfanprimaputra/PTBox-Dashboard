@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 300+ variants tested · Current best: <b style="color: {COLORS['success']};">e35 (Wyckoff direct ALL 3 sessions)</b>
+        Engine integration · OOS validation · 400+ variants tested · Current best: <b style="color: {COLORS['success']};">e36 (Asia DIRECT breakthrough)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -79,12 +79,12 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e35 (Wyckoff direct ALL 3 sessions)
+        ⭐ Current Best · e36 (ALL DIRECT — Asia switches from mean-rev)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +5086 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
+                +8192 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
                 Fixed-config 5y (2021-2026) · projected WF +3500-3800
@@ -108,7 +108,7 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                ~$1450-2030/yr
+                ~$2300-3300/yr
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
                 $200 cap, lot 0.02 (e35, 70-100% live retention)
@@ -116,11 +116,11 @@ st.markdown(f"""
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ℹ️ <b style="color: {COLORS['success']};">e35 Wyckoff DIRECT model ALL 3 sessions adopted 2026-05-04:</b><br>
-        🟢 Asia: 19:00/30m pre-Tokyo box (mean-rev) = +261<br>
-        🔵 London: <b>00:00/60m + DIRECT + body30% + TP=2.5R</b> = +800 (was +486 pullback) ⭐<br>
-        🟡 NY: 07:00/60m + ANY + body30% + TP=2.5R = +4025<br>
-        Total fixed-config 5y: <b>+5086 (+421% vs e20d baseline +976)</b>
+        ℹ️ <b style="color: {COLORS['success']};">e36 ALL-DIRECT MODEL adopted 2026-05-04:</b><br>
+        🟢 Asia: <b>switched mean-rev → DIRECT</b> @ 18:00/90m + body0% + SL=0.7×bw + TP=1.5R = <b>+1667</b> ⭐ (was +266)<br>
+        🔵 London: 00:00/60m DIRECT + body20% + TP=2.0R = +2500 (was +800)<br>
+        🟡 NY: 07:00/60m + ANY + body30% + TP=2.5R = +4025 (unchanged e33)<br>
+        Total fixed-config 5y: <b>+8192 (+740% vs e20d baseline +976)</b>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -132,9 +132,9 @@ st.markdown("<h2>📍 Per-Session Breakdown (e20d)</h2>", unsafe_allow_html=True
 
 c1, c2, c3 = st.columns(3)
 sessions_e20d = [
-    ("🟢 Asia", "Pre-Tokyo 19:00/30m + mean-rev A2-fail ⭐ e32", 261, 24, 68),
-    ("🔵 London", "Pre-London 00:00/60m + DIRECT + body30% + TP=2.5R ⭐ e35", 800, 468, 55),
-    ("🟡 NY", "Pre-NY 07:00/60m + ANY + body30% + TP=2.5R ⭐ e33", 4025, -117, 58),
+    ("🟢 Asia", "18:00/90m + DIRECT + body0% + SL=0.7×bw + TP=1.5R ⭐ e36", 1667, 24, 62),
+    ("🔵 London", "00:00/60m + DIRECT + body20% + TP=2.0R ⭐ e36", 2500, 468, 63),
+    ("🟡 NY", "07:00/60m + ANY + body30% + TP=2.5R ⭐ e33", 4025, -117, 58),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
     delta = pnl - e013_ref
@@ -199,7 +199,8 @@ evolution = pd.DataFrame([
     {"variant": "e31",  "label": "P7: e30 + TP=2.5R grid optimum (5y fixed)", "pnl": 1836, "stage": "phase7"},
     {"variant": "e32",  "label": "P7: e31 + Wyckoff pre-session (5y fixed)", "pnl": 3100, "stage": "phase7"},
     {"variant": "e33",  "label": "P7: e32 + regrid (any+body30+TP2.5) (5y fixed)", "pnl": 3370, "stage": "phase7"},
-    {"variant": "e35",  "label": "P7: e33 + London DIRECT 00:00/60m ⭐ NEW (proj WF)", "pnl": 3600, "stage": "phase7"},
+    {"variant": "e35",  "label": "P7: e33 + London DIRECT 00:00/60m (5y fixed)", "pnl": 3600, "stage": "phase7"},
+    {"variant": "e36",  "label": "P7: ALL DIRECT (Asia/London/NY) ⭐ NEW (proj WF)", "pnl": 5734, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -216,11 +217,11 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=3600, line_color=COLORS["success"], line_dash="solid", line_width=2,
-                   annotation_text="e35 PROJECTED +3600 (Wyckoff direct ALL 3 sessions)",
+fig_evo.add_hline(y=5734, line_color=COLORS["success"], line_dash="solid", line_width=2,
+                   annotation_text="e36 PROJECTED +5734 (ALL DIRECT model)",
                    annotation_font_color=COLORS["success"])
-fig_evo.add_hline(y=3370, line_color=COLORS["text_secondary"], line_dash="dot",
-                   annotation_text="e33 prior +3370",
+fig_evo.add_hline(y=3600, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e35 prior +3600",
                    annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=976, line_color=COLORS["text_secondary"], line_dash="dot",
                    annotation_text="e20d prior +976",
