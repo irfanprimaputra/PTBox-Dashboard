@@ -664,8 +664,8 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
             drawEntryMarker(false, color.orange)
             alert("🔴 SELL NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
 
-// ─── Stats Panel ───────────────────────────────────────────────────────────
-if showStatsPanel and barstate.islast
+// ─── Stats Panel (always visible, updates every bar so works during replay) ─
+if showStatsPanel
     var table stats = table.new(position.top_right, 4, 13,
          bgcolor      = color.new(color.black, 70),
          border_color = color.new(color.purple, 50),
