@@ -54,12 +54,13 @@ capUsd           = input.float(200,  "Account capital (USD)",                   
 riskPerTradeUsd  = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
 showLotSuggest   = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
 
-// ─── e30 Asia (mean-rev + LATE-window 21:30 / 15min — timing optimized) ────
-// e30 timing sweep: 21:30/15m = +175 (was +91 at 21:00/7m), Δ +84 fixed-config
-g_asia          = "🟢 Asia (e30 timing optimized)"
-asiaBoxStartH   = input.int  (21,  "Box start hour (ET)", minval = 0, maxval = 23, group = g_asia)
-asiaBoxStartM   = input.int  (30,  "Box start minute",    minval = 0, maxval = 59, group = g_asia)
-asiaBoxDur      = input.int  (15,  "Box duration (min)",  minval = 1, maxval = 60, group = g_asia)
+// ─── e32 Asia (PRE-Tokyo cause-building 19:00 / 30min) ────────────────────
+// e32 Wyckoff Phase B: box BEFORE official Tokyo open captures cause-building
+// 19:00/30m = +261 (was +175 at 21:30/15m), Δ +86 fixed-config
+g_asia          = "🟢 Asia (e32 Wyckoff Phase B pre-Tokyo)"
+asiaBoxStartH   = input.int  (19,  "Box start hour (ET)", minval = 0, maxval = 23, group = g_asia)
+asiaBoxStartM   = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_asia)
+asiaBoxDur      = input.int  (30,  "Box duration (min)",  minval = 1, maxval = 60, group = g_asia)
 asiaSessionEndH = input.int  (23,  "Session end hour (ET)", minval = 0, maxval = 23, group = g_asia)
 asiaSlBuffer    = input.float(1.0, "SL buffer (pts) above breakout extreme", group = g_asia)
 asiaMaxAttempt  = input.int  (5,   "Max attempts (adaptive 1W or 2L stops)", group = g_asia)
@@ -76,17 +77,19 @@ londonTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
 londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
 
-// ─── e31 NY (FULL OPTIMIZED: timing + pattern + body + R:R) ────────────────
+// ─── e32 NY (PRE-NY 07:00/60m + e31 strict+body50%+TP2.5R) ─────────────────
 // Iteration journey:
 //   baseline (any pat, 9:03/5m, TP=6R):    +1108
 //   e27e (strict + body50%):               +1422 (Δ +314)
 //   e30 (+ timing 9:07/10m):               +1662 (Δ +240)
-//   e31 (+ TP=2.5R from grid search):      +2964 (Δ +1302) ⭐
-// Total 5y: +1856 swing, 60.3% WR, 771 trades
-g_ny             = "🟡 NY (e31 grid-optimized — TP=2.5R)"
-nyBoxStartH      = input.int  (9,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
-nyBoxStartM      = input.int  (7,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
-nyBoxDur         = input.int  (10,  "Box duration (min)",  minval = 1, maxval = 60, group = g_ny)
+//   e31 (+ TP=2.5R from grid search):      +2964 (Δ +1302)
+//   e32 (+ pre-NY 07:00/60m box):          +3691 (Δ +727) ⭐
+// Total 5y: +2583 swing, 61.6% WR, 743 trades
+// Wyckoff: 07:00 ET = London-NY overlap, Phase B cause-building before NY surge
+g_ny             = "🟡 NY (e32 pre-NY 07:00/60m + e31 inherit)"
+nyBoxStartH      = input.int  (7,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
+nyBoxStartM      = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
+nyBoxDur         = input.int  (60,  "Box duration (min)",  minval = 1, maxval = 120, group = g_ny)
 nySessionEndH    = input.int  (12,  "Session end hour (ET)", group = g_ny)
 nySlBoxMult      = input.float(0.5, "SL = X × box_width", group = g_ny)
 nyTp1Mult        = input.float(1.5, "TP1 = X × SL", group = g_ny)

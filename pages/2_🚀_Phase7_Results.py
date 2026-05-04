@@ -57,7 +57,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · OOS validation · 150+ variants tested · Current best: <b style="color: {COLORS['success']};">e31 (full grid-optimized)</b>
+        Engine integration · OOS validation · 200+ variants tested · Current best: <b style="color: {COLORS['success']};">e32 (Wyckoff pre-session)</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
