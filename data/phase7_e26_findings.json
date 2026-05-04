@@ -1,0 +1,28 @@
+{
+  "generated": "2026-05-04T15:30:00",
+  "test_period": "2024-01-01 to 2026-04-10 (2.3 years recent regime)",
+  "baseline_reference": {
+    "ny_baseline_2.3y": 1214.6,
+    "asia_baseline_2.3y": 100.2
+  },
+  "ny_winners": [
+    {"variant": "NY-2a+1 body30 + strict", "pnl_2.3y": 1384.9, "delta": "+170", "wr": 29.0, "trades": 369, "verdict": "PRIME CANDIDATE"},
+    {"variant": "NY-2a body close >=30% bw", "pnl_2.3y": 1358.8, "delta": "+144", "wr": 27.8, "trades": 388, "verdict": "STRONG"},
+    {"variant": "NY-2b body close >=50% bw", "pnl_2.3y": 1338.0, "delta": "+123", "wr": 28.4, "trades": 366, "verdict": "STRONG"},
+    {"variant": "NY-1 strict pattern", "pnl_2.3y": 1247.5, "delta": "+33", "wr": 25.5, "trades": 408, "verdict": "MARGINAL"}
+  ],
+  "ny_losers": [
+    {"variant": "NY-3 Silver Bullet 10-11", "pnl": 886.8, "delta": "-328", "verdict": "TOO RESTRICTIVE"},
+    {"variant": "NY-5 min_bw=5pt", "pnl": 872.6, "delta": "-342", "verdict": "TOO RESTRICTIVE"}
+  ],
+  "asia_winners": [
+    {"variant": "A-6 short box dur=5", "pnl": 88.6, "delta": "-12", "verdict": "TIED"},
+    {"variant": "A-4c max_sl_dist=30", "pnl": 52.6, "delta": "-48", "verdict": "ACCEPTABLE FOR LIVE FILTER ALIGNMENT"}
+  ],
+  "asia_losers": [
+    {"variant": "A-1 narrow_box max_bw=8", "delta": "-62"},
+    {"variant": "A-2 TP=opposite_edge", "verdict": "DEGENERATE (SL > distance)"},
+    {"variant": "A-3 Pre-London 22:00", "delta": "-118"}
+  ],
+  "next_action": "Implement NY-2a+1 (body30 + strict pattern) in walk-forward 19Q test as e27 candidate"
+}

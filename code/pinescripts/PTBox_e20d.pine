@@ -75,17 +75,22 @@ londonTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
 londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
 
-// ─── NY (direct breakout + pattern-at-breakout) ────────────────────────────
-g_ny          = "🟡 NY (direct breakout + pattern)"
-nyBoxStartH   = input.int  (9,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
-nyBoxStartM   = input.int  (3,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
-nyBoxDur      = input.int  (5,   "Box duration (min)",  minval = 1, maxval = 60, group = g_ny)
-nySessionEndH = input.int  (12,  "Session end hour (ET)", group = g_ny)
-nySlBoxMult   = input.float(0.5, "SL = X × box_width", group = g_ny)
-nyTp1Mult     = input.float(3.0, "TP1 = X × SL", group = g_ny)
-nyTp2Mult     = input.float(6.0, "TP2 = X × SL", group = g_ny)
-nyMinSl       = input.float(3.0, "Min SL (pts)", group = g_ny)
-nyMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_ny)
+// ─── NY (direct breakout + STRICT pattern + BODY CLOSE confirm) ────────────
+// e27e variant: strict pattern (pin/engulf only, no inside_bar) + body close
+// must be >=50% of box_width above boxHi (or below boxLo for short)
+// Backtest 5y: +1422 pts vs +1108 baseline (Δ +314 swing) ⭐
+g_ny             = "🟡 NY (e27e strict + body50%)"
+nyBoxStartH      = input.int  (9,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
+nyBoxStartM      = input.int  (3,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
+nyBoxDur         = input.int  (5,   "Box duration (min)",  minval = 1, maxval = 60, group = g_ny)
+nySessionEndH    = input.int  (12,  "Session end hour (ET)", group = g_ny)
+nySlBoxMult      = input.float(0.5, "SL = X × box_width", group = g_ny)
+nyTp1Mult        = input.float(3.0, "TP1 = X × SL", group = g_ny)
+nyTp2Mult        = input.float(6.0, "TP2 = X × SL", group = g_ny)
+nyMinSl          = input.float(3.0, "Min SL (pts)", group = g_ny)
+nyMaxAttempt     = input.int  (3,   "Max attempts/day", group = g_ny)
+nyBodyClosePct   = input.float(0.50,"NY body close confirm (% box width)", minval = 0.0, maxval = 1.0, step = 0.05, group = g_ny)
+nyStrictPattern  = input.bool (true,"NY strict pattern (no inside_bar)", group = g_ny)
 
 // ─── Pattern detection ─────────────────────────────────────────────────────
 isBullPin(o, h, l, c) =>
@@ -109,6 +114,20 @@ anyBullPattern(po, ph, pl, pc, o, h, l, c) =>
 
 anyBearPattern(po, ph, pl, pc, o, h, l, c) =>
     isBearPin(o, h, l, c) or isBearEngulf(po, pc, o, c) or isInsideBar(ph, pl, h, l)
+
+// e27e strict: drop inside_bar (weakest pattern, kills filter quality)
+strictBullPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBullPin(o, h, l, c) or isBullEngulf(po, pc, o, c)
+
+strictBearPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBearPin(o, h, l, c) or isBearEngulf(po, pc, o, c)
+
+// NY pattern selector (toggle strict vs any)
+nyBullPattern(po, ph, pl, pc, o, h, l, c) =>
+    nyStrictPattern ? strictBullPattern(po, ph, pl, pc, o, h, l, c) : anyBullPattern(po, ph, pl, pc, o, h, l, c)
+
+nyBearPattern(po, ph, pl, pc, o, h, l, c) =>
+    nyStrictPattern ? strictBearPattern(po, ph, pl, pc, o, h, l, c) : anyBearPattern(po, ph, pl, pc, o, h, l, c)
 
 // ─── Time helpers ──────────────────────────────────────────────────────────
 minuteOfDayET() => hour(time, "America/New_York") * 60 + minute(time, "America/New_York")
@@ -627,7 +646,11 @@ if showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAt
 
 // ─── NY entry: direct breakout + pattern-at-breakout ───────────────────────
 if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyTodayAtt < nyMaxAttempt
-    if close > nyBoxHi and anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+    bw_ny      = nyBoxHi - nyBoxLo
+    bodyThresh = nyBodyClosePct * bw_ny
+    bullBkBody = close > nyBoxHi and (close - nyBoxHi) >= bodyThresh
+    bearBkBody = close < nyBoxLo and (nyBoxLo - close) >= bodyThresh
+    if bullBkBody and nyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
         slDist = math.max(nyMinSl, nySlBoxMult * bw)
         slPx   = nyBoxLo - slDist
@@ -645,7 +668,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
             array.push(nyOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
             drawEntryMarker(true, color.orange)
             alert("🟢 BUY NY Direct @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
-    else if close < nyBoxLo and anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+    else if bearBkBody and nyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
         bw     = nyBoxHi - nyBoxLo
         slDist = math.max(nyMinSl, nySlBoxMult * bw)
         slPx   = nyBoxHi + slDist
