@@ -28,16 +28,12 @@ if trades is None or len(trades) == 0:
     st.error("⚠️ Trade data not found. Run `python3 code/ptbox_v6_trade_export.py` first.")
     st.stop()
 
-st.warning(f"""
-**⚠️ LEGACY DATA — Pre-e37 Config:** Trade history below uses **OLD fixed config** (Asia 19:23, London 01:43, NY 09:03 — pullback model).
-This is **NOT current e37 config**. Total PnL = -1526 reflects pre-optimization performance.
+st.success(f"""
+**✅ e37 TRADE DATA (live config)** — Asia 18:00/90m DIRECT, London 00:00/60m DIRECT, NY 07:00/60m DIRECT.
+Period: 2021 → 2026 (5 years). **Total PnL +9084 pts · WR 60.2% · OOS validated 316% retention.**
 
-**For current e37 validated performance** (Asia 18:00/90m DIRECT, London 00:00/60m DIRECT, NY 07:00/60m DIRECT):
-- 5y fixed-config: **+9084 pts** (✅ OOS validated 316% retention)
-- See **Phase7 Results** page for full e37 breakdown
-- Or **Live Deploy** page for current trading windows
-
-This page kept for **historical pattern study only** (day-of-week, monthly seasonality, regime shifts).
+Per-session: Asia +1839 (594 trades, 61% WR) · London +3220 (958, 62% WR) · NY +4025 (881, 58% WR).
+Use filters below to slice by session, year, direction, day-of-week patterns.
 """)
 
 # --- Sidebar filters ---

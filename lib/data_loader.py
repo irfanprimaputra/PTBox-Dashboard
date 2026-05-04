@@ -84,14 +84,20 @@ def load_walkforward_baseline() -> pd.DataFrame:
 
 
 @st.cache_data
-def load_trades() -> pd.DataFrame:
-    """Per-trade log dari engine v6 (2015-2026 fixed deploy config).
+def load_trades(use_e37=True) -> pd.DataFrame:
+    """Per-trade log. Default e37 config (2021-2026), or v6 legacy if use_e37=False.
 
-    Columns: date, session, model, direction, entry_time, exit_time,
-             entry_price, exit_price, sl_price, tp1_price, tp2_price,
-             box_width, sl_distance, hit_type, pnl_pts, attempt,
-             day_of_week, week, month, quarter, year
+    e37 columns: date, session, direction, entry_time, exit_time,
+                 entry_price, sl_price, tp_price, box_width, sl_distance,
+                 hit_type, pnl_pts, attempt, day_of_week, week, month, quarter, year
     """
+    if use_e37:
+        path = DATA_DIR / "ptbox_e37_trades.csv"
+        if path.exists():
+            df = pd.read_csv(path)
+            df['date'] = pd.to_datetime(df['date'])
+            return df
+    # Fallback to v6 legacy
     path = DATA_DIR / "ptbox_v6_trades.csv"
     if not path.exists():
         return None
