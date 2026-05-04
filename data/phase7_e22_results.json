@@ -1,0 +1,55 @@
+{
+  "generated": "2026-05-04T09:44:50.793408",
+  "e20d_baseline_asia": 182.0,
+  "target_asia": 300.0,
+  "variants": [
+    {
+      "label": "e22a \u00b7 Asia direct breakout (full window, no pattern)",
+      "total_19q": 166.6,
+      "asia_pnl": -627.3,
+      "asia_delta_e20d": -809.3,
+      "total_recent": 519.1,
+      "by_session": {
+        "Asia": -627.3,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e22b \u00b7 Asia direct + pattern-at-breakout (full window)",
+      "total_19q": 461.3999999999999,
+      "asia_pnl": -332.5,
+      "asia_delta_e20d": -514.5,
+      "total_recent": 762.0,
+      "by_session": {
+        "Asia": -332.5,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e22c \u00b7 Asia direct + pattern (late 21-23 ET)",
+      "total_19q": 822.3000000000001,
+      "asia_pnl": 28.399999999999977,
+      "asia_delta_e20d": -153.60000000000002,
+      "total_recent": 864.3,
+      "by_session": {
+        "Asia": 28.399999999999977,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e22d \u00b7 Asia direct + pattern (Tokyo open 19-21 ET)",
+      "total_19q": 161.29999999999993,
+      "asia_pnl": -632.6,
+      "asia_delta_e20d": -814.6,
+      "total_recent": 651.9,
+      "by_session": {
+        "Asia": -632.6,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    }
+  ]
+}
