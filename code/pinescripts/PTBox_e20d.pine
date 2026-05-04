@@ -810,15 +810,16 @@ if showStatsPanel
     table.cell(stats, 2, 0, "LONDON",  text_color = color.aqua,   bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 3, 0, "NY",      text_color = color.orange, bgcolor = color.new(color.purple, 60), text_size = size.small)
 
+    // Win/Loss: gray when 0 (no trades), green/red when actually present
     table.cell(stats, 0, 1, "Win", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 1, str.tostring(asiaW_d),   text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 2, 1, str.tostring(londonW_d), text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 3, 1, str.tostring(nyW_d),     text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 1, 1, str.tostring(asiaW_d),   text_color = asiaW_d   > 0 ? color.lime : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 1, str.tostring(londonW_d), text_color = londonW_d > 0 ? color.lime : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 1, str.tostring(nyW_d),     text_color = nyW_d     > 0 ? color.lime : color.gray, text_size = size.tiny)
 
     table.cell(stats, 0, 2, "Loss", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 2, str.tostring(asiaL_d),   text_color = color.red, text_size = size.tiny)
-    table.cell(stats, 2, 2, str.tostring(londonL_d), text_color = color.red, text_size = size.tiny)
-    table.cell(stats, 3, 2, str.tostring(nyL_d),     text_color = color.red, text_size = size.tiny)
+    table.cell(stats, 1, 2, str.tostring(asiaL_d),   text_color = asiaL_d   > 0 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 2, str.tostring(londonL_d), text_color = londonL_d > 0 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 2, str.tostring(nyL_d),     text_color = nyL_d     > 0 ? color.red : color.gray, text_size = size.tiny)
 
     // Chop in TODAY mode = is today's session already chopped (session passed, no entry)
     asiaChopShow   = isToday ? (mod >= asiaSessionEndH   * 60 and not asiaHadEntry   ? 1 : 0) : asiaChopDays
@@ -832,15 +833,26 @@ if showStatsPanel
     asiaWR   = asiaW_d   + asiaL_d   > 0 ? 100.0 * asiaW_d   / (asiaW_d   + asiaL_d)   : 0.0
     londonWR = londonW_d + londonL_d > 0 ? 100.0 * londonW_d / (londonW_d + londonL_d) : 0.0
     nyWR     = nyW_d     + nyL_d     > 0 ? 100.0 * nyW_d     / (nyW_d     + nyL_d)     : 0.0
+    // Win Rate: gray if no trades, green if >=50%, red if <50%
+    asiaWRcol   = (asiaW_d   + asiaL_d)   == 0 ? color.gray : (asiaWR   >= 50 ? color.lime : color.red)
+    londonWRcol = (londonW_d + londonL_d) == 0 ? color.gray : (londonWR >= 50 ? color.lime : color.red)
+    nyWRcol     = (nyW_d     + nyL_d)     == 0 ? color.gray : (nyWR     >= 50 ? color.lime : color.red)
     table.cell(stats, 0, 4, "Win Rate", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 4, str.tostring(asiaWR,   "#.#") + "%", text_color = asiaWR   >= 50 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 2, 4, str.tostring(londonWR, "#.#") + "%", text_color = londonWR >= 50 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 3, 4, str.tostring(nyWR,     "#.#") + "%", text_color = nyWR     >= 50 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 1, 4, str.tostring(asiaWR,   "#.#") + "%", text_color = asiaWRcol,   text_size = size.tiny)
+    table.cell(stats, 2, 4, str.tostring(londonWR, "#.#") + "%", text_color = londonWRcol, text_size = size.tiny)
+    table.cell(stats, 3, 4, str.tostring(nyWR,     "#.#") + "%", text_color = nyWRcol,     text_size = size.tiny)
 
+    // Net P&L: explicit +/- prefix, gray when 0 (no trades), green if profit, red if loss
+    asiaPLstr   = asiaPL_d   == 0 ? "0.0"   : (asiaPL_d   > 0 ? "+" + str.tostring(asiaPL_d,   "#.#") : str.tostring(asiaPL_d,   "#.#"))
+    londonPLstr = londonPL_d == 0 ? "0.0"   : (londonPL_d > 0 ? "+" + str.tostring(londonPL_d, "#.#") : str.tostring(londonPL_d, "#.#"))
+    nyPLstr     = nyPL_d     == 0 ? "0.0"   : (nyPL_d     > 0 ? "+" + str.tostring(nyPL_d,     "#.#") : str.tostring(nyPL_d,     "#.#"))
+    asiaPLcol   = asiaPL_d   == 0 ? color.gray : (asiaPL_d   > 0 ? color.lime : color.red)
+    londonPLcol = londonPL_d == 0 ? color.gray : (londonPL_d > 0 ? color.lime : color.red)
+    nyPLcol     = nyPL_d     == 0 ? color.gray : (nyPL_d     > 0 ? color.lime : color.red)
     table.cell(stats, 0, 5, "Net P&L (pts)", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 5, str.tostring(asiaPL_d,   "#.#"), text_color = asiaPL_d   >= 0 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 2, 5, str.tostring(londonPL_d, "#.#"), text_color = londonPL_d >= 0 ? color.lime : color.red, text_size = size.tiny)
-    table.cell(stats, 3, 5, str.tostring(nyPL_d,     "#.#"), text_color = nyPL_d     >= 0 ? color.lime : color.red, text_size = size.tiny)
+    table.cell(stats, 1, 5, asiaPLstr,   text_color = asiaPLcol,   text_size = size.tiny)
+    table.cell(stats, 2, 5, londonPLstr, text_color = londonPLcol, text_size = size.tiny)
+    table.cell(stats, 3, 5, nyPLstr,     text_color = nyPLcol,     text_size = size.tiny)
 
     table.cell(stats, 0, 6, "RR (TP/SL)", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 6, "1:1.5",                                   text_color = color.white, text_size = size.tiny)
