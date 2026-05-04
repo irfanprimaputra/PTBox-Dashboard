@@ -79,7 +79,7 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e20d (Late-Asia 21-23 ET window restrict, e16b inherit)
+        ⭐ Current Best · e32 (Wyckoff pre-session boxes — Phase B detection)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
@@ -116,11 +116,11 @@ st.markdown(f"""
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ℹ️ <b style="color: {COLORS['success']};">e31 NY grid optimization adopted 2026-05-04:</b><br>
-        🟡 NY: e30 timing + body50% + <b>TP=2.5R</b> (was 6R) = +2964 5y (vs +1108 baseline, +168%)<br>
-        Trade-off: R:R 1:6 → 1:2.5, but WR 19% → 60.3% (Kelly-favorable).<br>
-        🟢 Asia: 21:30/15m timing (+84 swing). 🔵 London: unchanged.<br>
-        Projected system: +976 → +1800-2200 (84-125% improvement). Walk-forward refresh pending.
+        ℹ️ <b style="color: {COLORS['success']};">e32 Wyckoff pre-session adopted 2026-05-04:</b><br>
+        🟡 NY: <b>07:00/60m pre-NY box</b> + e31 inherit (strict + body50% + TP=2.5R) = +3691 5y<br>
+        🟢 Asia: <b>19:00/30m pre-Tokyo box</b> = +261 (Wyckoff Phase B cause-building)<br>
+        🔵 London: unchanged. System fixed-config: +4438 5y. Walk-forward projected: +3100-3500.<br>
+        At 0.02 lot: <b>$1240-1400/yr</b> theoretical.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -132,9 +132,9 @@ st.markdown("<h2>📍 Per-Session Breakdown (e20d)</h2>", unsafe_allow_html=True
 
 c1, c2, c3 = st.columns(3)
 sessions_e20d = [
-    ("🟢 Asia", "Mean-rev A2-fail + 21:30/15m timing ⭐ e30", 250, 24, 73),
+    ("🟢 Asia", "Pre-Tokyo 19:00/30m + mean-rev A2-fail ⭐ e32", 261, 24, 68),
     ("🔵 London", "Breakout-pullback + any_pattern (kept)", 486, 468, 0),
-    ("🟡 NY", "Direct + STRICT + body50% + TP=2.5R ⭐ e31", 1100, -117, 60),
+    ("🟡 NY", "Pre-NY 07:00/60m + STRICT + body50% + TP=2.5R ⭐ e32", 3691, -117, 62),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
     delta = pnl - e013_ref
@@ -196,7 +196,8 @@ evolution = pd.DataFrame([
     {"variant": "e23b", "label": "P7: Asia RANGE NY_prev (DISCONFIRMED)", "pnl": 807, "stage": "phase7"},
     {"variant": "e27e", "label": "P7: NY strict + body50% (proj WF)", "pnl": 1133, "stage": "phase7"},
     {"variant": "e30",  "label": "P7: e27e + timing sweep (proj WF)", "pnl": 1376, "stage": "phase7"},
-    {"variant": "e31",  "label": "P7: e30 + TP=2.5R grid optimum ⭐ NEW (proj WF)", "pnl": 1836, "stage": "phase7"},
+    {"variant": "e31",  "label": "P7: e30 + TP=2.5R grid optimum (5y fixed)", "pnl": 1836, "stage": "phase7"},
+    {"variant": "e32",  "label": "P7: e31 + Wyckoff pre-session ⭐ NEW (proj WF)", "pnl": 3100, "stage": "phase7"},
 ])
 
 # Line chart progression
@@ -213,11 +214,11 @@ fig_evo.add_trace(go.Bar(
     hovertemplate="<b>%{x}</b><br>%{customdata}<br>PnL: %{y:+.0f} pts<extra></extra>",
 ))
 fig_evo.add_hline(y=0, line_color=COLORS["text_secondary"], line_dash="dash")
-fig_evo.add_hline(y=1836, line_color=COLORS["success"], line_dash="solid", line_width=2,
-                   annotation_text="e31 PROJECTED +1836 (grid-optimized)",
+fig_evo.add_hline(y=3100, line_color=COLORS["success"], line_dash="solid", line_width=2,
+                   annotation_text="e32 PROJECTED +3100 (Wyckoff pre-session)",
                    annotation_font_color=COLORS["success"])
-fig_evo.add_hline(y=1376, line_color=COLORS["text_secondary"], line_dash="dot",
-                   annotation_text="e30 prior +1376",
+fig_evo.add_hline(y=1836, line_color=COLORS["text_secondary"], line_dash="dot",
+                   annotation_text="e31 prior +1836",
                    annotation_font_color=COLORS["text_secondary"])
 fig_evo.add_hline(y=976, line_color=COLORS["text_secondary"], line_dash="dot",
                    annotation_text="e20d prior +976",
