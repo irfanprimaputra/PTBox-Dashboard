@@ -19,6 +19,7 @@ import numpy as np
 # Add code dir to path so we can import v3/v4
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "code"))
+sys.path.insert(0, str(ROOT / "code" / "_archive"))  # legacy ptbox_quarterly_v4
 
 from ptbox_quarterly_v3 import (
     CONFIG, load_data, build_date_groups, BOX_QUALITY_VARIANTS,

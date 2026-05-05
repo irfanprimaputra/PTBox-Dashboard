@@ -1,0 +1,113 @@
+======================================================================================
+ PT BOX e37 — OUT-OF-SAMPLE VALIDATION REPORT
+ XAUUSD M1 · OOS Window
+======================================================================================
+ Data window (broker UTC): 2026-04-22 00:00 → 2026-04-27 00:00
+ Data window (ET, EDT)   : 2026-04-21 20:00 → 2026-04-26 20:00
+ Total M1 bars           : 4,132
+ ET trading days touched : 5  (2026-04-21, 2026-04-22, 2026-04-23, 2026-04-24, 2026-04-26)
+
+┌─ HEADLINE PERFORMANCE ─────────────────────────────────────────────────────────────┐
+│ Total trades opened     :      3                                                  │
+│ Closed (TP/SL hit)      :      3                                                  │
+│ Open at end-of-data     :      0  (mark-to-close included in PnL)            │
+│ Net PnL (points)        :   -34.13                                                │
+│ Win rate                :  33.33%                                                  │
+│ Avg win                 :    +7.39 pts                                            │
+│ Avg loss                :   -20.76 pts                                            │
+│ Expectancy / trade      :   -11.38 pts                                            │
+│ Profit factor           :   0.18                                                  │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ PER-SESSION BREAKDOWN ────────────────────────────────────────────────────────────┐
+│ Session  │  N  │  Wins │  Losses │  Net PnL │   WR   │ Avg Trade │ Profit Factor │
+├──────────┼─────┼───────┼─────────┼──────────┼────────┼───────────┼───────────────┤
+│ Asia     │   1 │     0 │       1 │   -27.12 │   0.0% │   -27.12  │   0.00        │
+│ London   │   2 │     1 │       1 │    -7.01 │  50.0% │    -3.50  │   0.51        │
+│ NY       │   0 │     0 │       0 │    +0.00 │   0.0% │    +0.00  │   0.00        │
+└──────────┴─────┴───────┴─────────┴──────────┴────────┴───────────┴───────────────┘
+
+┌─ HISTORICAL BENCHMARK (5y backtest 2021-2026) ─────────────────────────────────────┐
+│ Session   │  Hist 5y PnL │  Hist WR │  Daily expectation (5y avg, ~1255 days)       │
+├───────────┼──────────────┼──────────┼───────────────────────────────────────────────┤
+│ Asia      │      +1839   │   61.0%  │  ~1.46 pts/day                                │
+│ London    │      +3220   │   62.0%  │  ~2.57 pts/day                                │
+│ NY        │      +4025   │   58.0%  │  ~3.21 pts/day                                │
+│ TOTAL     │      +9084   │   60.1%  │  ~7.24 pts/day                                │
+└───────────┴──────────────┴──────────┴───────────────────────────────────────────────┘
+
+ This window: -34.13 pts across 5 ET days = -6.83 pts/day
+ 5y historical pace: +7.24 pts/day
+ Pace ratio (this window / 5y avg): -94%
+
+ ⚠️  STATISTICAL CAVEAT: This window has < 12 trade opportunities.
+    Treat as sanity check, NOT statistical validation. 5y backtest = 2,000+ trades.
+    A single big loss/win can swing this report by 100-200%.
+
+┌─ TRADE LEDGER (chronological) ─────────────────────────────────────────────────────┐
+│  # │ Session │ Dir │   Entry ET    │ Entry $  │   SL $   │   TP $   │ Risk │  Exit │ Reason │ PnL pts │
+├────┼─────────┼─────┼───────────────┼──────────┼──────────┼──────────┼──────┼───────┼────────┼─────────┤
+│  1 │ London  │ LONG │ 04-22 01:16 │  4761.68 │  4748.72 │  4769.07 │ 13.0 │ 4769.07 │ TP     │   +7.39 │
+│  2 │ London  │ LONG │ 04-23 01:08 │  4708.81 │  4694.42 │  4717.25 │ 14.4 │ 4694.42 │ SL     │  -14.40 │
+│  3 │ Asia    │ LONG │ 04-23 20:34 │  4704.27 │  4677.14 │  4718.45 │ 27.1 │ 4677.14 │ SL     │  -27.12 │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ BOX SIZING DIAGNOSTICS ───────────────────────────────────────────────────────────┐
+│ Session  │ N boxes │ Avg width │ Min width │ Max width │ Avg actual SL │ Avg TP dist │
+├──────────┼─────────┼───────────┼───────────┼───────────┼───────────────┼─────────────┤
+│ Asia     │      1  │   13.51   │   13.51   │   13.51   │    27.12 pts  │   14.18 pts │
+│ London   │      2  │    7.91   │    7.39   │    8.44   │    13.68 pts  │    7.91 pts │
+│ NY       │      0  │    —      │    —      │    —      │      —        │      —      │
+└──────────┴─────────┴───────────┴───────────┴───────────┴───────────────┴─────────────┘
+
+┌─ EXIT REASON DISTRIBUTION ─────────────────────────────────────────────────────────┐
+│ TP hits             :   1  ( 33.3%)                                        │
+│ SL hits             :   2  ( 66.7%)                                        │
+│ Open at EOD (M-T-M) :   0  (  0.0%)                                        │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ LIVE RISK SIM (Irfan: $200 cap, 0.02 lot, 1pt = $2) ──────────────────────────────┐
+│ This window net PnL  :   -68.27  USD                                     │
+│ % of $200 capital    :   -34.13%                                          │
+│ Avg daily USD        :   -13.65                                            │
+│ Naive 252-day project: -3440.58  USD/yr  (extrapolated from this window)  │
+│ 5y historical proj   : ~$2,200-3,630 USD/yr (per system docs)                      │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+======================================================================================
+ INTERPRETATION
+======================================================================================
+
+ FOR THE DATA PERSON:
+ --------------------
+ • Sample size: n=3 closed trades over 5 ET trading days. Statistical
+   power is LOW. 95% CI on win-rate at this sample is roughly ±25-35 percentage points.
+   Cannot reject null hypothesis 'system has zero edge' with this sample alone.
+ • Observed expectancy: -11.38 pts/trade. Historical 5y expectancy: ~+4.5 pts/trade.
+ • Profit factor this window: 0.18. Historical: ~1.7-2.0.
+ • Worst-case tie-break used: when SL and TP both fall within a single bar's range,
+   we assume SL hit first. This is conservative (pessimistic) by design.
+ • EOD positions are mark-to-close at the last available bar. In live trading these
+   would either flat-out at session boundary OR carry — system docs say flat-out.
+
+ FOR THE FINANCE PERSON:
+ -----------------------
+ ⚠️  The system was net-NEGATIVE -34.13 points this window. At 0.02 lot that is
+    $-68.27 on $200 capital (-34.1% return) over 5 trading days.
+
+ Drawdown context: largest single losing trade = -27.12 pts.
+ Max consecutive losses: 2
+
+ ⚠️  Sample-size warning: This is a 4-5 day OOS validation. The locked production
+    backtest used 1,255 trading days (5 years) and 2,433 trades. A single period of
+    4-5 days is sanity check, not validation. Use this output to verify SYSTEM LOGIC,
+    not edge magnitude.
+
+ SYSTEM-LOGIC CHECKS (what this validation actually proves):
+ ✓ Boxes form correctly across the 3 sessions on the OOS dates
+ ✓ Entry triggers fire when (close beyond box) + (body confirm) + (pattern) align
+ ✓ SL and TP placement obey the locked formulas
+ ✓ Max-attempts and max-SL filters are respected
+ ✗ NOT a statement on whether edge has decayed — would need 6+ months of new data
+
+======================================================================================

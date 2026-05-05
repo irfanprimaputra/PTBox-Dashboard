@@ -8,23 +8,14 @@ PINESCRIPTS_DIR = CODE_DIR / "pinescripts"
 
 CODE_FILES = {
     "Pinescript": {
-        "Asia": PINESCRIPTS_DIR / "Asia.md",
-        "London": PINESCRIPTS_DIR / "London.md",
-        "NY": PINESCRIPTS_DIR / "NY.md",
-        "Index": PINESCRIPTS_DIR / "Index.md",
+        "PTBox_e37 ⭐ LIVE": PINESCRIPTS_DIR / "PTBox_e37.pine",
     },
     "MQL5": {
-        "PTBox_NY": CODE_DIR / "PTBox_NY.mq5",
-        "PTBox_v140": CODE_DIR / "PTBox_v140.mq5",
+        "PTBox_e37 ⭐ LIVE": CODE_DIR / "mql5" / "PTBox_e37.mq5",
     },
     "Python": {
-        "v1 (deploy)": CODE_DIR / "ptbox_quarterly.py",
-        "v2 (walk-forward)": CODE_DIR / "ptbox_quarterly_v2.py",
-        "v3 (Phase 4)": CODE_DIR / "ptbox_quarterly_v3.py",
-        "v4 (Phase 5 #A)": CODE_DIR / "ptbox_quarterly_v4.py",
-        "v5 (Phase 5 #B) ⭐": CODE_DIR / "ptbox_quarterly_v5.py",
-        "ptbox_backtest": CODE_DIR / "ptbox_backtest.py",
-        "ptbox_run": CODE_DIR / "ptbox_run.py",
+        "ptbox_engine_e37 ⭐ LIVE": CODE_DIR / "ptbox_engine_e37.py",
+        "ptbox_quarterly_v3 (core)": CODE_DIR / "ptbox_quarterly_v3.py",
     },
 }
 

@@ -1,0 +1,59 @@
+{
+  "generated": "2026-05-04T10:54:45.542147",
+  "e20d_baseline_asia": 182.0,
+  "target_asia": 300.0,
+  "variants": [
+    {
+      "label": "e23a \u00b7 Skip Thursday Asia",
+      "total_19q": 856.2,
+      "asia_pnl": 62.3,
+      "asia_trades": 582,
+      "asia_delta": -119.7,
+      "total_recent": 662.3000000000001,
+      "by_session": {
+        "Asia": 62.3,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e23b \u00b7 Asia only RANGE NY_prev",
+      "total_19q": 807.4000000000001,
+      "asia_pnl": 13.5,
+      "asia_trades": 45,
+      "asia_delta": -168.5,
+      "total_recent": 669.1,
+      "by_session": {
+        "Asia": 13.5,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e23c \u00b7 Skip Thursday + RANGE NY_prev",
+      "total_19q": 776.0000000000001,
+      "asia_pnl": -17.9,
+      "asia_trades": 19,
+      "asia_delta": -199.9,
+      "total_recent": 637.0000000000001,
+      "by_session": {
+        "Asia": -17.9,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    },
+    {
+      "label": "e23d \u00b7 Skip Thursday + Friday",
+      "total_19q": 856.2,
+      "asia_pnl": 62.3,
+      "asia_trades": 582,
+      "asia_delta": -119.7,
+      "total_recent": 662.3000000000001,
+      "by_session": {
+        "Asia": 62.3,
+        "London": 486.40000000000003,
+        "NY": 307.5
+      }
+    }
+  ]
+}

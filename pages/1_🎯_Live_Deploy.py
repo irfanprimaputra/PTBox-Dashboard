@@ -201,7 +201,7 @@ with c1:
     </div>
     """, unsafe_allow_html=True)
     st.markdown("""
-    1. Buka [PTBox_e20d.pine](https://github.com/irfanprimaputra/PTBox-Dashboard/blob/main/code/pinescripts/PTBox_e20d.pine) → click **Raw** → Cmd+A, Cmd+C
+    1. Buka [PTBox_e37.pine](https://github.com/irfanprimaputra/PTBox-Dashboard/blob/main/code/pinescripts/PTBox_e37.pine) → click **Raw** → Cmd+A, Cmd+C
     2. TradingView → chart **XAUUSD** M1
     3. Bottom-right tab **Pine Editor** → paste
     4. Click **Save** → "PT Box e33"
@@ -216,7 +216,7 @@ with c1:
     - Cross-day box state leak fix (replay mode)
 
     Always pull latest from GitHub raw to get all v10 features:
-    [PTBox_e20d.pine raw](https://raw.githubusercontent.com/irfanprimaputra/PTBox-Dashboard/main/code/pinescripts/PTBox_e20d.pine)
+    [PTBox_e37.pine raw](https://raw.githubusercontent.com/irfanprimaputra/PTBox-Dashboard/main/code/pinescripts/PTBox_e37.pine)
     """)
 
 with c2:
@@ -374,8 +374,8 @@ with c1:
         <p style="color: {COLORS['text_secondary']}; font-size: 0.85rem;">
             Pine v5 indicator full source di GitHub.
         </p>
-        <a href="https://github.com/irfanprimaputra/PTBox-Dashboard/blob/main/code/pinescripts/PTBox_e20d.pine"
-           target="_blank" style="color: {COLORS['accent_blue']};">→ Open PTBox_e20d.pine</a>
+        <a href="https://github.com/irfanprimaputra/PTBox-Dashboard/blob/main/code/pinescripts/PTBox_e37.pine"
+           target="_blank" style="color: {COLORS['accent_blue']};">→ Open PTBox_e37.pine</a>
     </div>
     """, unsafe_allow_html=True)
 with c2:

@@ -23,7 +23,7 @@
 //   - Backtest assumes entry @ close[N] (zero slippage for engine truth)
 //   - Live slippage ~0-2 pts vs backtest is normal
 // ═══════════════════════════════════════════════════════════════════════════
-indicator("PT Box e20d (Phase 7 baseline)", overlay = true,
+indicator("PT Box e37 (live · OOS 316%)", overlay = true,
      max_boxes_count   = 500,
      max_lines_count   = 500,
      max_labels_count  = 500,

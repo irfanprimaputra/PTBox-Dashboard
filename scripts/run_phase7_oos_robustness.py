@@ -18,7 +18,9 @@ import numpy as np
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT / "code"))
+sys.path.insert(0, str(ROOT / "code" / "_archive"))     # legacy ptbox_quarterly_v4
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "scripts" / "_archive"))  # legacy run_phase7_e16
 
 from ptbox_quarterly_v3 import CONFIG, load_data, build_date_groups, PATTERN_VARIANTS
 from ptbox_quarterly_v4 import ASIA_MEANREV_VARIANTS
