@@ -16,6 +16,12 @@
 // 2026-05-04 v9: stats panel TODAY mode (realtime, not 90d cumulative)
 //                + de-clutter labels (delete on exit, keep lines + W/L marker)
 //                + minimal-mode toggle for cleaner multi-entry sessions
+// 2026-05-05 v10 BUGFIX: Asia 0-trade bug — asiaSessionEndH default 0 → 24
+//                (mod < 0 was always false, blocked Asia DIRECT entry).
+//                Stats panel display strings now reflect actual e37 config
+//                (was hardcoded legacy "ext+1/mid" + "0.5×bw/3R/6R").
+//                Validated against engine: Apr 22-May 5 should produce
+//                21 trades (Asia 7 / London 9 / NY 5), +169 pts.
 //
 // ENTRY TIMING (LIVE):
 //   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
@@ -63,7 +69,7 @@ g_asia            = "🟢 Asia (e36 DIRECT @ 18:00/90m)"
 asiaBoxStartH     = input.int  (18,  "Box start hour (ET)", minval = 0, maxval = 23, group = g_asia)
 asiaBoxStartM     = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_asia)
 asiaBoxDur        = input.int  (90,  "Box duration (min)",  minval = 1, maxval = 180, group = g_asia)
-asiaSessionEndH   = input.int  (0,   "Session end hour (ET) — e37 extended", minval = 0, maxval = 23, group = g_asia)
+asiaSessionEndH   = input.int  (24,  "Session end hour (ET) — e37 extended (24=midnight)", minval = 0, maxval = 24, group = g_asia)
 asiaSlBuffer      = input.float(1.0, "SL buffer (pts) — legacy mean-rev", group = g_asia)
 asiaMaxAttempt    = input.int  (5,   "Max attempts (adaptive 1W or 2L stops)", group = g_asia)
 asiaSlBoxMult     = input.float(0.7, "Asia SL = X × box_width (e36)", group = g_asia)
@@ -787,7 +793,7 @@ if showNY and inNYSessionRange and not na(nyBoxHi) and not nyEntered and nyToday
 
 // ─── Stats Panel (always visible, updates every bar so works during replay) ─
 if showStatsPanel
-    var table stats = table.new(position.top_right, 4, 13,
+    var table stats = table.new(position.top_right, 4, 14,
          bgcolor      = color.new(color.black, 70),
          border_color = color.new(color.purple, 50),
          border_width = 1)
@@ -855,14 +861,14 @@ if showStatsPanel
     table.cell(stats, 3, 5, nyPLstr,     text_color = nyPLcol,     text_size = size.tiny)
 
     table.cell(stats, 0, 6, "RR (TP/SL)", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 6, "1:1.5",                                   text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 1, 6, "1:" + str.tostring(asiaTp2Mult,   "#.#"), text_color = color.white, text_size = size.tiny)
     table.cell(stats, 2, 6, "1:" + str.tostring(londonTp2Mult, "#.#"), text_color = color.white, text_size = size.tiny)
     table.cell(stats, 3, 6, "1:" + str.tostring(nyTp2Mult,     "#.#"), text_color = color.white, text_size = size.tiny)
 
-    table.cell(stats, 0, 7, "SL/TP1/TP2", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 7, "ext+1 / mid",      text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 7, "0.5×bw / 3R / 6R", text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 7, "0.5×bw / 3R / 6R", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 0, 7, "SL/TP", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 7, str.tostring(asiaSlBoxMult,   "#.#") + "×bw / " + str.tostring(asiaTp2Mult,   "#.#") + "R", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 7, str.tostring(londonSlBoxMult, "#.#") + "×bw / " + str.tostring(londonTp2Mult, "#.#") + "R", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 7, str.tostring(nySlBoxMult,     "#.#") + "×bw / " + str.tostring(nyTp2Mult,     "#.#") + "R", text_color = color.white, text_size = size.tiny)
 
     table.cell(stats, 0, 8, "Max Attempt", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 8, str.tostring(asiaMaxAttempt)   + "x", text_color = color.white, text_size = size.tiny)
@@ -890,10 +896,15 @@ if showStatsPanel
     table.cell(stats, 2, 11, londonInTrade ? "YES" : "NO", text_color = londonInTrade ? color.lime : color.gray, text_size = size.tiny)
     table.cell(stats, 3, 11, nyInTrade     ? "YES" : "NO", text_color = nyInTrade     ? color.lime : color.gray, text_size = size.tiny)
 
-    table.cell(stats, 0, 12, "Mode",                  text_color = color.gray,   text_size = size.tiny)
-    table.cell(stats, 1, 12, modeLabel,               text_color = color.aqua,   text_size = size.tiny)
-    table.cell(stats, 2, 12, "e37",                   text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 3, 12, "+9084/+6428 OOS",       text_color = color.lime,   text_size = size.tiny)
+    table.cell(stats, 0, 12, "Config", text_color = color.gray,   text_size = size.tiny)
+    table.cell(stats, 1, 12, "e37",    text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 2, 12, "e37",    text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 3, 12, "e37",    text_color = color.yellow, text_size = size.tiny)
+
+    table.cell(stats, 0, 13, "Stats Mode",      text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 13, modeLabel,         text_color = color.aqua, text_size = size.tiny)
+    table.cell(stats, 2, 13, "+9084/+6428 OOS", text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 3, 13, "5y backtest",     text_color = color.lime, text_size = size.tiny)
 
 // ─── Optional info panel (bottom-right) ────────────────────────────────────
 if showInfoPanel and barstate.islast
