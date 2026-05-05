@@ -18,10 +18,13 @@
 //                + minimal-mode toggle for cleaner multi-entry sessions
 // 2026-05-05 v10 BUGFIX: Asia 0-trade bug — asiaSessionEndH default 0 → 24
 //                (mod < 0 was always false, blocked Asia DIRECT entry).
-//                Stats panel display strings now reflect actual e37 config
-//                (was hardcoded legacy "ext+1/mid" + "0.5×bw/3R/6R").
-//                Validated against engine: Apr 22-May 5 should produce
-//                21 trades (Asia 7 / London 9 / NY 5), +169 pts.
+//                Stats panel display strings now reflect actual e37 config.
+// 2026-05-05 v11 SYNC: Max attempts/day all sessions 5/3/3 → 1/1/1.
+//                Engine canonical (+9084 PnL, OOS 316%) uses 1 entry/day per
+//                session. Pine multi-attempt was 4.7x over-firing Asia,
+//                producing -217 PnL in validation period. v11 matches engine.
+//                Validated: Apr 22-May 5 should produce 21 trades
+//                (Asia 7 / London 9 / NY 5), +169 pts.
 //
 // ENTRY TIMING (LIVE):
 //   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
@@ -71,7 +74,7 @@ asiaBoxStartM     = input.int  (0,   "Box start minute",    minval = 0, maxval =
 asiaBoxDur        = input.int  (90,  "Box duration (min)",  minval = 1, maxval = 180, group = g_asia)
 asiaSessionEndH   = input.int  (24,  "Session end hour (ET) — e37 extended (24=midnight)", minval = 0, maxval = 24, group = g_asia)
 asiaSlBuffer      = input.float(1.0, "SL buffer (pts) — legacy mean-rev", group = g_asia)
-asiaMaxAttempt    = input.int  (5,   "Max attempts (adaptive 1W or 2L stops)", group = g_asia)
+asiaMaxAttempt    = input.int  (1,   "Max attempts/day (e37: 1 to match engine)", group = g_asia)
 asiaSlBoxMult     = input.float(0.7, "Asia SL = X × box_width (e36)", group = g_asia)
 asiaTp1Mult       = input.float(1.0, "Asia TP1 = X × SL", group = g_asia)
 asiaTp2Mult       = input.float(1.5, "Asia TP2 = X × SL (e36 optimum)", group = g_asia)
@@ -92,7 +95,7 @@ londonSlBoxMult   = input.float(0.5, "SL = X × box_width", minval = 0.1, maxval
 londonTp1Mult     = input.float(1.5, "TP1 = X × SL", group = g_london)
 londonTp2Mult     = input.float(2.0, "TP2 = X × SL (e36 optimum)", group = g_london)
 londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
-londonMaxAttempt  = input.int  (3,   "Max attempts/day", group = g_london)
+londonMaxAttempt  = input.int  (1,   "Max attempts/day (e37: 1 to match engine)", group = g_london)
 londonBodyClosePct = input.float(0.20,"London body close confirm (% box width) — e36", minval = 0.0, maxval = 1.0, step = 0.05, group = g_london)
 londonUseDirectModel = input.bool(true,"London DIRECT breakout (e35) instead of pullback", group = g_london)
 
@@ -115,7 +118,7 @@ nySlBoxMult      = input.float(0.5, "SL = X × box_width", group = g_ny)
 nyTp1Mult        = input.float(1.5, "TP1 = X × SL", group = g_ny)
 nyTp2Mult        = input.float(2.5, "TP2 = X × SL (e31 optimum)", group = g_ny)
 nyMinSl          = input.float(3.0, "Min SL (pts)", group = g_ny)
-nyMaxAttempt     = input.int  (3,   "Max attempts/day", group = g_ny)
+nyMaxAttempt     = input.int  (1,   "Max attempts/day (e37: 1 to match engine)", group = g_ny)
 nyBodyClosePct   = input.float(0.30,"NY body close confirm (% box width) — e33 optimum", minval = 0.0, maxval = 1.0, step = 0.05, group = g_ny)
 nyStrictPattern  = input.bool (false,"NY strict pattern — e33: any pattern beats strict on 07:00/60m timing", group = g_ny)
 

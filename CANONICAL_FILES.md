@@ -130,6 +130,11 @@ e37   extended session windows       +9084  (+892)  ⭐ CURRENT
 **Pine v10 hotfix (2026-05-05):**
 - Asia 0-trade bug: `asiaSessionEndH` default was 0 → Pine session range `mod < 0` always false → DIRECT entry never fired. Default fixed to 24 (midnight extended).
 - Stats panel display strings updated to reflect actual e37 config (was showing legacy "ext+1/mid" + "0.5×bw/3R/6R").
+
+**Pine v11 sync (2026-05-05):**
+- Max attempts/day defaults: 5/3/3 → **1/1/1** (Asia/London/NY).
+- Reason: engine canonical fires 1 entry/day per session. Pine multi-attempt was 4.7x over-firing Asia → user panel showed 33 trades/-217 PnL vs engine 7 trades/+21.
+- e37 canonical = **1 entry/day per session, locked**.
 - Validation gold-standard: `data/e37_validation_apr22-may05.json` (21 trades, +169 pts, Apr 22 - May 5 2026).
 - Reproduce: `python3 scripts/run_e37_detail.py <CSV>` for per-trade detail.
 
