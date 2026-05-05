@@ -41,7 +41,8 @@ E37_CONFIG = {
         "sl_box_mult": 0.7, "min_sl": 3.0,
         "tp_mult": 1.5,
         "body_pct": 0.0,
-        "max_sl_pts": 30.0,
+        "max_sl_pts": None,   # 2026-05-05 v11: removed filter — was over-tight,
+                              # killed PnL ~60%. Live deploy can override.
     },
     "london": {
         "box_start_h": 0, "box_start_m": 0, "box_dur": 60,
@@ -49,7 +50,7 @@ E37_CONFIG = {
         "sl_box_mult": 0.5, "min_sl": 3.0,
         "tp_mult": 2.0,
         "body_pct": 0.20,
-        "max_sl_pts": 15.0,
+        "max_sl_pts": None,
     },
     "ny": {
         "box_start_h": 7, "box_start_m": 0, "box_dur": 60,
@@ -57,9 +58,17 @@ E37_CONFIG = {
         "sl_box_mult": 0.5, "min_sl": 3.0,
         "tp_mult": 2.5,
         "body_pct": 0.30,
-        "max_sl_pts": 15.0,
+        "max_sl_pts": None,
     },
 }
+
+# True 5y canonical (corrected loss accounting + filter OFF, 2021-2026, 1368 days):
+# Asia +855 (594 trades, 61% WR), London +1186 (958, 62% WR), NY +1182 (881, 58% WR)
+# Total +3223 pts 5y = ~+645 pts/year = ~$129/year at lot 0.02 / cap $200
+# Was claimed +9084 due to loss accounting bug (recorded -sl_dist instead of -(ep-sp)).
+#
+# Live filter recommendation (cap-aware): max_sl_pts=30 across all 3 sessions
+# gives +1782 5y (~$71/yr at lot 0.02) but caps risk per trade at $0.60.
 
 # ═══════════════════════════════════════════════════════════════════
 # Pattern detectors
@@ -144,8 +153,10 @@ def backtest_session_direct(
         Hi = H[tr]; Lo = L[tr]; Cl = C[tr]; Op = O[tr]
 
         sl_dist = max(min_sl, sl_box_mult * bw)
-        if max_sl_pts is not None and sl_dist > max_sl_pts:
-            pnl_list.append(0.); continue
+        # Note: max_sl_pts filter applied per-trade at entry time (where ep
+        # is known) since actual risk = (ep - sp) ≈ bw + sl_dist for DIRECT
+        # breakout. Pre-trade filter on sl_dist alone (old logic) was wrong:
+        # under-counted real risk by box-width amount. Pine filters this way.
         body_thresh = body_pct * bw if body_pct > 0 else 0
 
         in_trade = False
@@ -158,14 +169,18 @@ def backtest_session_direct(
             ph = Hi[i - 1]; pl = Lo[i - 1]; pc = Cl[i - 1]; po = Op[i - 1]
 
             if in_trade:
+                # 2026-05-05 v11 fix: loss = entry - SL (full distance, includes
+                # box-width crossing). Previous bug: dp -= sl_dist under-counts
+                # losses for DIRECT breakout where entry > boxHi but SL < boxLo.
+                # Pine accounting was already correct; engine now matches.
                 if ed == 1:
                     if cl <= sp:
-                        dl += 1; dp -= sl_dist; in_trade = False; continue
+                        dl += 1; dp -= (ep - sp); in_trade = False; continue
                     if ch >= tp:
                         dw += 1; dp += (tp - ep); in_trade = False; continue
                 else:
                     if ch >= sp:
-                        dl += 1; dp -= sl_dist; in_trade = False; continue
+                        dl += 1; dp -= (sp - ep); in_trade = False; continue
                     if cl <= tp:
                         dw += 1; dp += (ep - tp); in_trade = False; continue
                 continue
@@ -177,21 +192,31 @@ def backtest_session_direct(
                 if cc - bx_hi < body_thresh:
                     continue
                 if pattern_fn(po, ph, pl, pc, co, ch, cl, cc, 1):
-                    ep = cc; ed = 1
-                    sp = bx_lo - sl_dist
+                    ep_candidate = cc
+                    sp_candidate = bx_lo - sl_dist
+                    actual_risk = ep_candidate - sp_candidate
+                    if max_sl_pts is not None and actual_risk > max_sl_pts:
+                        entered = True   # fire-or-skip-once semantic (matches Pine)
+                        continue
+                    ep = ep_candidate; ed = 1; sp = sp_candidate
                     tp = ep + tp_mult * sl_dist
                     in_trade = True; entered = True
-                    sl_dists.append(sl_dist)
+                    sl_dists.append(actual_risk)
                     continue
             elif cc < bx_lo:
                 if bx_lo - cc < body_thresh:
                     continue
                 if pattern_fn(po, ph, pl, pc, co, ch, cl, cc, -1):
-                    ep = cc; ed = -1
-                    sp = bx_hi + sl_dist
+                    ep_candidate = cc
+                    sp_candidate = bx_hi + sl_dist
+                    actual_risk = sp_candidate - ep_candidate
+                    if max_sl_pts is not None and actual_risk > max_sl_pts:
+                        entered = True
+                        continue
+                    ep = ep_candidate; ed = -1; sp = sp_candidate
                     tp = ep - tp_mult * sl_dist
                     in_trade = True; entered = True
-                    sl_dists.append(sl_dist)
+                    sl_dists.append(actual_risk)
                     continue
 
         tw += dw; tl += dl

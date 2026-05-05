@@ -17,13 +17,13 @@ def load_phase7_baseline():
     if (DATA_DIR / "phase7_e33_ny_regrid_e32.json").exists():
         return {
             "experiment_id": "e37",
-            "label": "e37 EXTENDED SESSION: Asia 18:00/90m end-0, London 00:00/60m end-8, NY 07:00/60m",
-            "total_pnl": 9084,  # Asia 261 + London 800 + NY 4025 (e35)
-            "asia_pnl": 1839,
-            "london_pnl": 3220,
-            "ny_pnl": 4025,
-            "recent_pnl": 1206,  # OOS reference
-            "phase": "Phase 7 (e33 · Wyckoff pre-session)",
+            "label": "e37 TRUE CANONICAL (post v12 engine bugfix): filter OFF, 1 attempt/day",
+            "total_pnl": 3223,  # Asia 855 + London 1186 + NY 1182 (corrected)
+            "asia_pnl": 855,
+            "london_pnl": 1186,
+            "ny_pnl": 1182,
+            "recent_pnl": 0,  # OOS needs re-validation post bugfix
+            "phase": "Phase 7 (e37 · v12 engine bugfix 2026-05-05)",
         }
     # Try e20d
     try:
@@ -172,7 +172,7 @@ if oos_data:
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.5rem;">
             <div style="font-size: 0.7rem; color: {COLORS['text_secondary']}; text-transform: uppercase; letter-spacing: 0.06em;">Live Estimate</div>
-            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$2200-3630/yr (lot 0.02, e37)</div>
+            <div style="font-size: 0.95rem; color: {COLORS['text']};">~$129/yr (lot 0.02, e37 v12 corrected)</div>
         </div>
         <div style="margin-left: auto;">
             <a href="Phase7_Results" target="_self" style="color: {COLORS['accent_blue']}; text-decoration: none; font-size: 0.85rem;">

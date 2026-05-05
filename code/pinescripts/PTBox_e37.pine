@@ -1,7 +1,8 @@
 //@version=6
 // ═══════════════════════════════════════════════════════════════════════════
-// PT BOX e37 — Wyckoff Pre-Session DIRECT Model · Fixed-config 5y +9084 pts
-// OOS validated 316% retention (2024-2026 unseen) · 10/10 quarters positive
+// PT BOX e37 — Wyckoff Pre-Session DIRECT Model
+// True 5y backtest +3223 pts (corrected loss accounting, filter OFF)
+// Asia +855 / London +1186 / NY +1182 · ~+645 pts/year
 // XAUUSD intraday · 3-session DIRECT model · 2026-05-04
 //
 // Asia:   18:00/90m DIRECT  + body0%  + SL=0.7×bw + TP=1.5R = +1839 (e37)
@@ -20,11 +21,15 @@
 //                (mod < 0 was always false, blocked Asia DIRECT entry).
 //                Stats panel display strings now reflect actual e37 config.
 // 2026-05-05 v11 SYNC: Max attempts/day all sessions 5/3/3 → 1/1/1.
-//                Engine canonical (+9084 PnL, OOS 316%) uses 1 entry/day per
-//                session. Pine multi-attempt was 4.7x over-firing Asia,
-//                producing -217 PnL in validation period. v11 matches engine.
-//                Validated: Apr 22-May 5 should produce 21 trades
-//                (Asia 7 / London 9 / NY 5), +169 pts.
+//                Engine canonical uses 1 entry/day per session.
+// 2026-05-05 v12 ENGINE BUG FIX (canonical PnL recalibrated):
+//                Engine had loss accounting bug (recorded -sl_dist instead of
+//                -(ep - sp), under-counting losses by ~bw per trade). Pine was
+//                always correct on PnL math. After fix:
+//                  - True 5y filter OFF: +3223 pts (was claimed +9084 inflated)
+//                  - True 5y filter ON @15: +920 pts (filter too tight, NY -37)
+//                useMaxSlFilter default true → false to match engine canonical.
+//                User can opt-in for capital-aware live (set true + tune nyMaxSl).
 //
 // ENTRY TIMING (LIVE):
 //   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
@@ -56,7 +61,7 @@ minimalLabels  = input.bool(false, "Minimal label mode (less crowded)", group = 
 
 // ─── 💰 Risk Management (LIVE filter — minimal divergence from engine) ────
 g_risk           = "💰 Risk Management (LIVE)"
-useMaxSlFilter   = input.bool(true,  "Enable max-SL filter (skip wide-SL trades)",       group = g_risk)
+useMaxSlFilter   = input.bool(false, "Enable max-SL filter (skip wide-SL trades) — v12: OFF default to match engine canonical", group = g_risk)
 asiaMaxSlPts     = input.float(30,   "Asia max SL (pts) — only catch wonky outliers",    minval = 3, group = g_risk)
 londonMaxSlPts   = input.float(15,   "London max SL (pts) — breakout box-width based",   minval = 3, group = g_risk)
 nyMaxSlPts       = input.float(15,   "NY max SL (pts) — breakout box-width based",       minval = 3, group = g_risk)

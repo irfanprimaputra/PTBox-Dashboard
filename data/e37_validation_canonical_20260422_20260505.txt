@@ -1,0 +1,135 @@
+============================================================================================
+ PT BOX e37 — CANONICAL-ENGINE VALIDATION REPORT
+ Engine: code/ptbox_engine_e37.py · backtest_session_direct (live source of truth)
+============================================================================================
+ Source CSV   : XAUUSD_M1_e37_validation_20260422_20260505.csv
+ ET date range: 2026-04-21 → 2026-05-05  (11 ET trading days)
+
+┌─ HEADLINE PERFORMANCE ────────────────────────────────────────────────────────────────┐
+│ Total trades opened     :   24                                                          │
+│ Closed (TP or SL hit)   :   21                                                          │
+│ Open at EOD             :    3                                                          │
+│ Win rate (TP hits)      :  71.43%                                                       │
+│                                                                                       │
+│ ── PnL views ──                                                                       │
+│ Canonical engine PnL    :   +168.98  (engine semantics — losses = planned SL)         │
+│ Realistic PnL (closed)  :    +84.95  (entry→exit price diff, TP/SL only)            │
+│ Realistic PnL (all)     :    +69.91  ⭐ ACTUAL trader PnL (incl. EOD M-T-M)            │
+│                                                                                       │
+│ Avg win (real)          :    +14.11 pts                                                 │
+│ Avg loss (real)         :    -21.12 pts                                                 │
+│ Expectancy (real)       :     +2.91 pts/trade                                          │
+│ Profit factor (real)    :   1.67                                                       │
+│ Win rate                :  71.43%                                                       │
+│ Avg win                 :    +14.11 pts                                                 │
+│ Avg loss                :    -21.12 pts                                                 │
+└───────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ PER-SESSION BREAKDOWN (REALISTIC PnL — actual entry→exit) ───────────────────────────┐
+│ Session  │  N  │  W  │  L  │ EOD │ Real PnL │ Canon PnL│   WR   │ Expectancy │  PF   │
+├──────────┼─────┼─────┼─────┼─────┼──────────┼──────────┼────────┼────────────┼───────┤
+│ Asia     │   7 │   3 │   4 │   0 │   -26.29 │   +20.88 │  42.9% │    -3.76   │  0.65 │
+│ London   │  10 │   8 │   1 │   1 │   +80.92 │   +92.73 │  88.9% │    +8.09   │  6.73 │
+│ NY       │   7 │   4 │   1 │   2 │   +15.28 │   +55.37 │  80.0% │    +2.18   │  1.79 │
+└──────────┴─────┴─────┴─────┴─────┴──────────┴──────────┴────────┴────────────┴───────┘
+
+┌─ HISTORICAL BENCHMARK (5y backtest 2021-2026, ~1255 ET days) ─────────────────────────┐
+│ Session   │  Hist 5y PnL │  Hist WR │  Daily expectation                              │
+├───────────┼──────────────┼──────────┼─────────────────────────────────────────────────┤
+│ Asia      │      +1839   │   61.0%  │  ~1.46 pts/day                                  │
+│ London    │      +3220   │   62.0%  │  ~2.57 pts/day                                  │
+│ NY        │      +4025   │   58.0%  │  ~3.21 pts/day                                  │
+│ TOTAL     │      +9084   │   60.1%  │  ~7.24 pts/day                                  │
+└───────────┴──────────────┴──────────┴─────────────────────────────────────────────────┘
+
+ This window — canonical: +168.98 pts / 11 ET days = +15.36/day  (212% of 5y baseline)
+ This window — REALISTIC: +69.91 pts / 11 ET days = +6.36/day  (88% of 5y baseline)
+ 5y baseline pace      : +7.24 pts/day  (canonical engine — likely overstated)
+
+┌─ TRADE LEDGER (chronological — Real PnL = actual entry→exit) ─────────────────────────┐
+│  # │ Date       │ Sess   │ Dir   │ Entry │  Entry $ │   SL $   │   TP $   │  Risk │  Exit  │ Reason │ Real PnL │ Canon │
+├────┼────────────┼────────┼───────┼───────┼──────────┼──────────┼──────────┼───────┼────────┼────────┼──────────┼───────┤
+│  1 │ 2026-04-22 │ London │ LONG  │ 01:16 │  4761.68 │  4748.72 │  4769.07 │  13.0 │  01:19 │ TP     │    +7.39 │ +7.39 │
+│  2 │ 2026-04-22 │ NY     │ SHORT │ 09:00 │  4742.69 │  4767.49 │  4726.19 │  24.8 │  11:40 │ TP     │   +16.50 │ +16.50 │
+│  3 │ 2026-04-22 │ Asia   │ SHORT │ 20:02 │  4722.06 │  4761.42 │  4698.58 │  39.4 │  20:15 │ TP     │   +23.48 │ +23.48 │
+│  4 │ 2026-04-23 │ London │ LONG  │ 01:08 │  4708.81 │  4694.42 │  4717.25 │  14.4 │  01:30 │ SL     │   -14.40 │ -4.22 │
+│  5 │ 2026-04-23 │ NY     │ LONG  │ 08:02 │  4730.84 │  4682.91 │  4762.51 │  47.9 │  11:59 │ EOD    │   -10.54 │ -10.54 │
+│  6 │ 2026-04-23 │ Asia   │ LONG  │ 20:34 │  4704.27 │  4677.14 │  4718.45 │  27.1 │  22:49 │ SL     │   -27.12 │ -9.45 │
+│  7 │ 2026-04-24 │ London │ LONG  │ 01:36 │  4683.84 │  4648.07 │  4702.93 │  35.8 │  07:07 │ TP     │   +19.10 │ +19.10 │
+│  8 │ 2026-04-27 │ London │ SHORT │ 01:05 │  4721.19 │  4733.91 │  4713.74 │  12.7 │  01:33 │ TP     │    +7.45 │ +7.45 │
+│  9 │ 2026-04-27 │ NY     │ SHORT │ 09:02 │  4695.35 │  4713.55 │  4684.04 │  18.2 │  10:33 │ TP     │   +11.31 │ +11.31 │
+│ 10 │ 2026-04-27 │ Asia   │ LONG  │ 19:37 │  4692.65 │  4675.37 │  4702.72 │  17.3 │  21:57 │ SL     │   -17.28 │ -6.71 │
+│ 11 │ 2026-04-28 │ London │ SHORT │ 01:01 │  4664.86 │  4674.38 │  4658.86 │   9.5 │  01:06 │ TP     │    +6.00 │ +6.00 │
+│ 12 │ 2026-04-28 │ Asia   │ SHORT │ 19:40 │  4588.55 │  4606.99 │  4577.60 │  18.4 │  20:04 │ SL     │   -18.44 │ -7.30 │
+│ 13 │ 2026-04-29 │ London │ SHORT │ 02:09 │  4592.79 │  4611.06 │  4582.19 │  18.3 │  02:23 │ TP     │   +10.59 │ +10.59 │
+│ 14 │ 2026-04-29 │ NY     │ SHORT │ 08:33 │  4554.38 │  4578.36 │  4538.46 │  24.0 │  09:20 │ TP     │   +15.92 │ +15.92 │
+│ 15 │ 2026-04-29 │ Asia   │ LONG  │ 19:46 │  4555.44 │  4527.95 │  4572.35 │  27.5 │  20:47 │ TP     │   +16.91 │ +16.91 │
+│ 16 │ 2026-04-30 │ London │ LONG  │ 01:41 │  4565.49 │  4532.70 │  4581.72 │  32.8 │  02:52 │ TP     │   +16.23 │ +16.23 │
+│ 17 │ 2026-04-30 │ NY     │ SHORT │ 09:53 │  4612.46 │  4655.63 │  4588.21 │  43.2 │  11:59 │ EOD    │    -2.86 │ -2.86 │
+│ 18 │ 2026-04-30 │ Asia   │ LONG  │ 19:34 │  4632.96 │  4619.86 │  4640.91 │  13.1 │  20:36 │ SL     │   -13.10 │ -5.30 │
+│ 19 │ 2026-05-01 │ London │ SHORT │ 01:57 │  4604.52 │  4638.87 │  4584.64 │  34.4 │  03:34 │ TP     │   +19.88 │ +19.88 │
+│ 20 │ 2026-05-01 │ NY     │ LONG  │ 08:15 │  4585.14 │  4553.98 │  4606.48 │  31.2 │  08:26 │ TP     │   +21.34 │ +21.34 │
+│ 21 │ 2026-05-04 │ London │ SHORT │ 01:17 │  4602.26 │  4620.71 │  4591.95 │  18.4 │  02:04 │ TP     │   +10.31 │ +10.31 │
+│ 22 │ 2026-05-04 │ NY     │ LONG  │ 10:23 │  4578.23 │  4541.84 │  4602.49 │  36.4 │  11:19 │ SL     │   -36.39 │ -9.70 │
+│ 23 │ 2026-05-04 │ Asia   │ LONG  │ 20:07 │  4525.07 │  4509.32 │  4534.33 │  15.8 │  21:04 │ TP     │    +9.26 │ +9.26 │
+│ 24 │ 2026-05-05 │ London │ LONG  │ 01:09 │  4542.97 │  4523.62 │  4551.74 │  19.3 │  01:14 │ EOD    │    -1.64 │ -1.64 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─ BOX SIZING DIAGNOSTICS ──────────────────────────────────────────────────────────────┐
+│ Session  │ N boxes │ Avg width │ Min width │ Max width │ Avg actual SL │ Avg TP dist │
+├──────────┼─────────┼───────────┼───────────┼───────────┼───────────────┼─────────────┤
+│ Asia     │      7  │   12.63   │    7.58   │   22.36   │    22.65 pts  │   13.26 pts │
+│ London   │     10  │   11.29   │    4.75   │   19.88   │    20.86 pts  │   11.42 pts │
+│ NY       │      7  │   16.60   │    9.05   │   25.34   │    32.24 pts  │   20.75 pts │
+└──────────┴─────────┴───────────┴───────────┴───────────┴───────────────┴─────────────┘
+
+┌─ LIVE RISK SIM (Irfan: $200 cap, 0.02 lot, 1pt = $2) ─────────────────────────────────┐
+│ ── REALISTIC view (what bank account shows) ──                                        │
+│ Window net USD       :  +139.82                                                       │
+│ % of $200 capital    :   +69.91%                                                       │
+│ Avg daily USD        :   +12.71                                                       │
+│ Naive 252-day project: +3203.23  USD/yr                                              │
+│                                                                                       │
+│ ── CANONICAL view (engine output, planned-loss accounting) ──                         │
+│ Window net USD       :  +337.97                                                       │
+│ 5y historical proj   : ~$2,200-3,630 USD/yr (canonical, likely overstated)             │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+============================================================================================
+ INTERPRETATION
+============================================================================================
+
+ FOR THE DATA PERSON:
+ --------------------
+ • n = 24 trades (21 closed + 3 EOD M-T-M) over 11 ET trading days.
+ • Observed WR: 71.4% vs historical 60.1%. 95% CI on WR at this n is ±19.3pp.
+ • Profit factor (realistic): 1.67. Historical (canonical): 1.7-2.0 — caveat: hist PF uses buggy accounting.
+ • Expectancy (realistic): +2.91 pts/trade.
+ • Daily pace (realistic): +6.36 pts/day vs +7.24 baseline (canonical).
+
+ 🚨 ACCOUNTING DISCOVERY:
+    Canonical engine records SL loss as -sl_dist (planned formula: 0.5×bw or 0.7×bw),
+    NOT as actual (entry - SL price). This UNDERSTATES losses, since entry happens at
+    breakout-candle close which is well above box low. Real loss = sl_dist + (entry - boxLo).
+
+    Implication: the +9084 5y baseline number (per CANONICAL_FILES.md) is overstated.
+    True 5y PnL likely ~50-70% of stated (rough estimate based on this 11-day window).
+    System logic, win rate, trade frequency all REMAIN CORRECT — only PnL accounting affected.
+
+ • Engine handles same-bar SL+TP collision conservatively (SL hit first).
+ • EOD trades = open at end of session bars; canonical engine silently drops them from
+   PnL aggregate, but in live trading these would close at session boundary.
+ • Canonical engine = ONE entry per session per day. Pinescript live allows up to 5/3/3.
+
+ FOR THE FINANCE PERSON:
+ -----------------------
+ ✅ Window net POSITIVE (realistic): +69.91 pts ≈ $+139.82 on $200 cap (+69.9%).
+     (Engine reports +168.98 but uses planned-SL accounting. Actual = realistic.)
+ Worst single trade: -36.39 pts. Max consecutive losing trades: 3.
+
+ SAMPLE-SIZE WARNING:
+ ⚠️  11 trading days vs 1,255 in 5y baseline = 0.9% of historical sample.
+    A single big trade (+/- 30 pts) shifts results dramatically. This is a SANITY CHECK,
+    not statistical validation. To confirm/refute edge: need 60-90 day window minimum.
+
+============================================================================================

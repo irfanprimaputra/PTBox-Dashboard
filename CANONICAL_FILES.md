@@ -1,7 +1,11 @@
 # 📦 PT Box — Canonical Files (Single Source of Truth)
 
-**Current version:** `e37 + Pine v10 (2026-05-05 hotfix)` · OOS validated 316% · Live-ready
+**Current version:** `e37 + Pine v12 (2026-05-05 engine bugfix)` · True canonical PnL recalibrated
 **Last updated:** 2026-05-05
+
+⚠️ **MAJOR CORRECTION 2026-05-05:** Engine had loss accounting bug under-counting
+losses by ~bw per trade. True 5y PnL = **+3223** (was claimed +9084 inflated).
+See "Pine v12" section below for details.
 
 > Aturan: setiap iterasi PT Box, update file ini supaya new conversation tidak bingung.
 > Kalau lu liat file di luar list ini → itu ARCHIVE / EXPERIMENT, jangan dipake live.
@@ -65,17 +69,20 @@ For ad-hoc sweeps: `scripts/run_london_5pt_target.py` shows pattern.
 
 ---
 
-## 📊 e37 CONFIG (locked)
+## 📊 e37 CONFIG (TRUE canonical, post v12 fix)
 
 | Session | Box | Model | SL | TP | Body | PnL 5y | WR |
 |---|---|---|---|---|---|---|---|
-| 🟢 Asia | 18:00/90m ET | DIRECT | 0.7×bw, min 3pt | 1.5R | 0% | +1839 | 61% |
-| 🔵 London | 00:00/60m ET | DIRECT | 0.5×bw, min 3pt | 2.0R | 20% | +3220 | 62% |
-| 🟡 NY | 07:00/60m ET | DIRECT | 0.5×bw, min 3pt | 2.5R | 30% | +4025 | 58% |
-| **TOTAL** | | | | | | **+9084** | |
+| 🟢 Asia | 18:00/90m ET | DIRECT | 0.7×bw, min 3pt | 1.5R | 0% | **+855** | 61% |
+| 🔵 London | 00:00/60m ET | DIRECT | 0.5×bw, min 3pt | 2.0R | 20% | **+1186** | 62% |
+| 🟡 NY | 07:00/60m ET | DIRECT | 0.5×bw, min 3pt | 2.5R | 30% | **+1182** | 58% |
+| **TOTAL** | | | | | | **+3223** | |
 
-**OOS:** Train 2021-2023 → Test 2024-2026 = +6428 OOS / 316% retention / 10/10 Q positive
-**Live estimate:** ~$2200-3630/yr at lot 0.02 / cap $200
+(5y = 2021-2026, 1368 trading days, max-SL filter OFF — engine canonical)
+
+**Live estimate:** ~+645 pts/year = **~$129/year at lot 0.02 / cap $200** (raw edge).
+With max-SL filter @ 30pt cap-aware: +1782 pts 5y = ~$71/year, lower risk per trade.
+**OOS:** needs re-validation with corrected engine (was claimed 316% retention but on inflated baseline).
 
 ---
 
@@ -135,6 +142,21 @@ e37   extended session windows       +9084  (+892)  ⭐ CURRENT
 - Max attempts/day defaults: 5/3/3 → **1/1/1** (Asia/London/NY).
 - Reason: engine canonical fires 1 entry/day per session. Pine multi-attempt was 4.7x over-firing Asia → user panel showed 33 trades/-217 PnL vs engine 7 trades/+21.
 - e37 canonical = **1 entry/day per session, locked**.
+
+**Pine v12 + ENGINE BUGFIX (2026-05-05) — MAJOR CORRECTION:**
+- Engine `code/ptbox_engine_e37.py` had loss accounting bug:
+  ```
+  WRONG: dp -= sl_dist          (only counts slDist amount)
+  FIXED: dp -= (ep - sp)        (full entry-to-SL distance = bw + slDist)
+  ```
+  For DIRECT breakout where entry > boxHi but SL < boxLo, real loss includes
+  the box-width crossing. Engine was under-counting losses by ~bw per loss.
+- Engine `max_sl_pts` filter was using slDist (incomplete), now uses actual risk
+  (entry-to-SL = bw + slDist), matching Pine.
+- True 5y PnL: **+3223** (was claimed +9084, off by 65%).
+- Pine `useMaxSlFilter` default true → false to match engine canonical (filter
+  was killing PnL especially for NY: filter @15 made NY -37, filter OFF NY +1182).
+- Per-session canonical: Asia +855 / London +1186 / NY +1182 (5y 2021-2026).
 - Validation gold-standard: `data/e37_validation_apr22-may05.json` (21 trades, +169 pts, Apr 22 - May 5 2026).
 - Reproduce: `python3 scripts/run_e37_detail.py <CSV>` for per-trade detail.
 

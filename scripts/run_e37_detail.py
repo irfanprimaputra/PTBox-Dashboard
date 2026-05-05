@@ -61,7 +61,7 @@ def session_detail(date_groups, all_dates, sess_name, cfg):
                             'entry_dt': entry_dt, 'exit_dt': str(DTr[i]),
                             'dir': 'BUY', 'entry': ep, 'sl': sp, 'tp': tp, 'exit': sp,
                             'box_hi': bx_hi, 'box_lo': bx_lo, 'bw': bw, 'sl_dist': sl_dist,
-                            'pnl': -sl_dist, 'result': 'SL',
+                            'pnl': -(ep - sp), 'result': 'SL',
                         }); in_trade = False; continue
                     if ch >= tp:
                         trades.append({
@@ -78,7 +78,7 @@ def session_detail(date_groups, all_dates, sess_name, cfg):
                             'entry_dt': entry_dt, 'exit_dt': str(DTr[i]),
                             'dir': 'SELL', 'entry': ep, 'sl': sp, 'tp': tp, 'exit': sp,
                             'box_hi': bx_hi, 'box_lo': bx_lo, 'bw': bw, 'sl_dist': sl_dist,
-                            'pnl': -sl_dist, 'result': 'SL',
+                            'pnl': -(sp - ep), 'result': 'SL',
                         }); in_trade = False; continue
                     if cl <= tp:
                         trades.append({
@@ -93,12 +93,16 @@ def session_detail(date_groups, all_dates, sess_name, cfg):
             if entered:
                 continue
 
+            max_sl = cfg.get('max_sl_pts')
             if cc > bx_hi:
                 if cc - bx_hi < body_thresh:
                     continue
                 if pattern_any(po, ph, pl, pc, co, ch, cl, cc, 1):
-                    ep = cc; ed = 1
-                    sp = bx_lo - sl_dist
+                    ep_c = cc; sp_c = bx_lo - sl_dist
+                    risk = ep_c - sp_c
+                    if max_sl is not None and risk > max_sl:
+                        entered = True; continue   # SKIP, fire-or-skip-once
+                    ep = ep_c; ed = 1; sp = sp_c
                     tp = ep + cfg['tp_mult'] * sl_dist
                     in_trade = True; entered = True
                     entry_dt = str(DTr[i])
@@ -107,8 +111,11 @@ def session_detail(date_groups, all_dates, sess_name, cfg):
                 if bx_lo - cc < body_thresh:
                     continue
                 if pattern_any(po, ph, pl, pc, co, ch, cl, cc, -1):
-                    ep = cc; ed = -1
-                    sp = bx_hi + sl_dist
+                    ep_c = cc; sp_c = bx_hi + sl_dist
+                    risk = sp_c - ep_c
+                    if max_sl is not None and risk > max_sl:
+                        entered = True; continue
+                    ep = ep_c; ed = -1; sp = sp_c
                     tp = ep - cfg['tp_mult'] * sl_dist
                     in_trade = True; entered = True
                     entry_dt = str(DTr[i])

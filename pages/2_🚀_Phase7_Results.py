@@ -94,7 +94,7 @@ st.markdown(f"""
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +9084 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
+                +3223 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
                 Fixed-config 5y (2021-2026) · projected WF +3500-3800
@@ -118,19 +118,20 @@ st.markdown(f"""
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                ~$2540-3630/yr
+                ~$129/yr
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
-                $200 cap, lot 0.02 (e35, 70-100% live retention)
+                $200 cap, lot 0.02 (e37 v12 corrected, raw edge)
             </div>
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ℹ️ <b style="color: {COLORS['success']};">e37 EXTENDED SESSION WINDOWS adopted 2026-05-04:</b><br>
-        🟢 Asia: 18:00/90m DIRECT + session_end=00:00 (was 23:00) = <b>+1839</b> ⭐ (Δ +172)<br>
-        🔵 London: 00:00/60m DIRECT + session_end=08:00 (was 05:00) = <b>+3220</b> ⭐ (Δ +720)<br>
-        🟡 NY: 07:00/60m unchanged = +4025 (at ceiling)<br>
-        Total fixed-config 5y: <b>+9084 (+831% vs e20d baseline +976)</b>
+        ⚠️ <b style="color: {COLORS['warning']};">2026-05-05 ENGINE BUGFIX (Pine v12):</b> Loss accounting bug under-counted losses by ~bw per trade. Previous +9084 claim was inflated.<br>
+        🟢 Asia: 18:00/90m DIRECT + filter OFF = <b>+855</b> (was claimed +1839)<br>
+        🔵 London: 00:00/60m DIRECT + filter OFF = <b>+1186</b> (was claimed +3220)<br>
+        🟡 NY: 07:00/60m + filter OFF = <b>+1182</b> (was claimed +4025)<br>
+        True 5y: <b>+3223 pts</b> (corrected, raw edge, no max-SL filter)<br>
+        With cap-aware filter @30pt: +1782 5y. OOS validation needs re-run.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -142,9 +143,9 @@ st.markdown("<h2>📍 Per-Session Breakdown (e20d)</h2>", unsafe_allow_html=True
 
 c1, c2, c3 = st.columns(3)
 sessions_e20d = [
-    ("🟢 Asia", "18:00/90m DIRECT + end-00:00 ⭐ e37", 1839, 24, 61),
-    ("🔵 London", "00:00/60m DIRECT + end-08:00 + body20% ⭐ e37", 3220, 468, 62),
-    ("🟡 NY", "07:00/60m + ANY + body30% + TP=2.5R ⭐ e33", 4025, -117, 58),
+    ("🟢 Asia", "18:00/90m DIRECT + 1 attempt/day (corrected v12)", 855, 24, 61),
+    ("🔵 London", "00:00/60m DIRECT + body20% + 1 attempt/day (corrected v12)", 1186, 468, 62),
+    ("🟡 NY", "07:00/60m + ANY + body30% + TP=2.5R (corrected v12)", 1182, -117, 58),
 ]
 for col, (label, desc, pnl, e013_ref, wr) in zip([c1, c2, c3], sessions_e20d):
     delta = pnl - e013_ref

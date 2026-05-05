@@ -1,101 +1,37 @@
 {
   "generated": "2026-05-05",
+  "version": "engine v12 (loss bug fix + actual-risk filter)",
   "test_period": "2026-04-22 to 2026-05-05 ET (11 trading days)",
-  "data_source": "XAUUSD_M1_202604220000_202605050514.csv (MT5 export, broker time +4 ET offset)",
-  "config": "e37 locked (Asia 18:00/90m DIRECT, London 00:00/60m DIRECT, NY 07:00/60m DIRECT)",
+  "data_source": "XAUUSD_M1_e37_validation_20260422_20260505.csv",
+  "config": "e37 corrected (filter OFF, 1 attempt/day per session)",
   "summary": {
-    "total_pnl": 168.98,
+    "total_pnl": 84.95,
     "total_trades": 21,
     "wins": 15,
     "losses": 6,
     "win_rate_pct": 71.4,
     "trading_days": 11,
-    "pnl_per_day_avg": 15.36,
-    "annualized_proj_pts": 3840,
-    "annualized_proj_usd_lot002": 7680
+    "pnl_per_day_avg": 7.72
   },
   "per_session": {
-    "asia": {"trades": 7, "wins": 3, "losses": 4, "wr": 42.9, "pnl": 20.88, "avg_sl": 8.8},
-    "london": {"trades": 9, "wins": 8, "losses": 1, "wr": 88.9, "pnl": 92.73, "avg_sl": 5.9},
-    "ny": {"trades": 5, "wins": 4, "losses": 1, "wr": 80.0, "pnl": 55.37, "avg_sl": 7.1}
+    "asia": {"trades": 7, "wins": 3, "losses": 4, "wr": 42.9, "pnl": -26.29, "avg_sl": 8.8},
+    "london": {"trades": 9, "wins": 8, "losses": 1, "wr": 88.9, "pnl": 82.55, "avg_sl": 5.9},
+    "ny": {"trades": 5, "wins": 4, "losses": 1, "wr": 80.0, "pnl": 28.68, "avg_sl": 7.1}
   },
-  "trades": [
-    {"n": 1, "session": "LONDON", "day": "2026-04-22", "entry_dt": "2026-04-22 01:16:00", "dir": "BUY", "entry": 4761.679, "sl": 4748.724, "tp": 4769.069, "exit": 4769.069, "result": "TP", "pnl": 7.39},
-    {"n": 2, "session": "NY",     "day": "2026-04-22", "entry_dt": "2026-04-22 09:00:00", "dir": "SELL","entry": 4742.687, "sl": 4767.495, "tp": 4726.186, "exit": 4726.186, "result": "TP", "pnl": 16.50},
-    {"n": 3, "session": "ASIA",   "day": "2026-04-22", "entry_dt": "2026-04-22 20:02:00", "dir": "SELL","entry": 4722.064, "sl": 4761.421, "tp": 4698.582, "exit": 4698.582, "result": "TP", "pnl": 23.48},
-    {"n": 4, "session": "LONDON", "day": "2026-04-23", "entry_dt": "2026-04-23 01:08:00", "dir": "BUY", "entry": 4708.814, "sl": 4694.416, "tp": 4717.251, "exit": 4694.416, "result": "SL", "pnl": -4.22},
-    {"n": 5, "session": "ASIA",   "day": "2026-04-23", "entry_dt": "2026-04-23 20:34:00", "dir": "BUY", "entry": 4704.267, "sl": 4677.143, "tp": 4718.448, "exit": 4677.143, "result": "SL", "pnl": -9.45},
-    {"n": 6, "session": "LONDON", "day": "2026-04-24", "entry_dt": "2026-04-24 01:36:00", "dir": "BUY", "entry": 4683.836, "sl": 4648.075, "tp": 4702.932, "exit": 4702.932, "result": "TP", "pnl": 19.10},
-    {"n": 7, "session": "LONDON", "day": "2026-04-27", "entry_dt": "2026-04-27 01:05:00", "dir": "SELL","entry": 4721.191, "sl": 4733.913, "tp": 4713.740, "exit": 4713.740, "result": "TP", "pnl": 7.45},
-    {"n": 8, "session": "NY",     "day": "2026-04-27", "entry_dt": "2026-04-27 09:02:00", "dir": "SELL","entry": 4695.351, "sl": 4713.550, "tp": 4684.037, "exit": 4684.037, "result": "TP", "pnl": 11.31},
-    {"n": 9, "session": "ASIA",   "day": "2026-04-27", "entry_dt": "2026-04-27 19:37:00", "dir": "BUY", "entry": 4692.647, "sl": 4675.371, "tp": 4702.718, "exit": 4675.371, "result": "SL", "pnl": -6.71},
-    {"n":10, "session": "LONDON", "day": "2026-04-28", "entry_dt": "2026-04-28 01:01:00", "dir": "SELL","entry": 4664.859, "sl": 4674.378, "tp": 4658.859, "exit": 4658.859, "result": "TP", "pnl": 6.00},
-    {"n":11, "session": "ASIA",   "day": "2026-04-28", "entry_dt": "2026-04-28 19:40:00", "dir": "SELL","entry": 4588.549, "sl": 4606.993, "tp": 4577.597, "exit": 4606.993, "result": "SL", "pnl": -7.30},
-    {"n":12, "session": "LONDON", "day": "2026-04-29", "entry_dt": "2026-04-29 02:09:00", "dir": "SELL","entry": 4592.789, "sl": 4611.064, "tp": 4582.195, "exit": 4582.195, "result": "TP", "pnl": 10.59},
-    {"n":13, "session": "NY",     "day": "2026-04-29", "entry_dt": "2026-04-29 08:33:00", "dir": "SELL","entry": 4554.379, "sl": 4578.357, "tp": 4538.462, "exit": 4538.462, "result": "TP", "pnl": 15.92},
-    {"n":14, "session": "ASIA",   "day": "2026-04-29", "entry_dt": "2026-04-29 19:46:00", "dir": "BUY", "entry": 4555.441, "sl": 4527.947, "tp": 4572.351, "exit": 4572.351, "result": "TP", "pnl": 16.91},
-    {"n":15, "session": "LONDON", "day": "2026-04-30", "entry_dt": "2026-04-30 01:41:00", "dir": "BUY", "entry": 4565.489, "sl": 4532.699, "tp": 4581.721, "exit": 4581.721, "result": "TP", "pnl": 16.23},
-    {"n":16, "session": "ASIA",   "day": "2026-04-30", "entry_dt": "2026-04-30 19:34:00", "dir": "BUY", "entry": 4632.958, "sl": 4619.863, "tp": 4640.913, "exit": 4619.863, "result": "SL", "pnl": -5.30},
-    {"n":17, "session": "LONDON", "day": "2026-05-01", "entry_dt": "2026-05-01 01:57:00", "dir": "SELL","entry": 4604.518, "sl": 4638.873, "tp": 4584.639, "exit": 4584.639, "result": "TP", "pnl": 19.88},
-    {"n":18, "session": "NY",     "day": "2026-05-01", "entry_dt": "2026-05-01 08:15:00", "dir": "BUY", "entry": 4585.142, "sl": 4553.977, "tp": 4606.484, "exit": 4606.484, "result": "TP", "pnl": 21.34},
-    {"n":19, "session": "LONDON", "day": "2026-05-04", "entry_dt": "2026-05-04 01:17:00", "dir": "SELL","entry": 4602.261, "sl": 4620.711, "tp": 4591.951, "exit": 4591.951, "result": "TP", "pnl": 10.31},
-    {"n":20, "session": "NY",     "day": "2026-05-04", "entry_dt": "2026-05-04 10:23:00", "dir": "BUY", "entry": 4578.232, "sl": 4541.840, "tp": 4602.489, "exit": 4541.840, "result": "SL", "pnl": -9.70},
-    {"n":21, "session": "ASIA",   "day": "2026-05-04", "entry_dt": "2026-05-04 20:07:00", "dir": "BUY", "entry": 4525.075, "sl": 4509.316, "tp": 4534.333, "exit": 4534.333, "result": "TP", "pnl": 9.26}
-  ],
-  "boxes": {
-    "asia_18_00_90m": {
-      "2026-04-22": {"hi": 4745.766, "lo": 4723.402, "width": 22.36},
-      "2026-04-23": {"hi": 4700.103, "lo": 4686.597, "width": 13.51},
-      "2026-04-27": {"hi": 4691.676, "lo": 4682.085, "width":  9.59},
-      "2026-04-28": {"hi": 4599.692, "lo": 4589.262, "width": 10.43},
-      "2026-04-29": {"hi": 4555.325, "lo": 4539.220, "width": 16.10},
-      "2026-04-30": {"hi": 4632.742, "lo": 4625.166, "width":  7.58},
-      "2026-05-04": {"hi": 4524.305, "lo": 4515.488, "width":  8.82}
-    },
-    "london_00_00_60m": {
-      "2026-04-22": {"hi": 4759.809, "lo": 4752.419, "width":  7.39},
-      "2026-04-23": {"hi": 4707.071, "lo": 4698.634, "width":  8.44},
-      "2026-04-24": {"hi": 4676.719, "lo": 4657.623, "width": 19.10},
-      "2026-04-27": {"hi": 4730.187, "lo": 4722.736, "width":  7.45},
-      "2026-04-28": {"hi": 4671.378, "lo": 4666.624, "width":  4.75},
-      "2026-04-29": {"hi": 4605.767, "lo": 4595.173, "width": 10.59},
-      "2026-04-30": {"hi": 4557.047, "lo": 4540.815, "width": 16.23},
-      "2026-05-01": {"hi": 4628.934, "lo": 4609.055, "width": 19.88},
-      "2026-05-04": {"hi": 4615.556, "lo": 4605.246, "width": 10.31},
-      "2026-05-05": {"hi": 4536.773, "lo": 4528.006, "width":  8.77}
-    },
-    "ny_07_00_60m": {
-      "2026-04-22": {"hi": 4760.894, "lo": 4747.693, "width": 13.20},
-      "2026-04-23": {"hi": 4720.914, "lo": 4695.576, "width": 25.34},
-      "2026-04-24": {"hi": 4717.453, "lo": 4677.797, "width": 39.66},
-      "2026-04-27": {"hi": 4709.024, "lo": 4699.973, "width":  9.05},
-      "2026-04-28": {"hi": 4608.602, "lo": 4555.341, "width": 53.26},
-      "2026-04-29": {"hi": 4571.990, "lo": 4559.256, "width": 12.73},
-      "2026-04-30": {"hi": 4645.932, "lo": 4626.533, "width": 19.40},
-      "2026-05-01": {"hi": 4579.588, "lo": 4562.514, "width": 17.07},
-      "2026-05-04": {"hi": 4570.949, "lo": 4551.543, "width": 19.41}
-    }
+  "engine_correction_notes": {
+    "v11_bug": "Loss accounting recorded -sl_dist instead of -(ep - sp). For DIRECT breakout where entry > boxHi but SL < boxLo, real loss includes box-width crossing.",
+    "v12_fix": "Engine now uses actual entry-to-SL distance for both PnL and max_sl_pts filter. Pine math was always correct.",
+    "old_apr22-may05_total": 168.98,
+    "new_apr22-may05_total": 84.95,
+    "delta": -84.03,
+    "delta_explanation": "True loss per SL exit is ~bw + slDist (not just slDist). 6 losses × ~14pt avg under-counted = -84pt correction."
   },
-  "tradingview_panel_observed": {
-    "asia": {"win": 0, "loss": 0, "chop": 11, "wr_pct": 0, "net_pnl": 0, "breakout_dir": "NO", "mode": "90d (LEGACY)", "sl_formula": "ext+1/mid (MEAN-REV)"},
-    "london": {"win": 8, "loss": 3, "chop": 6, "wr_pct": 72.7, "net_pnl": 10.8, "mode": "e37"},
-    "ny": {"win": 0, "loss": 2, "chop": 6, "wr_pct": 0, "net_pnl": -2, "mode": "OOS panel"}
-  },
-  "engine_vs_pine_discrepancy": {
-    "asia": {
-      "engine": "7 trades 3W/4L 43% WR +20.88 (DIRECT model)",
-      "pine":   "0 trades, panel shows MEAN-REV formula (ext+1/mid)",
-      "verdict": "Pine NOT running e36 DIRECT model — bug or toggle off"
-    },
-    "london": {
-      "engine": "9 trades 8W/1L 89% WR +92.73",
-      "pine":   "11 trades 8W/3L 73% WR +10.8 pts (P&L mismatch huge)",
-      "verdict": "Win count match but loss count and PnL very different — likely TP/SL formula different"
-    },
-    "ny": {
-      "engine": "5 trades 4W/1L 80% WR +55.37",
-      "pine":   "2 trades 0W/2L 0% WR -2 pts",
-      "verdict": "Pine NOT entering most NY setups — likely max-SL filter blocking + different TP formula"
-    }
+  "true_5y_canonical": {
+    "asia": {"trades": 594, "wr": 61.3, "pnl": 855},
+    "london": {"trades": 958, "wr": 61.8, "pnl": 1186},
+    "ny": {"trades": 881, "wr": 57.8, "pnl": 1182},
+    "total": 3223,
+    "live_estimate_lot002": "$129/year",
+    "previous_inflated_claim": 9084
   }
 }
