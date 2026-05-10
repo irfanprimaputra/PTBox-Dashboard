@@ -476,37 +476,70 @@ void DrawExitMarker(VirtualTrade &vt, double exitPx, string reason) {
 }
 
 //+------------------------------------------------------------------+
-//| OnTick                                                           |
+//| OnCalculate — process historical bars on first run + live updates|
 //+------------------------------------------------------------------+
-datetime lastBar = 0;
+datetime lastBarProcessed = 0;
 
-int OnCalculate(const int rates_total, const int prev_calculated,
-                const datetime &time[], const double &open[],
-                const double &high[], const double &low[], const double &close[],
-                const long &tick_volume[], const long &volume[],
-                const int &spread[]) {
-   // Manage virtual trades every tick
-   ManageVirtualTrade(asiaVT);
-   ManageVirtualTrade(lonVT);
-   ManageVirtualTrade(nyVT);
+// Historical virtual trade manager — uses bar high/low (not live bid/ask)
+void HistoricalManageVT(VirtualTrade &vt, double bh, double bl, datetime barT) {
+   if(!vt.active) return;
+   bool exited = false;
+   string exitReason = "";
+   double exitPx = 0;
+   if(vt.dir == 1) {
+      if(bl <= vt.sl) { exited = true; exitPx = vt.sl;
+         exitReason = vt.beTriggered && MathAbs(vt.sl - vt.entry) <= 0.5 ? "BE" : (vt.beTriggered ? "TRAIL" : "SL"); }
+      else if(bh >= vt.tp) { exited = true; exitPx = vt.tp; exitReason = "TP"; }
+   } else {
+      if(bh >= vt.sl) { exited = true; exitPx = vt.sl;
+         exitReason = vt.beTriggered && MathAbs(vt.sl - vt.entry) <= 0.5 ? "BE" : (vt.beTriggered ? "TRAIL" : "SL"); }
+      else if(bl <= vt.tp) { exited = true; exitPx = vt.tp; exitReason = "TP"; }
+   }
+   if(exited) {
+      DrawExitMarker(vt, exitPx, exitReason);
+      ResetVT(vt);
+      return;
+   }
+   if(!UseBeTrail) return;
+   double slDist = MathAbs(vt.entry - vt.slOrig);
+   if(!vt.beTriggered) {
+      bool armed = vt.dir == 1 ? bh >= vt.entry + BeTriggerR * slDist
+                                : bl <= vt.entry - BeTriggerR * slDist;
+      if(armed) {
+         vt.sl = vt.entry; vt.beTriggered = true;
+         vt.runExtreme = vt.dir == 1 ? bh : bl;
+         UpdateSLLine(vt, vt.sl, "🛡️ BE");
+      }
+   } else {
+      if(vt.dir == 1) {
+         if(bh > vt.runExtreme) vt.runExtreme = bh;
+         double newSl = vt.runExtreme - slDist;
+         if(newSl > vt.sl) { vt.sl = newSl; UpdateSLLine(vt, vt.sl, "🎯"); }
+      } else {
+         if(bl < vt.runExtreme) vt.runExtreme = bl;
+         double newSl = vt.runExtreme + slDist;
+         if(newSl < vt.sl) { vt.sl = newSl; UpdateSLLine(vt, vt.sl, "🎯"); }
+      }
+   }
+}
 
-   // Bar-close logic only
-   if(rates_total < 3) return rates_total;
-   datetime curBar = time[rates_total - 1];
-   if(curBar == lastBar) return rates_total;
-   lastBar = curBar;
-
-   datetime now = TimeCurrent();
-   int curDay = ETDayOfMonth(now);
-   int curMin = ETMinOfDay(now);
+void ProcessBar(int idx, const datetime &time[], const double &open[],
+                const double &high[], const double &low[], const double &close[]) {
+   if(idx < 1) return;
+   datetime barTime = time[idx];
+   int curDay = ETDayOfMonth(barTime);
+   int curMin = ETMinOfDay(barTime);
 
    if(lastDay != -1 && curDay != lastDay) ResetSessions();
    lastDay = curDay;
 
-   int idx = rates_total - 2;  // last closed bar
-   if(idx < 1) return rates_total;
    double po = open[idx-1], ph = high[idx-1], pl = low[idx-1], pc = close[idx-1];
    double co = open[idx],   ch = high[idx],   cl = low[idx],   cc = close[idx];
+
+   // Manage active virtual trades using THIS bar's high/low (historical-safe)
+   HistoricalManageVT(asiaVT, ch, cl, barTime);
+   HistoricalManageVT(lonVT,  ch, cl, barTime);
+   HistoricalManageVT(nyVT,   ch, cl, barTime);
 
    if(AsiaEnable) {
       int s = AsiaBoxStartH * 60 + AsiaBoxStartM;
@@ -515,7 +548,7 @@ int OnCalculate(const int rates_total, const int prev_calculated,
       UpdateBox(asiaBox, s, e, ph, pl, curMin, AsiaColor, "ASIA");
       if(curMin >= e && curMin < f) {
          ProcessPullback(asiaBox, asiaVT, "ASIA", AsiaMaxAttempt, AsiaColor,
-                         po, ph, pl, pc, co, ch, cl, cc, time[idx]);
+                         po, ph, pl, pc, co, ch, cl, cc, barTime);
       }
    }
 
@@ -526,7 +559,7 @@ int OnCalculate(const int rates_total, const int prev_calculated,
       UpdateBox(lonBox, s, e, ph, pl, curMin, LonColor, "LON");
       if(curMin >= e && curMin < f) {
          ProcessPullback(lonBox, lonVT, "LON", LonMaxAttempt, LonColor,
-                         po, ph, pl, pc, co, ch, cl, cc, time[idx]);
+                         po, ph, pl, pc, co, ch, cl, cc, barTime);
       }
    }
 
@@ -537,10 +570,49 @@ int OnCalculate(const int rates_total, const int prev_calculated,
       UpdateBox(nyBox, s, e, ph, pl, curMin, NYColor, "NY");
       if(curMin >= e + NYEntryDelayMin && curMin < f) {
          ProcessPullback(nyBox, nyVT, "NY", NYMaxAttempt, NYColor,
-                         po, ph, pl, pc, co, ch, cl, cc, time[idx]);
+                         po, ph, pl, pc, co, ch, cl, cc, barTime);
       }
    }
+}
 
+int OnCalculate(const int rates_total, const int prev_calculated,
+                const datetime &time[], const double &open[],
+                const double &high[], const double &low[], const double &close[],
+                const long &tick_volume[], const long &volume[],
+                const int &spread[]) {
+   if(rates_total < 3) return rates_total;
+
+   // ─── FIRST RUN: process historical bars ──────────────────────────────
+   if(prev_calculated == 0) {
+      Print("[PT Box v14] Processing ", rates_total, " historical bars...");
+      // Reset state at start of historical replay
+      ResetSessions();
+      lastDay = -1;
+      // Iterate ALL closed bars (skip last forming bar)
+      for(int i = 1; i < rates_total - 1; i++) {
+         ProcessBar(i, time, open, high, low, close);
+      }
+      lastBarProcessed = time[rates_total - 2];
+      Print("[PT Box v14] Historical replay complete. Live mode active.");
+      ChartRedraw();
+      return rates_total;
+   }
+
+   // ─── LIVE MODE: process new closed bars only ─────────────────────────
+   // Manage virtual trades every tick (live)
+   ManageVirtualTrade(asiaVT);
+   ManageVirtualTrade(lonVT);
+   ManageVirtualTrade(nyVT);
+
+   // Process newly closed bars
+   int closedIdx = rates_total - 2;
+   if(closedIdx < 1) return rates_total;
+   datetime closedBarTime = time[closedIdx];
+   if(closedBarTime <= lastBarProcessed) return rates_total;
+
+   ProcessBar(closedIdx, time, open, high, low, close);
+   lastBarProcessed = closedBarTime;
+   ChartRedraw();
    return rates_total;
 }
 
