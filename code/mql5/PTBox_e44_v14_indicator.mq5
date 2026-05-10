@@ -216,7 +216,7 @@ void UpdateBox(BoxState &bx, int startMin, int endMin, double ph, double pl, int
    if(curMin >= startMin && curMin < endMin) {
       if(bx.hi == 0 && bx.lo == 0) {
          bx.hi = ph; bx.lo = pl;
-         bx.formedAt = barTime - (long)(curMin - startMin) * 60;  // approx box start time
+         bx.formedAt = (datetime)((long)barTime - (long)(curMin - startMin) * 60);  // approx box start time
       } else {
          bx.hi = MathMax(bx.hi, ph);
          bx.lo = MathMin(bx.lo, pl);
