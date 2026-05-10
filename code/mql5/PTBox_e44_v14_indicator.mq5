@@ -30,9 +30,16 @@ input bool   ShowBoxes        = true;
 input bool   ShowSignals      = true;
 input bool   ShowSLTPLines    = true;
 input bool   ShowBeMarkers    = true;
-input color  AsiaColor        = clrLime;
-input color  LonColor         = clrDeepSkyBlue;
-input color  NYColor          = clrOrange;
+input bool   ShowStatsPanel   = true;
+input color  AsiaColor        = C'80,200,120';   // soft mint green (good vs dark)
+input color  LonColor         = C'100,160,255';  // soft sky blue
+input color  NYColor          = C'255,180,80';   // amber (less harsh than orange)
+input color  BuyArrowColor    = C'50,255,150';   // bright mint
+input color  SellArrowColor   = C'255,100,100';  // bright coral
+input color  BeMarkerColor    = C'120,220,255';  // light cyan
+input color  TrailMarkerColor = C'100,255,180';  // mint trail
+input color  SlLineColor      = C'255,90,90';    // soft red
+input color  TpLineColor      = C'100,255,100';  // mint green
 
 input group "═════ Notifications ═════"
 input bool   PushToMobile     = true;
@@ -114,6 +121,16 @@ BoxState     asiaBox, lonBox, nyBox;
 VirtualTrade asiaVT, lonVT, nyVT;
 int          lastDay = -1;
 string       OBJ_PREFIX = "PTBox_v14_";
+
+// Stats per session (cumulative since attach)
+struct SessionStats {
+   int    wins;
+   int    losses;
+   int    bes;
+   int    trails;
+   double pnlPts;
+};
+SessionStats asiaStats, lonStats, nyStats;
 
 //+------------------------------------------------------------------+
 //| Init / Deinit                                                    |
@@ -347,13 +364,13 @@ void DrawEntryLabel(datetime t, double price, bool isLong, string tag, color col
    string name = OBJ_PREFIX + tag + "_entry_" + TimeToString(t, TIME_DATE | TIME_SECONDS);
    ObjectCreate(0, name, OBJ_ARROW, 0, t, price);
    ObjectSetInteger(0, name, OBJPROP_ARROWCODE, isLong ? 233 : 234);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, col);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, isLong ? BuyArrowColor : SellArrowColor);
    ObjectSetInteger(0, name, OBJPROP_WIDTH, 3);
 
    string lblName = name + "_lbl";
    ObjectCreate(0, lblName, OBJ_TEXT, 0, t, isLong ? price - 5 : price + 5);
-   ObjectSetString(0, lblName, OBJPROP_TEXT, (isLong ? "🌊 BUY " : "🌊 SELL ") + tag);
-   ObjectSetInteger(0, lblName, OBJPROP_COLOR, clrWhite);
+   ObjectSetString(0, lblName, OBJPROP_TEXT, (isLong ? " BUY " : " SELL ") + tag);
+   ObjectSetInteger(0, lblName, OBJPROP_COLOR, isLong ? BuyArrowColor : SellArrowColor);
    ObjectSetInteger(0, lblName, OBJPROP_FONTSIZE, 9);
 }
 
@@ -363,20 +380,23 @@ void DrawSLTP(VirtualTrade &vt, color col) {
 
    string slName = base + "_sl";
    ObjectCreate(0, slName, OBJ_TREND, 0, vt.openTime, vt.sl, endT, vt.sl);
-   ObjectSetInteger(0, slName, OBJPROP_COLOR, clrRed);
+   ObjectSetInteger(0, slName, OBJPROP_COLOR, SlLineColor);
    ObjectSetInteger(0, slName, OBJPROP_STYLE, STYLE_DASH);
    ObjectSetInteger(0, slName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, slName, OBJPROP_RAY_RIGHT, false);
 
    string tpName = base + "_tp";
    ObjectCreate(0, tpName, OBJ_TREND, 0, vt.openTime, vt.tp, endT, vt.tp);
-   ObjectSetInteger(0, tpName, OBJPROP_COLOR, clrLime);
+   ObjectSetInteger(0, tpName, OBJPROP_COLOR, TpLineColor);
    ObjectSetInteger(0, tpName, OBJPROP_STYLE, STYLE_DASH);
    ObjectSetInteger(0, tpName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, tpName, OBJPROP_RAY_RIGHT, false);
 
    string entName = base + "_entry_line";
    ObjectCreate(0, entName, OBJ_TREND, 0, vt.openTime, vt.entry, endT, vt.entry);
    ObjectSetInteger(0, entName, OBJPROP_COLOR, col);
    ObjectSetInteger(0, entName, OBJPROP_STYLE, STYLE_DOT);
+   ObjectSetInteger(0, entName, OBJPROP_RAY_RIGHT, false);
 }
 
 void UpdateSLLine(VirtualTrade &vt, double newSL, string markerText) {
@@ -388,13 +408,14 @@ void UpdateSLLine(VirtualTrade &vt, double newSL, string markerText) {
    ObjectMove(0, slName, 1, endT, newSL);
    if(ShowBeMarkers) {
       string markerName = base + "_be_" + TimeToString(barT, TIME_DATE | TIME_SECONDS);
+      color mc = StringFind(markerText, "TRAIL") >= 0 || StringFind(markerText, "TR") >= 0 ? TrailMarkerColor : BeMarkerColor;
       ObjectCreate(0, markerName, OBJ_ARROW, 0, barT, newSL);
       ObjectSetInteger(0, markerName, OBJPROP_ARROWCODE, 251);
-      ObjectSetInteger(0, markerName, OBJPROP_COLOR, clrAqua);
+      ObjectSetInteger(0, markerName, OBJPROP_COLOR, mc);
       string lblName = markerName + "_lbl";
       ObjectCreate(0, lblName, OBJ_TEXT, 0, barT, vt.dir == 1 ? newSL - 3 : newSL + 3);
       ObjectSetString(0, lblName, OBJPROP_TEXT, markerText);
-      ObjectSetInteger(0, lblName, OBJPROP_COLOR, clrAqua);
+      ObjectSetInteger(0, lblName, OBJPROP_COLOR, mc);
       ObjectSetInteger(0, lblName, OBJPROP_FONTSIZE, 8);
    }
 }
@@ -478,9 +499,24 @@ void DrawExitMarker(VirtualTrade &vt, double exitPx, string reason) {
    ObjectCreate(0, name, OBJ_TEXT, 0, barT, exitPx);
    string symbol = reason == "TP" ? "TP" : (reason == "BE" ? "BE" : (reason == "TRAIL" ? "TR" : "SL"));
    ObjectSetString(0, name, OBJPROP_TEXT, " " + symbol + " " + vt.sessionTag);
-   color col = (reason == "TP" || reason == "TRAIL") ? clrLime : (reason == "BE" ? clrAqua : clrRed);
+   color col = (reason == "TP" || reason == "TRAIL") ? TpLineColor : (reason == "BE" ? BeMarkerColor : SlLineColor);
    ObjectSetInteger(0, name, OBJPROP_COLOR, col);
    ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 9);
+
+   // Update stats
+   double pnl = vt.dir == 1 ? exitPx - vt.entry : vt.entry - exitPx;
+   SessionStats stats = {0,0,0,0,0};
+   if(vt.sessionTag == "ASIA") stats = asiaStats;
+   else if(vt.sessionTag == "LON") stats = lonStats;
+   else if(vt.sessionTag == "NY")  stats = nyStats;
+   stats.pnlPts += pnl;
+   if(reason == "TP")           stats.wins++;
+   else if(reason == "BE")      stats.bes++;
+   else if(reason == "TRAIL")   stats.trails++;
+   else                          stats.losses++;
+   if(vt.sessionTag == "ASIA")     asiaStats = stats;
+   else if(vt.sessionTag == "LON") lonStats  = stats;
+   else if(vt.sessionTag == "NY")  nyStats   = stats;
 }
 
 //+------------------------------------------------------------------+
@@ -586,6 +622,55 @@ void ProcessBar(int idx, const datetime &time[], const double &open[],
    }
 }
 
+//+------------------------------------------------------------------+
+//| Stats panel — Pine v14 style top-right table                     |
+//+------------------------------------------------------------------+
+void RenderStatsPanel() {
+   if(!ShowStatsPanel) return;
+   string p = OBJ_PREFIX + "stats_";
+
+   string rows[] = {
+      "PT BOX v14 (BE Trail)",
+      "─────────────────",
+      StringFormat("ASIA   %d W · %d L · %d BE · %d TR", asiaStats.wins, asiaStats.losses, asiaStats.bes, asiaStats.trails),
+      StringFormat("       PnL %+.2fpt = $%+.2f", asiaStats.pnlPts, asiaStats.pnlPts * LotSize * 100),
+      StringFormat("LONDON %d W · %d L · %d BE · %d TR", lonStats.wins, lonStats.losses, lonStats.bes, lonStats.trails),
+      StringFormat("       PnL %+.2fpt = $%+.2f", lonStats.pnlPts, lonStats.pnlPts * LotSize * 100),
+      StringFormat("NY     %d W · %d L · %d BE · %d TR", nyStats.wins, nyStats.losses, nyStats.bes, nyStats.trails),
+      StringFormat("       PnL %+.2fpt = $%+.2f", nyStats.pnlPts, nyStats.pnlPts * LotSize * 100),
+      "─────────────────",
+      StringFormat("TOTAL  %+.2fpt = $%+.2f",
+                   asiaStats.pnlPts + lonStats.pnlPts + nyStats.pnlPts,
+                   (asiaStats.pnlPts + lonStats.pnlPts + nyStats.pnlPts) * LotSize * 100)
+   };
+
+   for(int i = 0; i < ArraySize(rows); i++) {
+      string nm = p + IntegerToString(i);
+      if(ObjectFind(0, nm) < 0) {
+         ObjectCreate(0, nm, OBJ_LABEL, 0, 0, 0);
+         ObjectSetInteger(0, nm, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+         ObjectSetInteger(0, nm, OBJPROP_ANCHOR, ANCHOR_RIGHT_UPPER);
+         ObjectSetInteger(0, nm, OBJPROP_XDISTANCE, 10);
+         ObjectSetInteger(0, nm, OBJPROP_YDISTANCE, 20 + i * 16);
+         ObjectSetInteger(0, nm, OBJPROP_FONTSIZE, 9);
+         ObjectSetString(0, nm, OBJPROP_FONT, "Consolas");
+         ObjectSetInteger(0, nm, OBJPROP_SELECTABLE, false);
+      }
+      ObjectSetString(0, nm, OBJPROP_TEXT, rows[i]);
+      // Color coding
+      color c = clrWhite;
+      if(i == 0) c = C'200,200,255';
+      else if(StringFind(rows[i], "ASIA") == 0) c = AsiaColor;
+      else if(StringFind(rows[i], "LONDON") == 0) c = LonColor;
+      else if(StringFind(rows[i], "NY") == 0) c = NYColor;
+      else if(StringFind(rows[i], "TOTAL") == 0) {
+         double tot = asiaStats.pnlPts + lonStats.pnlPts + nyStats.pnlPts;
+         c = tot >= 0 ? TpLineColor : SlLineColor;
+      }
+      ObjectSetInteger(0, nm, OBJPROP_COLOR, c);
+   }
+}
+
 int OnCalculate(const int rates_total, const int prev_calculated,
                 const datetime &time[], const double &open[],
                 const double &high[], const double &low[], const double &close[],
@@ -605,7 +690,7 @@ int OnCalculate(const int rates_total, const int prev_calculated,
       }
       lastBarProcessed = time[rates_total - 2];
       Print("[PT Box v14] Historical replay complete. Live mode active.");
-      ChartRedraw();
+      RenderStatsPanel(); ChartRedraw();
       return rates_total;
    }
 
@@ -623,7 +708,7 @@ int OnCalculate(const int rates_total, const int prev_calculated,
 
    ProcessBar(closedIdx, time, open, high, low, close);
    lastBarProcessed = closedBarTime;
-   ChartRedraw();
+   RenderStatsPanel(); ChartRedraw();
    return rates_total;
 }
 
