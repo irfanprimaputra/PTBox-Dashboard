@@ -36,6 +36,12 @@
 //                Backtest: WR 34.9% → 51.2% (+16.2pt), 5y PnL +$48 (sama).
 //                Mental boost massive — profit ga balik ke loss lagi.
 //                Toggle: useBeTrail default ON. Set OFF untuk balik baseline.
+// 2026-05-10 v15 V2 ASIA TIGHT SL (Phase 24 winner): Asia switches from
+//                pullback state machine to DIRECT BO + fixed 5pt SL.
+//                Backtest: Asia +664 vs +572 PB (+$92), worst trade -$10
+//                vs -$74 (7.4× safer). Recommended untuk modal kecil.
+//                Toggle: asiaUseTightSlBO default ON. Bypass = back to PB.
+//                London + NY tetap PB (default).
 //
 // ENTRY TIMING (LIVE):
 //   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
@@ -43,7 +49,7 @@
 //   - Backtest assumes entry @ close[N] (zero slippage for engine truth)
 //   - Live slippage ~0-2 pts vs backtest is normal
 // ═══════════════════════════════════════════════════════════════════════════
-indicator("PT Box e44 PULLBACK v14 (BE Trail · WR 35→51% · OOS 10/10 Q+ · 5.8× safer)", overlay = true,
+indicator("PT Box v15 (BE Trail + V2 Asia Tight SL · WR 51% · Worst Asia -$10)", overlay = true,
      max_boxes_count   = 500,
      max_lines_count   = 500,
      max_labels_count  = 500,
@@ -158,6 +164,13 @@ asiaMaxAttempt    = input.int  (5,   "Max attempts/day — e44 PB optimum: 5", g
 asiaSlBoxMult     = input.float(0.7, "Asia SL = X × box_width (e36)", group = g_asia)
 asiaTp1Mult       = input.float(1.0, "Asia TP1 = X × SL", group = g_asia)
 asiaTp2Mult       = input.float(1.5, "Asia TP2 = X × SL (e36 optimum)", group = g_asia)
+// ─── 🛡️ V2 Asia Tight SL (Phase 24 winner — modal kecil mental safety) ────
+// 5y backtest: +664 vs e44 PB Asia +572 (+92 PnL) AND worst trade -$10 vs -$74 (7.4× safer)
+// Mechanic: Asia uses DIRECT breakout entry (not pullback) + FIXED 5pt SL
+// Default ON — recommended untuk modal <$500 (drama drop 86%)
+asiaUseTightSlBO  = input.bool (true, "🛡️ V2: Direct BO + fixed-pt SL (Phase 24 — safer Asia)", group = g_asia)
+asiaTightSlPts    = input.float(5.0,  "V2 Asia: fixed SL distance (pts)", minval = 2, maxval = 15, group = g_asia)
+asiaTightTpMult   = input.float(2.0,  "V2 Asia: TP × SL (1:N RR)", minval = 1, maxval = 4, step = 0.5, group = g_asia)
 asiaBodyClosePct  = input.float(0.0, "Asia body close confirm (% box width)", minval = 0.0, maxval = 1.0, step = 0.05, group = g_asia)
 asiaUseDirectModel = input.bool(true,"Asia DIRECT breakout (e36) instead of mean-rev fade", group = g_asia)
 asiaMinSl         = input.float(3.0, "Asia min SL (pts)", group = g_asia)
@@ -974,8 +987,32 @@ if showLondon and not londonUseDirectModel and inLondonSessionRange and not na(l
 // 5y backtest: +4301 (vs e41 +3983), avgSL 4.2pt, worst -$74 (5.8× safer)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ─── Asia PULLBACK ─────────────────────────────────────────────────────────
-if entryMode == "PULLBACK" and showAsia and inAsiaSessionRange and not na(asiaBoxHi) and asiaTodayAtt < asiaMaxAttempt and atrPass and weekdayPass and array.size(asiaOpen) == 0
+// ─── 🛡️ V2 Asia Tight SL (Phase 24 winner) — Direct BO + fixed 5pt SL ────
+// Active when asiaUseTightSlBO == true. Bypasses pullback state machine.
+if asiaUseTightSlBO and entryMode == "PULLBACK" and showAsia and inAsiaSessionRange and not na(asiaBoxHi) and asiaTodayAtt < asiaMaxAttempt and atrPass and weekdayPass and array.size(asiaOpen) == 0
+    if close > asiaBoxHi
+        slPx_v2 = close - asiaTightSlPts
+        tpPx_v2 = close + asiaTightTpMult * asiaTightSlPts
+        asiaTodayAtt += 1
+        asiaHadEntry := true
+        [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_v2, tpPx_v2, close, color.red, color.green)
+        array.push(asiaOpen, Trade.new(close, slPx_v2, tpPx_v2, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab, slPx_v2, false, na))
+        drawEntryMarker(true, color.lime)
+        alert("🛡️ BUY Asia V2 (tight " + str.tostring(asiaTightSlPts, "#.#") + "pt) @ " + str.tostring(close) + " | SL " + str.tostring(slPx_v2) + " | TP " + str.tostring(tpPx_v2), alert.freq_once_per_bar)
+        log.info("ENTRY|Asia-V2|LONG|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_v2, "#.##") + "|tp=" + str.tostring(tpPx_v2, "#.##") + "|risk=" + str.tostring(asiaTightSlPts, "#.##"))
+    else if close < asiaBoxLo
+        slPx_v2 = close + asiaTightSlPts
+        tpPx_v2 = close - asiaTightTpMult * asiaTightSlPts
+        asiaTodayAtt += 1
+        asiaHadEntry := true
+        [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_v2, tpPx_v2, close, color.red, color.green)
+        array.push(asiaOpen, Trade.new(close, slPx_v2, tpPx_v2, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab, slPx_v2, false, na))
+        drawEntryMarker(false, color.lime)
+        alert("🛡️ SELL Asia V2 (tight " + str.tostring(asiaTightSlPts, "#.#") + "pt) @ " + str.tostring(close) + " | SL " + str.tostring(slPx_v2) + " | TP " + str.tostring(tpPx_v2), alert.freq_once_per_bar)
+        log.info("ENTRY|Asia-V2|SHORT|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_v2, "#.##") + "|tp=" + str.tostring(tpPx_v2, "#.##") + "|risk=" + str.tostring(asiaTightSlPts, "#.##"))
+
+// ─── Asia PULLBACK (legacy mode, gated when V2 toggle off) ────────────────
+if not asiaUseTightSlBO and entryMode == "PULLBACK" and showAsia and inAsiaSessionRange and not na(asiaBoxHi) and asiaTodayAtt < asiaMaxAttempt and atrPass and weekdayPass and array.size(asiaOpen) == 0
     if asiaPbState == 0   // WAIT_BREAKOUT
         if close > asiaBoxHi
             asiaPbBkDir   := 1
