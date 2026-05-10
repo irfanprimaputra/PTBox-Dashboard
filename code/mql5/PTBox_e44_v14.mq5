@@ -3,27 +3,25 @@
 //|         PT BOX e44 PULLBACK v14 — BE TRAIL EA (auto-execute)    |
 //|         Mirror of Pine v14: e44 PB state machine + BE Trail     |
 //|                                                                  |
-//|   Mechanic:                                                       |
-//|     1. Box per session (Asia 19:00/90m, London 0:00/60m,          |
-//|        NY 7:00/60m — ET timezone)                                 |
-//|     2. State machine: WAIT_BREAKOUT → WAIT_PULLBACK →             |
-//|        WAIT_REJECTION → ENTRY                                     |
-//|     3. SL = high/low of rejection candle + buffer                 |
-//|     4. TP = entry + 2×R                                           |
-//|     5. BE Trail: at +1R favor, SL → entry. After BE, trail SL    |
-//|        with running max(high)/min(low).                           |
-//|     6. EOD force-close at session end                             |
+//|   2026-05-10 v14.1 BUGFIX + PARITY:                              |
+//|     - Fix ArrayInitialize struct compile error                    |
+//|     - Add maxAttempt counter (1→5, match Pine default)            |
+//|     - Add ATR filter (e38, skip below 30th pctile)                |
+//|     - Add TP boost (e39, 1.3× when ATR rank ≥72)                  |
+//|     - Add NY delay 25min (e40)                                    |
+//|     - Add session attempt tracker reset per day                   |
+//|     - Tighter pattern detection (multi-shape match)               |
 //|                                                                  |
-//|   Backtest (Pine v14 5y):                                         |
+//|   Backtest (Pine v14 5y mirror):                                  |
 //|     WR 51.2% (vs 34.9% v13) · PnL +$4349 · worst trade -$74      |
 //|                                                                  |
 //|   ⚠️ AUTO-TRADE EA — opens/manages/closes trades automatically.  |
 //|   Test on demo dulu sebelum live!                                 |
 //+------------------------------------------------------------------+
-#property copyright "PT Box e44 v14 BE Trail · Irfan 2026"
-#property version   "14.00"
+#property copyright "PT Box e44 v14.1 BE Trail · Irfan 2026"
+#property version   "14.10"
 #property strict
-#property description "Auto-execute e44 PULLBACK + BE Trail (Pine v14 mirror)"
+#property description "Auto-execute e44 PULLBACK + BE Trail (Pine v14 mirror, full parity)"
 
 #include <Trade\Trade.mqh>
 CTrade trade;
@@ -32,52 +30,64 @@ CTrade trade;
 //| Inputs                                                            |
 //+------------------------------------------------------------------+
 input group "═════ Risk ═════"
-input double LotSize          = 0.02;     // Lot per trade
-input ulong  MagicNumber      = 14014401; // EA magic number (don't share with other EAs)
-input int    SlippagePts      = 20;       // Slippage tolerance (points = 0.1 pip XAUUSD)
+input double LotSize          = 0.02;
+input ulong  MagicNumber      = 14014401;
+input int    SlippagePts      = 20;
 
 input group "═════ Timezone ═════"
-input int    ET_GMTOffset     = -4;       // ET = GMT-4 (EDT) or -5 (EST winter)
-input int    Broker_GMTOffset = 0;        // Broker server time vs GMT (Tools→Options→Server)
+input int    ET_GMTOffset     = -4;
+input int    Broker_GMTOffset = 0;
 
-input group "═════ Session: Asia (e44 PB) ═════"
+input group "═════ Asia (e44 PB) ═════"
 input bool   AsiaEnable       = true;
-input int    AsiaBoxStartH    = 19;       // ET hour (19:00 ET)
+input int    AsiaBoxStartH    = 19;
 input int    AsiaBoxStartM    = 0;
 input int    AsiaBoxDurMin    = 90;
-input int    AsiaSessionEndH  = 24;       // 24 = midnight (extended)
+input int    AsiaSessionEndH  = 24;
+input int    AsiaMaxAttempt   = 5;
 
-input group "═════ Session: London (e44 PB) ═════"
+input group "═════ London (e44 PB) ═════"
 input bool   LonEnable        = true;
-input int    LonBoxStartH     = 0;        // ET hour (0:00 ET)
+input int    LonBoxStartH     = 0;
 input int    LonBoxStartM     = 0;
 input int    LonBoxDurMin     = 60;
 input int    LonSessionEndH   = 8;
+input int    LonMaxAttempt    = 5;
 
-input group "═════ Session: NY (e44 PB) ═════"
+input group "═════ NY (e44 PB) ═════"
 input bool   NYEnable         = true;
-input int    NYBoxStartH      = 7;        // ET hour (7:00 ET)
+input int    NYBoxStartH      = 7;
 input int    NYBoxStartM      = 0;
 input int    NYBoxDurMin      = 60;
 input int    NYSessionEndH    = 13;
+input int    NYMaxAttempt     = 5;
+input int    NYEntryDelayMin  = 25;            // e40: skip first 25min of NY post-box (kill-zone trap avoidance)
 
 input group "═════ e44 PULLBACK Params ═════"
-input double PbRetestTol      = 3.0;      // Retest tolerance (pts)
-input double PbSlBuffer       = 2.0;      // SL buffer below retest (pts)
-input double PbTpMult         = 2.0;      // TP × actual_risk (R:R)
-input int    PbMaxWaitBars    = 60;       // Max wait bars for retest
+input double PbRetestTol      = 3.0;
+input double PbSlBuffer       = 2.0;
+input double PbTpMult         = 2.0;
+input int    PbMaxWaitBars    = 60;
 
 input group "═════ 🛡️ BE Trail (Phase 17 V5) ═════"
-input bool   UseBeTrail       = true;     // Enable BE Trail
-input double BeTriggerR       = 1.0;      // BE trigger at +X×R favor
+input bool   UseBeTrail       = true;
+input double BeTriggerR       = 1.0;
+
+input group "═════ ATR Regime Filter (e38/e39) ═════"
+input bool   UseAtrFilter     = true;          // e38: skip days with ATR < 30th pctile
+input int    AtrLookbackDays  = 30;
+input int    AtrPctileSkip    = 30;            // skip below this percentile
+input bool   UseTpBoost       = true;          // e39: 1.3× TP when ATR ≥ 72nd
+input int    AtrPctileBoost   = 72;
+input double TpBoostMult      = 1.30;
 
 input group "═════ Notifications ═════"
-input bool   PushToMobile     = true;     // Push notification ke MT5 mobile
+input bool   PushToMobile     = true;
 input bool   PlayAlertSound   = true;
 input bool   PrintLog         = true;
 
 //+------------------------------------------------------------------+
-//| Globals — box state per session                                  |
+//| Globals                                                           |
 //+------------------------------------------------------------------+
 struct BoxState {
    double  hi;
@@ -85,17 +95,15 @@ struct BoxState {
    bool    formed;
    datetime formedAt;
    int     pbState;       // 0=WAIT_BREAKOUT, 1=WAIT_PULLBACK, 2=WAIT_REJECTION
-   int     pbBkDir;       // breakout direction (1=up, -1=down)
-   int     pbBkBar;       // bar index when breakout fired
-   double  pbExtreme;     // pullback extreme tracker
-   bool    hadEntry;      // already entered today (1 attempt/day)
+   int     pbBkDir;
+   int     pbBkBar;
+   double  pbExtreme;
+   int     attempts;      // counter (replaces hadEntry bool, supports max=5)
 };
-
 BoxState asiaBox, lonBox, nyBox;
 int      lastDay = -1;
 ulong    asiaTicket = 0, lonTicket = 0, nyTicket = 0;
 
-// BE Trail per-trade state (keyed by ticket)
 struct BeState {
    ulong  ticket;
    double entryPx;
@@ -103,7 +111,11 @@ struct BeState {
    bool   triggered;
    double runExtreme;
 };
-BeState beStates[3];   // max 3 concurrent (one per session)
+BeState beStates[3];
+
+// ATR regime cache (computed once per day)
+double  atrRankToday = 0.5;   // 0.0–1.0 percentile rank
+bool    atrComputedToday = false;
 
 //+------------------------------------------------------------------+
 //| Init / Deinit                                                    |
@@ -113,192 +125,218 @@ int OnInit() {
    trade.SetDeviationInPoints(SlippagePts);
    trade.SetTypeFilling(ORDER_FILLING_IOC);
    ResetSessions();
-   ArrayInitialize(beStates, 0);
-   for(int i = 0; i < 3; i++) beStates[i].ticket = 0;
-   Print("[PT Box v14] EA initialized | Lot=", LotSize, " | BE Trail=", UseBeTrail ? "ON" : "OFF");
+   for(int i = 0; i < 3; i++) {
+      beStates[i].ticket    = 0;
+      beStates[i].triggered = false;
+   }
+   PrintFormat("[PT Box v14.1] init | Lot=%.2f | BE=%s | ATR=%s | maxAtt=%d/%d/%d",
+               LotSize, UseBeTrail ? "ON" : "OFF", UseAtrFilter ? "ON" : "OFF",
+               AsiaMaxAttempt, LonMaxAttempt, NYMaxAttempt);
    return INIT_SUCCEEDED;
 }
 
 void OnDeinit(const int reason) {
-   Print("[PT Box v14] EA deinit, reason=", reason);
+   PrintFormat("[PT Box v14.1] deinit reason=%d", reason);
 }
 
 //+------------------------------------------------------------------+
-//| Helpers — time conversion                                        |
+//| Time helpers                                                     |
 //+------------------------------------------------------------------+
 int BrokerToETHour(datetime t) {
    MqlDateTime mt; TimeToStruct(t, mt);
-   int brokerH = mt.hour;
-   int gmtH = brokerH - Broker_GMTOffset;
-   int etH = gmtH + ET_GMTOffset;
-   while(etH < 0) etH += 24;
+   int gmtH = mt.hour - Broker_GMTOffset;
+   int etH  = gmtH + ET_GMTOffset;
+   while(etH < 0)  etH += 24;
    while(etH >= 24) etH -= 24;
    return etH;
 }
 
-int BrokerToETMin(datetime t) {
-   MqlDateTime mt; TimeToStruct(t, mt);
-   return mt.min;
-}
-
 int ETMinOfDay(datetime t) {
-   return BrokerToETHour(t) * 60 + BrokerToETMin(t);
+   MqlDateTime mt; TimeToStruct(t, mt);
+   return BrokerToETHour(t) * 60 + mt.min;
 }
 
 int ETDayOfMonth(datetime t) {
    MqlDateTime mt; TimeToStruct(t, mt);
-   // Approximation — for boundary precision use ET-shifted time
    int gmtH = mt.hour - Broker_GMTOffset;
    int etH = gmtH + ET_GMTOffset;
    if(etH < 0) {
-      // ET previous day
-      datetime prev = t - 86400;
-      MqlDateTime mp; TimeToStruct(prev, mp);
+      MqlDateTime mp; TimeToStruct(t - 86400, mp);
       return mp.day;
    }
    if(etH >= 24) {
-      datetime nxt = t + 86400;
-      MqlDateTime mn; TimeToStruct(nxt, mn);
+      MqlDateTime mn; TimeToStruct(t + 86400, mn);
       return mn.day;
    }
    return mt.day;
 }
 
 //+------------------------------------------------------------------+
-//| Session reset (new day)                                          |
+//| Session reset                                                    |
 //+------------------------------------------------------------------+
-void ResetSessions() {
-   asiaBox.hi = 0; asiaBox.lo = 0; asiaBox.formed = false;
-   asiaBox.pbState = 0; asiaBox.pbBkDir = 0; asiaBox.pbBkBar = 0;
-   asiaBox.pbExtreme = 0; asiaBox.hadEntry = false;
+void ResetBox(BoxState &bx) {
+   bx.hi = 0; bx.lo = 0; bx.formed = false;
+   bx.pbState = 0; bx.pbBkDir = 0; bx.pbBkBar = 0;
+   bx.pbExtreme = 0; bx.attempts = 0;
+}
 
-   lonBox = asiaBox;
-   nyBox  = asiaBox;
+void ResetSessions() {
+   ResetBox(asiaBox);
+   ResetBox(lonBox);
+   ResetBox(nyBox);
+   atrComputedToday = false;
 }
 
 //+------------------------------------------------------------------+
-//| Build box per session — accumulate high/low during box window    |
+//| ATR regime filter (e38/e39)                                      |
+//| Compute today's true range, rank vs N-day window                 |
+//+------------------------------------------------------------------+
+void ComputeAtrRank() {
+   if(atrComputedToday) return;
+   int n = AtrLookbackDays;
+   if(n < 5) n = 5;
+   double trArr[];
+   ArrayResize(trArr, n);
+   for(int i = 1; i <= n; i++) {
+      double h = iHigh(_Symbol, PERIOD_D1, i);
+      double l = iLow(_Symbol, PERIOD_D1, i);
+      double pc = iClose(_Symbol, PERIOD_D1, i + 1);
+      double tr = MathMax(h - l, MathMax(MathAbs(h - pc), MathAbs(l - pc)));
+      trArr[i - 1] = tr;
+   }
+   // Today's TR (proxy: most recent completed day TR vs distribution)
+   double trToday = trArr[0];
+   int below = 0;
+   for(int i = 0; i < n; i++) if(trArr[i] < trToday) below++;
+   atrRankToday = (double)below / (double)n;
+   atrComputedToday = true;
+   if(PrintLog) PrintFormat("[ATR] rank=%.2f (today TR=%.2f, %d-day window)",
+                            atrRankToday, trToday, n);
+}
+
+bool AtrPass() {
+   if(!UseAtrFilter) return true;
+   ComputeAtrRank();
+   return atrRankToday >= (AtrPctileSkip / 100.0);
+}
+
+double TpEffectiveMult() {
+   if(!UseTpBoost) return PbTpMult;
+   ComputeAtrRank();
+   return atrRankToday >= (AtrPctileBoost / 100.0)
+          ? PbTpMult * TpBoostMult
+          : PbTpMult;
+}
+
+//+------------------------------------------------------------------+
+//| Box build                                                        |
 //+------------------------------------------------------------------+
 void UpdateBox(BoxState &bx, int startMin, int endMin, double ph, double pl, int curMin) {
+   if(bx.formed) return;
    if(curMin >= startMin && curMin < endMin) {
-      // In box window — accumulate
-      if(!bx.formed && curMin == startMin) {
+      if(bx.hi == 0 && bx.lo == 0) {
          bx.hi = ph; bx.lo = pl;
       } else {
          bx.hi = MathMax(bx.hi, ph);
          bx.lo = MathMin(bx.lo, pl);
       }
-   } else if(curMin == endMin && !bx.formed) {
+   } else if(curMin >= endMin && bx.hi > 0) {
       bx.formed = true;
       bx.formedAt = TimeCurrent();
-      if(PrintLog) PrintFormat("[PT Box v14] Box formed: hi=%.2f lo=%.2f bw=%.2f",
+      if(PrintLog) PrintFormat("[BOX FORMED] hi=%.2f lo=%.2f bw=%.2f",
                                bx.hi, bx.lo, bx.hi - bx.lo);
    }
 }
 
 //+------------------------------------------------------------------+
-//| Pattern detection — bullish/bearish reversal at retest           |
+//| Pattern detection — multi-shape match (engulf, pin, hammer)      |
 //+------------------------------------------------------------------+
 bool IsBullPattern(double po, double ph, double pl, double pc,
                    double co, double ch, double cl, double cc) {
-   // Engulfing bull: cc > po (current close > prev open)
-   bool engulf = cc > po && co < pc;
-   // Pin bull: long lower wick, close upper half
+   bool engulf = cc > po && co < pc && cc > co;
    double range = ch - cl;
-   if(range <= 0) return false;
+   if(range <= 0) return engulf;
    bool pin = (cc - cl) / range > 0.6 && (cc > co);
-   // Hammer / inside bar bull
-   return engulf || pin;
+   bool hammer = (cc - cl) / range > 0.5 && (ch - cc) / range < 0.3 && cc > co;
+   bool inside = ch <= ph && cl >= pl && cc > co;
+   return engulf || pin || hammer || inside;
 }
 
 bool IsBearPattern(double po, double ph, double pl, double pc,
                    double co, double ch, double cl, double cc) {
-   bool engulf = cc < po && co > pc;
+   bool engulf = cc < po && co > pc && cc < co;
    double range = ch - cl;
-   if(range <= 0) return false;
+   if(range <= 0) return engulf;
    bool pin = (ch - cc) / range > 0.6 && (cc < co);
-   return engulf || pin;
+   bool hammer = (ch - cc) / range > 0.5 && (cc - cl) / range < 0.3 && cc < co;
+   bool inside = ch <= ph && cl >= pl && cc < co;
+   return engulf || pin || hammer || inside;
 }
 
 //+------------------------------------------------------------------+
 //| e44 PULLBACK state machine                                       |
 //+------------------------------------------------------------------+
-void ProcessPullback(BoxState &bx, ulong &ticketRef, string sessionTag,
+void ProcessPullback(BoxState &bx, ulong &ticketRef, string sessionTag, int maxAtt,
                      double po, double ph, double pl, double pc,
                      double co, double ch, double cl, double cc,
                      int curBarIdx) {
    if(!bx.formed) return;
-   if(bx.hadEntry) return;
+   if(bx.attempts >= maxAtt) return;
    if(ticketRef != 0) return;
+   if(!AtrPass()) return;
 
    double bw = bx.hi - bx.lo;
    if(bw < 1) return;
 
-   // State 0: WAIT_BREAKOUT
    if(bx.pbState == 0) {
       if(cc > bx.hi) {
-         bx.pbState = 1;
-         bx.pbBkDir = 1;
-         bx.pbBkBar = curBarIdx;
-         bx.pbExtreme = cl;
+         bx.pbState = 1; bx.pbBkDir = 1; bx.pbBkBar = curBarIdx; bx.pbExtreme = cl;
          if(PrintLog) PrintFormat("[%s] BREAKOUT UP @ %.2f", sessionTag, cc);
       } else if(cc < bx.lo) {
-         bx.pbState = 1;
-         bx.pbBkDir = -1;
-         bx.pbBkBar = curBarIdx;
-         bx.pbExtreme = ch;
+         bx.pbState = 1; bx.pbBkDir = -1; bx.pbBkBar = curBarIdx; bx.pbExtreme = ch;
          if(PrintLog) PrintFormat("[%s] BREAKOUT DOWN @ %.2f", sessionTag, cc);
       }
       return;
    }
 
-   // State 1: WAIT_PULLBACK — price retreats toward box edge
    if(bx.pbState == 1) {
       if(curBarIdx - bx.pbBkBar > PbMaxWaitBars) {
-         bx.pbState = 0; bx.pbBkDir = 0;  // timeout, reset
+         bx.pbState = 0; bx.pbBkDir = 0;
          return;
       }
       if(bx.pbBkDir == 1) {
          bx.pbExtreme = MathMin(bx.pbExtreme, cl);
-         // Retest: low touches near box top (within tolerance)
-         if(cl <= bx.hi + PbRetestTol && cl >= bx.hi - PbRetestTol) {
-            bx.pbState = 2;
-         }
+         if(cl <= bx.hi + PbRetestTol && cl >= bx.hi - PbRetestTol) bx.pbState = 2;
       } else {
          bx.pbExtreme = MathMax(bx.pbExtreme, ch);
-         if(ch >= bx.lo - PbRetestTol && ch <= bx.lo + PbRetestTol) {
-            bx.pbState = 2;
-         }
+         if(ch >= bx.lo - PbRetestTol && ch <= bx.lo + PbRetestTol) bx.pbState = 2;
       }
       return;
    }
 
-   // State 2: WAIT_REJECTION — confirm reversal candle, ENTRY
    if(bx.pbState == 2) {
+      double tpEff = TpEffectiveMult();
       if(bx.pbBkDir == 1) {
-         // Long entry: price came back to box top, look for bull rejection
          if(cl >= bx.hi - PbRetestTol && IsBullPattern(po, ph, pl, pc, co, ch, cl, cc)) {
             double slPx = MathMin(cl, pl) - PbSlBuffer;
             double slDist = cc - slPx;
             if(slDist <= 0 || slDist > 30) {
-               bx.pbState = 0; bx.hadEntry = true; return;  // bad SL, skip
+               bx.attempts++; bx.pbState = 0; return;
             }
-            double tpPx = cc + PbTpMult * slDist;
+            double tpPx = cc + tpEff * slDist;
             OpenTrade(true, cc, slPx, tpPx, sessionTag, ticketRef);
-            bx.hadEntry = true;
-            bx.pbState = 0;
+            bx.attempts++; bx.pbState = 0;
          }
       } else {
          if(ch <= bx.lo + PbRetestTol && IsBearPattern(po, ph, pl, pc, co, ch, cl, cc)) {
             double slPx = MathMax(ch, ph) + PbSlBuffer;
             double slDist = slPx - cc;
             if(slDist <= 0 || slDist > 30) {
-               bx.pbState = 0; bx.hadEntry = true; return;
+               bx.attempts++; bx.pbState = 0; return;
             }
-            double tpPx = cc - PbTpMult * slDist;
+            double tpPx = cc - tpEff * slDist;
             OpenTrade(false, cc, slPx, tpPx, sessionTag, ticketRef);
-            bx.hadEntry = true;
-            bx.pbState = 0;
+            bx.attempts++; bx.pbState = 0;
          }
       }
    }
@@ -342,7 +380,7 @@ void RegisterBeState(ulong ticket, double entryPx, double slOrig) {
 }
 
 //+------------------------------------------------------------------+
-//| BE Trail manager — call OnTick                                   |
+//| BE Trail manager (called every tick)                             |
 //+------------------------------------------------------------------+
 void ManageBeTrail() {
    if(!UseBeTrail) return;
@@ -353,7 +391,6 @@ void ManageBeTrail() {
       if(beStates[i].ticket == 0) continue;
       ulong ticket = beStates[i].ticket;
       if(!PositionSelectByTicket(ticket)) {
-         // Position closed — clear state
          beStates[i].ticket = 0;
          continue;
       }
@@ -365,12 +402,10 @@ void ManageBeTrail() {
       double curSl   = PositionGetDouble(POSITION_SL);
       double curTp   = PositionGetDouble(POSITION_TP);
 
-      // Step 1: arm BE
       if(!beStates[i].triggered) {
          double favor = (type == POSITION_TYPE_BUY) ? (bid - entryPx) : (entryPx - ask);
          double trigger = BeTriggerR * slDist;
          if(favor >= trigger) {
-            // Move SL to entry (BE)
             if(trade.PositionModify(ticket, entryPx, curTp)) {
                beStates[i].triggered = true;
                beStates[i].runExtreme = (type == POSITION_TYPE_BUY) ? bid : ask;
@@ -379,15 +414,13 @@ void ManageBeTrail() {
                if(PushToMobile) SendNotification(msg);
             }
          }
-      }
-      // Step 2: trail
-      else {
+      } else {
          if(type == POSITION_TYPE_BUY) {
             if(bid > beStates[i].runExtreme) beStates[i].runExtreme = bid;
             double newSl = beStates[i].runExtreme - slDist;
             if(newSl > curSl) {
                if(trade.PositionModify(ticket, newSl, curTp)) {
-                  if(PrintLog) PrintFormat("🎯 TRAIL ticket=%I64u SL → %.2f", ticket, newSl);
+                  if(PrintLog) PrintFormat("🎯 TRAIL %I64u SL→%.2f", ticket, newSl);
                }
             }
          } else {
@@ -395,7 +428,7 @@ void ManageBeTrail() {
             double newSl = beStates[i].runExtreme + slDist;
             if(newSl < curSl) {
                if(trade.PositionModify(ticket, newSl, curTp)) {
-                  if(PrintLog) PrintFormat("🎯 TRAIL ticket=%I64u SL → %.2f", ticket, newSl);
+                  if(PrintLog) PrintFormat("🎯 TRAIL %I64u SL→%.2f", ticket, newSl);
                }
             }
          }
@@ -404,13 +437,13 @@ void ManageBeTrail() {
 }
 
 //+------------------------------------------------------------------+
-//| EOD force-close per session                                      |
+//| EOD force-close                                                  |
 //+------------------------------------------------------------------+
 void ForceCloseSession(ulong &ticketRef, string sessionTag) {
    if(ticketRef == 0) return;
    if(PositionSelectByTicket(ticketRef)) {
       if(trade.PositionClose(ticketRef)) {
-         string msg = StringFormat("🔚 EOD close %s ticket=%I64u", sessionTag, ticketRef);
+         string msg = StringFormat("🔚 EOD %s ticket=%I64u", sessionTag, ticketRef);
          Print(msg);
          if(PushToMobile) SendNotification(msg);
       }
@@ -424,10 +457,8 @@ void ForceCloseSession(ulong &ticketRef, string sessionTag) {
 datetime lastBar = 0;
 
 void OnTick() {
-   // BE Trail runs every tick (responsive)
    ManageBeTrail();
 
-   // Bar-close logic only
    datetime curBar = iTime(_Symbol, PERIOD_M1, 0);
    if(curBar == lastBar) return;
    lastBar = curBar;
@@ -436,13 +467,11 @@ void OnTick() {
    int curDay = ETDayOfMonth(now);
    int curMin = ETMinOfDay(now);
 
-   // New day reset
    if(lastDay != -1 && curDay != lastDay) {
       ResetSessions();
    }
    lastDay = curDay;
 
-   // Get prev + cur bar OHLC (bar 1 = closed prev, bar 0 = current forming)
    double po = iOpen(_Symbol, PERIOD_M1, 2);
    double ph = iHigh(_Symbol, PERIOD_M1, 2);
    double pl = iLow(_Symbol, PERIOD_M1, 2);
@@ -454,43 +483,43 @@ void OnTick() {
 
    int curBarIdx = (int)(now / 60);
 
-   // === ASIA ===
    if(AsiaEnable) {
-      int asiaStart = AsiaBoxStartH * 60 + AsiaBoxStartM;
-      int asiaEnd   = asiaStart + AsiaBoxDurMin;
-      int asiaForce = (AsiaSessionEndH == 24 ? 1439 : AsiaSessionEndH * 60 - 1);
-      UpdateBox(asiaBox, asiaStart, asiaEnd, ph, pl, curMin);
-      if(curMin >= asiaEnd && curMin < asiaForce) {
-         ProcessPullback(asiaBox, asiaTicket, "ASIA", po, ph, pl, pc, co, ch, cl, cc, curBarIdx);
+      int s = AsiaBoxStartH * 60 + AsiaBoxStartM;
+      int e = s + AsiaBoxDurMin;
+      int f = (AsiaSessionEndH == 24 ? 1439 : AsiaSessionEndH * 60 - 1);
+      UpdateBox(asiaBox, s, e, ph, pl, curMin);
+      if(curMin >= e && curMin < f) {
+         ProcessPullback(asiaBox, asiaTicket, "ASIA", AsiaMaxAttempt,
+                         po, ph, pl, pc, co, ch, cl, cc, curBarIdx);
       }
-      if(curMin == asiaForce) ForceCloseSession(asiaTicket, "ASIA");
+      if(curMin >= f) ForceCloseSession(asiaTicket, "ASIA");
    }
 
-   // === LONDON ===
    if(LonEnable) {
-      int lonStart = LonBoxStartH * 60 + LonBoxStartM;
-      int lonEnd   = lonStart + LonBoxDurMin;
-      int lonForce = LonSessionEndH * 60 - 1;
-      UpdateBox(lonBox, lonStart, lonEnd, ph, pl, curMin);
-      if(curMin >= lonEnd && curMin < lonForce) {
-         ProcessPullback(lonBox, lonTicket, "LON", po, ph, pl, pc, co, ch, cl, cc, curBarIdx);
+      int s = LonBoxStartH * 60 + LonBoxStartM;
+      int e = s + LonBoxDurMin;
+      int f = LonSessionEndH * 60 - 1;
+      UpdateBox(lonBox, s, e, ph, pl, curMin);
+      if(curMin >= e && curMin < f) {
+         ProcessPullback(lonBox, lonTicket, "LON", LonMaxAttempt,
+                         po, ph, pl, pc, co, ch, cl, cc, curBarIdx);
       }
-      if(curMin == lonForce) ForceCloseSession(lonTicket, "LON");
+      if(curMin >= f) ForceCloseSession(lonTicket, "LON");
    }
 
-   // === NY ===
    if(NYEnable) {
-      int nyStart = NYBoxStartH * 60 + NYBoxStartM;
-      int nyEnd   = nyStart + NYBoxDurMin;
-      int nyForce = NYSessionEndH * 60 - 1;
-      UpdateBox(nyBox, nyStart, nyEnd, ph, pl, curMin);
-      if(curMin >= nyEnd && curMin < nyForce) {
-         ProcessPullback(nyBox, nyTicket, "NY", po, ph, pl, pc, co, ch, cl, cc, curBarIdx);
+      int s = NYBoxStartH * 60 + NYBoxStartM;
+      int e = s + NYBoxDurMin;
+      int f = NYSessionEndH * 60 - 1;
+      UpdateBox(nyBox, s, e, ph, pl, curMin);
+      // e40 NY delay: trade only AFTER box end + entry delay
+      if(curMin >= e + NYEntryDelayMin && curMin < f) {
+         ProcessPullback(nyBox, nyTicket, "NY", NYMaxAttempt,
+                         po, ph, pl, pc, co, ch, cl, cc, curBarIdx);
       }
-      if(curMin == nyForce) ForceCloseSession(nyTicket, "NY");
+      if(curMin >= f) ForceCloseSession(nyTicket, "NY");
    }
 
-   // Cleanup closed tickets from registry
    if(asiaTicket != 0 && !PositionSelectByTicket(asiaTicket)) asiaTicket = 0;
    if(lonTicket  != 0 && !PositionSelectByTicket(lonTicket))  lonTicket  = 0;
    if(nyTicket   != 0 && !PositionSelectByTicket(nyTicket))   nyTicket   = 0;
