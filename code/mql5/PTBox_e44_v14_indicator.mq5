@@ -131,6 +131,7 @@ struct SessionStats {
    double pnlPts;
 };
 SessionStats asiaStats, lonStats, nyStats;
+bool g_isHistoricalReplay = false;  // true during initial replay → suppress notifications
 
 //+------------------------------------------------------------------+
 //| Init / Deinit                                                    |
@@ -360,9 +361,12 @@ void FireSignal(VirtualTrade &vt, bool isLong, double entry, double sl, double t
    string msg = StringFormat("🌊 PT Box v14 %s | %s @ %.2f | SL %.2f | TP %.2f | Risk %.1fpt = -$%.2f (%.1f%% cap)",
                              sessionTag, isLong ? "BUY" : "SELL", entry, sl, tp, slDist, lossUsd, pctCap);
    Print(msg);
-   if(PushToMobile) SendNotification(msg);
-   if(PlayAlertSound) PlaySound("alert.wav");
-   if(ShowAlertPopup) Alert(msg);
+   // Suppress notifications during historical replay (avoid HP spam)
+   if(!g_isHistoricalReplay) {
+      if(PushToMobile) SendNotification(msg);
+      if(PlayAlertSound) PlaySound("alert.wav");
+      if(ShowAlertPopup) Alert(msg);
+   }
 
    // Visual entry marker
    if(ShowSignals) DrawEntryLabel(t, entry, isLong, sessionTag, col);
@@ -460,8 +464,10 @@ void ManageVirtualTrade(VirtualTrade &vt) {
       string msg = StringFormat("%s %s VIRTUAL EXIT %s @ %.2f | PnL %.2fpt = $%.2f @ 0.02 lot",
                                 emoji, vt.sessionTag, exitReason, exitPx, pnl, pnl * LotSize * 100);
       Print(msg);
-      if(PushToMobile) SendNotification(msg);
-      if(PlayAlertSound) PlaySound("alert.wav");
+      if(!g_isHistoricalReplay) {
+         if(PushToMobile) SendNotification(msg);
+         if(PlayAlertSound) PlaySound("alert.wav");
+      }
       DrawExitMarker(vt, exitPx, exitReason);
       ResetVT(vt);
       return;
@@ -481,7 +487,7 @@ void ManageVirtualTrade(VirtualTrade &vt) {
          UpdateSLLine(vt, vt.sl, "🛡️ BE");
          string msg = StringFormat("🛡️ BE ARMED %s | SL → entry %.2f", vt.sessionTag, vt.entry);
          Print(msg);
-         if(PushToMobile) SendNotification(msg);
+         if(!g_isHistoricalReplay && PushToMobile) SendNotification(msg);
       }
    } else {
       if(vt.dir == 1) {
@@ -689,19 +695,21 @@ int OnCalculate(const int rates_total, const int prev_calculated,
 
    // ─── FIRST RUN: process historical bars ──────────────────────────────
    if(prev_calculated == 0) {
-      Print("[PT Box v14] Processing ", rates_total, " historical bars...");
+      Print("[PT Box v14] Processing ", rates_total, " historical bars (notifications SUPPRESSED)...");
       // Reset state + stats at start of historical replay (prevents double-count)
       ResetSessions();
       ResetAllStats();
       // Clean stale exit markers from prior runs (avoid duplicate visual clutter)
       ObjectsDeleteAll(0, OBJ_PREFIX);
       lastDay = -1;
+      g_isHistoricalReplay = true;   // suppress push notif/sound/popup during replay
       // Iterate ALL closed bars (skip last forming bar)
       for(int i = 1; i < rates_total - 1; i++) {
          ProcessBar(i, time, open, high, low, close);
       }
+      g_isHistoricalReplay = false;  // re-enable notifications for live mode
       lastBarProcessed = time[rates_total - 2];
-      Print("[PT Box v14] Historical replay complete. Live mode active.");
+      Print("[PT Box v14] Historical replay complete. Live mode active. Notifications ON.");
       RenderStatsPanel(); ChartRedraw();
       return rates_total;
    }
