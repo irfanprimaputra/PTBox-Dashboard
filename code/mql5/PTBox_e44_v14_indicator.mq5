@@ -209,39 +209,47 @@ bool IsBearPattern(double po, double ph, double pl, double pc,
 //+------------------------------------------------------------------+
 //| Box update                                                       |
 //+------------------------------------------------------------------+
-void UpdateBox(BoxState &bx, int startMin, int endMin, double ph, double pl, int curMin, color col, string sessionTag) {
+datetime g_currentBarTime = 0;  // Set in ProcessBar — used by drawing for historical accuracy
+
+void UpdateBox(BoxState &bx, int startMin, int endMin, double ph, double pl, int curMin, color col, string sessionTag, datetime barTime) {
    if(bx.formed) return;
    if(curMin >= startMin && curMin < endMin) {
       if(bx.hi == 0 && bx.lo == 0) {
          bx.hi = ph; bx.lo = pl;
+         bx.formedAt = barTime - (long)(curMin - startMin) * 60;  // approx box start time
       } else {
          bx.hi = MathMax(bx.hi, ph);
          bx.lo = MathMin(bx.lo, pl);
       }
    } else if(curMin >= endMin && bx.hi > 0) {
       bx.formed = true;
-      bx.formedAt = TimeCurrent();
-      // Draw box
-      if(ShowBoxes) DrawBox(bx, col, sessionTag);
+      // bx.formedAt already set when box first opened
+      if(ShowBoxes) DrawBox(bx, col, sessionTag, barTime);
       Print("[", sessionTag, "] BOX FORMED hi=", DoubleToString(bx.hi, 2), " lo=", DoubleToString(bx.lo, 2),
             " bw=", DoubleToString(bx.hi - bx.lo, 2));
    }
 }
 
-void DrawBox(BoxState &bx, color col, string tag) {
-   string boxName = OBJ_PREFIX + tag + "_box_" + IntegerToString(ETDayOfMonth(TimeCurrent()));
-   datetime endT = TimeCurrent() + 14400;  // 4hr forward visual extension
-   ObjectCreate(0, boxName, OBJ_RECTANGLE, 0, bx.formedAt - 5400, bx.hi, endT, bx.lo);
+void DrawBox(BoxState &bx, color col, string tag, datetime barTime) {
+   // Unique name per session per day to avoid overwrites
+   string boxName = OBJ_PREFIX + tag + "_box_" + TimeToString(bx.formedAt, TIME_DATE);
+   datetime endT = barTime + 14400;
+   ObjectDelete(0, boxName);
+   ObjectCreate(0, boxName, OBJ_RECTANGLE, 0, bx.formedAt, bx.hi, endT, bx.lo);
    ObjectSetInteger(0, boxName, OBJPROP_COLOR, col);
-   ObjectSetInteger(0, boxName, OBJPROP_FILL, true);
+   ObjectSetInteger(0, boxName, OBJPROP_FILL, false);   // outline only — MT5 alpha unreliable
    ObjectSetInteger(0, boxName, OBJPROP_BACK, true);
-   ObjectSetInteger(0, boxName, OBJPROP_STYLE, STYLE_DOT);
-   color fillCol = ColorAlpha(col, 30);
-   ObjectSetInteger(0, boxName, OBJPROP_BGCOLOR, fillCol);
-}
+   ObjectSetInteger(0, boxName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, boxName, OBJPROP_WIDTH, 2);
+   ObjectSetInteger(0, boxName, OBJPROP_SELECTABLE, false);
 
-color ColorAlpha(color c, int alpha) {
-   return (color)(c | (alpha << 24));
+   // Add session label at box top-left
+   string lblName = boxName + "_lbl";
+   ObjectDelete(0, lblName);
+   ObjectCreate(0, lblName, OBJ_TEXT, 0, bx.formedAt, bx.hi);
+   ObjectSetString(0, lblName, OBJPROP_TEXT, " " + tag + " box");
+   ObjectSetInteger(0, lblName, OBJPROP_COLOR, col);
+   ObjectSetInteger(0, lblName, OBJPROP_FONTSIZE, 8);
 }
 
 //+------------------------------------------------------------------+
@@ -374,17 +382,17 @@ void DrawSLTP(VirtualTrade &vt, color col) {
 void UpdateSLLine(VirtualTrade &vt, double newSL, string markerText) {
    string base = OBJ_PREFIX + vt.sessionTag + "_" + TimeToString(vt.openTime, TIME_DATE | TIME_SECONDS);
    string slName = base + "_sl";
-   datetime now = TimeCurrent();
-   datetime endT = now + 14400;
+   datetime barT = g_currentBarTime > 0 ? g_currentBarTime : TimeCurrent();
+   datetime endT = barT + 14400;
    ObjectMove(0, slName, 0, vt.openTime, newSL);
    ObjectMove(0, slName, 1, endT, newSL);
    if(ShowBeMarkers) {
-      string markerName = base + "_be_" + TimeToString(now, TIME_DATE | TIME_SECONDS);
-      ObjectCreate(0, markerName, OBJ_ARROW, 0, now, newSL);
+      string markerName = base + "_be_" + TimeToString(barT, TIME_DATE | TIME_SECONDS);
+      ObjectCreate(0, markerName, OBJ_ARROW, 0, barT, newSL);
       ObjectSetInteger(0, markerName, OBJPROP_ARROWCODE, 251);
       ObjectSetInteger(0, markerName, OBJPROP_COLOR, clrAqua);
       string lblName = markerName + "_lbl";
-      ObjectCreate(0, lblName, OBJ_TEXT, 0, now, vt.dir == 1 ? newSL - 3 : newSL + 3);
+      ObjectCreate(0, lblName, OBJ_TEXT, 0, barT, vt.dir == 1 ? newSL - 3 : newSL + 3);
       ObjectSetString(0, lblName, OBJPROP_TEXT, markerText);
       ObjectSetInteger(0, lblName, OBJPROP_COLOR, clrAqua);
       ObjectSetInteger(0, lblName, OBJPROP_FONTSIZE, 8);
@@ -465,14 +473,14 @@ void ManageVirtualTrade(VirtualTrade &vt) {
 }
 
 void DrawExitMarker(VirtualTrade &vt, double exitPx, string reason) {
-   datetime now = TimeCurrent();
+   datetime barT = g_currentBarTime > 0 ? g_currentBarTime : TimeCurrent();
    string name = OBJ_PREFIX + vt.sessionTag + "_exit_" + TimeToString(vt.openTime, TIME_DATE | TIME_SECONDS);
-   ObjectCreate(0, name, OBJ_TEXT, 0, now, exitPx);
-   string symbol = reason == "TP" ? "✅" : (reason == "BE" ? "🛡️" : (reason == "TRAIL" ? "🎯" : "❌"));
-   ObjectSetString(0, name, OBJPROP_TEXT, symbol + " " + reason + " " + vt.sessionTag);
+   ObjectCreate(0, name, OBJ_TEXT, 0, barT, exitPx);
+   string symbol = reason == "TP" ? "TP" : (reason == "BE" ? "BE" : (reason == "TRAIL" ? "TR" : "SL"));
+   ObjectSetString(0, name, OBJPROP_TEXT, " " + symbol + " " + vt.sessionTag);
    color col = (reason == "TP" || reason == "TRAIL") ? clrLime : (reason == "BE" ? clrAqua : clrRed);
    ObjectSetInteger(0, name, OBJPROP_COLOR, col);
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 10);
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 9);
 }
 
 //+------------------------------------------------------------------+
@@ -536,6 +544,9 @@ void ProcessBar(int idx, const datetime &time[], const double &open[],
    double po = open[idx-1], ph = high[idx-1], pl = low[idx-1], pc = close[idx-1];
    double co = open[idx],   ch = high[idx],   cl = low[idx],   cc = close[idx];
 
+   // Set global bar time for drawing functions (historical accuracy)
+   g_currentBarTime = barTime;
+
    // Manage active virtual trades using THIS bar's high/low (historical-safe)
    HistoricalManageVT(asiaVT, ch, cl, barTime);
    HistoricalManageVT(lonVT,  ch, cl, barTime);
@@ -545,7 +556,7 @@ void ProcessBar(int idx, const datetime &time[], const double &open[],
       int s = AsiaBoxStartH * 60 + AsiaBoxStartM;
       int e = s + AsiaBoxDurMin;
       int f = (AsiaSessionEndH == 24 ? 1439 : AsiaSessionEndH * 60 - 1);
-      UpdateBox(asiaBox, s, e, ph, pl, curMin, AsiaColor, "ASIA");
+      UpdateBox(asiaBox, s, e, ph, pl, curMin, AsiaColor, "ASIA", barTime);
       if(curMin >= e && curMin < f) {
          ProcessPullback(asiaBox, asiaVT, "ASIA", AsiaMaxAttempt, AsiaColor,
                          po, ph, pl, pc, co, ch, cl, cc, barTime);
@@ -556,7 +567,7 @@ void ProcessBar(int idx, const datetime &time[], const double &open[],
       int s = LonBoxStartH * 60 + LonBoxStartM;
       int e = s + LonBoxDurMin;
       int f = LonSessionEndH * 60 - 1;
-      UpdateBox(lonBox, s, e, ph, pl, curMin, LonColor, "LON");
+      UpdateBox(lonBox, s, e, ph, pl, curMin, LonColor, "LON", barTime);
       if(curMin >= e && curMin < f) {
          ProcessPullback(lonBox, lonVT, "LON", LonMaxAttempt, LonColor,
                          po, ph, pl, pc, co, ch, cl, cc, barTime);
@@ -567,7 +578,7 @@ void ProcessBar(int idx, const datetime &time[], const double &open[],
       int s = NYBoxStartH * 60 + NYBoxStartM;
       int e = s + NYBoxDurMin;
       int f = NYSessionEndH * 60 - 1;
-      UpdateBox(nyBox, s, e, ph, pl, curMin, NYColor, "NY");
+      UpdateBox(nyBox, s, e, ph, pl, curMin, NYColor, "NY", barTime);
       if(curMin >= e + NYEntryDelayMin && curMin < f) {
          ProcessPullback(nyBox, nyVT, "NY", NYMaxAttempt, NYColor,
                          po, ph, pl, pc, co, ch, cl, cc, barTime);
