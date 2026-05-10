@@ -27,19 +27,19 @@ def now_et(utc):
 def now_wib(utc):
     return utc + timedelta(hours=7)
 
-# Sessions in ET (e37 Wyckoff pre-session config)
+# Sessions in ET (e41 4-layer stack)
 SESSIONS = [
-    {"name": "Asia", "emoji": "🟢", "et_start": (18, 0), "et_end": (24, 0),
-     "box_window": "18:00-19:30 ET (90m)", "model": "DIRECT breakout + body0% + TP=1.5R (e37)",
-     "wib_start": (5, 0), "wib_end": (11, 0),
+    {"name": "Asia", "emoji": "🟢", "et_start": (19, 0), "et_end": (24, 0),
+     "box_window": "19:00-20:30 ET (90m)", "model": "DIRECT + body0% + SL=0.7×bw + TP=1.5R (e41: start 19:00)",
+     "wib_start": (6, 0), "wib_end": (11, 0),
      "color": COLORS["success"]},
     {"name": "London", "emoji": "🔵", "et_start": (0, 0), "et_end": (8, 0),
-     "box_window": "00:00-01:00 ET (60m)", "model": "DIRECT breakout + body20% + TP=2.0R (e37)",
+     "box_window": "00:00-01:00 ET (60m)", "model": "DIRECT + body20% + SL=0.9×bw + TP=2.0R (e41: SL 0.9)",
      "wib_start": (11, 0), "wib_end": (19, 0),
      "color": COLORS["accent_blue"]},
-    {"name": "NY", "emoji": "🟡", "et_start": (7, 0), "et_end": (12, 0),
-     "box_window": "07:00-08:00 ET (60m)", "model": "DIRECT breakout + body30% + TP=2.5R (e37)",
-     "wib_start": (18, 0), "wib_end": (23, 0),
+    {"name": "NY", "emoji": "🟡", "et_start": (7, 0), "et_end": (13, 0),
+     "box_window": "07:00-08:00 ET (60m) · entry from 08:25", "model": "DIRECT + body30% + SL=0.5×bw + TP=2.5R (e40 delay 25m + e41 end 13)",
+     "wib_start": (18, 0), "wib_end": (24, 0),
      "color": COLORS["warning"]},
 ]
 
@@ -48,10 +48,13 @@ SESSIONS = [
 # ───────────────────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
-    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box e37 (OOS PASSED ✅)</h1>
+    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box v14 · e41 BREAKOUT + e44 PULLBACK + 🛡️ BE Trail</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Pinescript on TradingView · Manual MT5 execution · Trade journal
+        <b style="color: rgb(34, 197, 94);">Pine v14 (TradingView)</b> · <b style="color: rgb(96, 165, 250);">MT5 EA v14.1 (auto-execute, 95% Pine parity)</b> · Trade journal
     </p>
+    <div style="margin-top: 0.6rem; padding: 0.6rem 0.9rem; background: rgba(34, 197, 94, 0.08); border-left: 3px solid rgb(34, 197, 94); border-radius: 4px; font-size: 0.85rem; color: {COLORS['text']};">
+        🛡️ <b>BE Trail v14 ACTIVE</b> · WR 34.9% → 51.2% (+16.2pt) · Worst trade SAMA -$74 · 🤖 MT5 EA standalone (Pine reflection optional)
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
