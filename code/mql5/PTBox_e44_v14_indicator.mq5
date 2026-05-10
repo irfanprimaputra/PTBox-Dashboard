@@ -137,6 +137,7 @@ SessionStats asiaStats, lonStats, nyStats;
 //+------------------------------------------------------------------+
 int OnInit() {
    ResetSessions();
+   ResetAllStats();
    PrintFormat("[PT Box v14 Indicator] init | BE Trail=%s | Lot=%.2f",
                UseBeTrail ? "ON" : "OFF", LotSize);
    return INIT_SUCCEEDED;
@@ -193,9 +194,17 @@ void ResetVT(VirtualTrade &vt) {
    vt.openTime = 0; vt.beTriggered = false; vt.runExtreme = 0; vt.sessionTag = "";
 }
 
+void ResetStats(SessionStats &s) {
+   s.wins = 0; s.losses = 0; s.bes = 0; s.trails = 0; s.pnlPts = 0;
+}
+
 void ResetSessions() {
    ResetBox(asiaBox); ResetBox(lonBox); ResetBox(nyBox);
    ResetVT(asiaVT); ResetVT(lonVT); ResetVT(nyVT);
+}
+
+void ResetAllStats() {
+   ResetStats(asiaStats); ResetStats(lonStats); ResetStats(nyStats);
 }
 
 //+------------------------------------------------------------------+
@@ -681,8 +690,11 @@ int OnCalculate(const int rates_total, const int prev_calculated,
    // ─── FIRST RUN: process historical bars ──────────────────────────────
    if(prev_calculated == 0) {
       Print("[PT Box v14] Processing ", rates_total, " historical bars...");
-      // Reset state at start of historical replay
+      // Reset state + stats at start of historical replay (prevents double-count)
       ResetSessions();
+      ResetAllStats();
+      // Clean stale exit markers from prior runs (avoid duplicate visual clutter)
+      ObjectsDeleteAll(0, OBJ_PREFIX);
       lastDay = -1;
       // Iterate ALL closed bars (skip last forming bar)
       for(int i = 1; i < rates_total - 1; i++) {
