@@ -7,7 +7,7 @@
 
 **maxAttempt = 5 (2026-05-06 SYNC):** Pine default 1→5 to match Python backtest peak edge. At max5: $1,813/yr at 0.02 lot, worst single trade -$116. Better both PnL AND safety vs max1.
 
-**Last updated:** 2026-05-10 (Pine v15 LIVE — BE Trail + V2 Asia Tight SL. Phase 40 stop rules backtested + live plan saved. 7× iron law confirmed.)
+**Last updated:** 2026-05-10 (Pine v15 LIVE — BE Trail + V2 Asia Tight SL. Phase 40 stop rules + Phase 42 wider TP rejected. TP 1:2 confirmed optimal. 7× iron law.)
 
 ⚠️ **MAJOR CORRECTION 2026-05-05:** Engine had loss accounting bug under-counting
 losses by ~bw per trade. True 5y PnL = **+3223** (was claimed +9084 inflated).
@@ -80,6 +80,37 @@ Need new long-window (60-90 day) OOS run on engine v11+ before re-citing retenti
 ✅ pages/2_🚀_Phase7_Results.py            ← Phase 7 timeline + OOS callout
 ✅ pages/3_📊_Trade_Analytics.py           ← uses ptbox_e37_trades.csv
 ```
+
+---
+
+## 📏 Phase 42 — Wider TP Sweep REJECTED
+
+**Date:** 2026-05-10
+**Status:** REJECTED — TP 1:2 confirmed OPTIMAL.
+**Files:**
+```
+✅ scripts/run_phase42_wider_tp.py
+✅ data/phase42_wider_tp_sweep.json
+✅ Vault: ...Phase-42-Wider-TP-Sweep.md
+```
+
+**Test:** User question "what if TP dilebarin?" with BE Trail v14 active.
+**7 variants:** TP 1:2 (current), 1:2.5, 1:3, 1:4, 1:5, 1:6, 1:8.
+
+**Result:** ALL wider variants LOSE vs 1:2 baseline.
+
+| TP mult | $/yr (rel) | TP hit % |
+|---------|-----------:|---------:|
+| 1:2 ⭐ | **best** | 15.6% |
+| 1:3 | -$426 | 4.4% |
+| 1:5 | -$599 | 0.3% |
+| 1:8 | -$616 | 0.0% |
+
+**Why:** Gold M1 jarang gerak >3R sebelum reverse. Wider TP = TP hardly ever hit. Trail catches LESS than 1:2 TP would have given.
+
+Confirms Phase 36 pattern (cap SL + bigger TP also failed).
+
+**Kill list (8 dead variants):** Wider TP, Cap SL ≤5pt, Tighter SL <3pt, Compound sizing, Filter sweeps (3×), Max consec/flip skip stop.
 
 ---
 
