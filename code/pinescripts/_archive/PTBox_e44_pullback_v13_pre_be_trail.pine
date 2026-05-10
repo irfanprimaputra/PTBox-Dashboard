@@ -1,0 +1,1193 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════
+// PT BOX e37 — Wyckoff Pre-Session DIRECT Model
+// True 5y backtest +3223 pts (corrected loss accounting, filter OFF)
+// Asia +855 / London +1186 / NY +1182 · ~+645 pts/year
+// XAUUSD intraday · 3-session DIRECT model · 2026-05-04
+//
+// Asia:   18:00/90m DIRECT  + body0%  + SL=0.7×bw + TP=1.5R = +1839 (e37)
+// London: 00:00/60m DIRECT  + body20% + SL=0.5×bw + TP=2.0R = +3220 (e37)
+// NY:     07:00/60m DIRECT  + body30% + SL=0.5×bw + TP=2.5R = +4025 (e37)
+//
+// Setup TradingView:
+//   - Chart timezone: UTC-4 (NY EDT)
+//   - Timeframe: M1 (preferred) or M5
+//   - Symbol: XAUUSD
+//
+// 2026-05-04 v9: stats panel TODAY mode (realtime, not 90d cumulative)
+//                + de-clutter labels (delete on exit, keep lines + W/L marker)
+//                + minimal-mode toggle for cleaner multi-entry sessions
+// 2026-05-05 v10 BUGFIX: Asia 0-trade bug — asiaSessionEndH default 0 → 24
+//                (mod < 0 was always false, blocked Asia DIRECT entry).
+//                Stats panel display strings now reflect actual e37 config.
+// 2026-05-05 v11 SYNC: Max attempts/day all sessions 5/3/3 → 1/1/1.
+//                Engine canonical uses 1 entry/day per session.
+// 2026-05-05 v12 ENGINE BUG FIX (canonical PnL recalibrated):
+//                Engine had loss accounting bug (recorded -sl_dist instead of
+//                -(ep - sp), under-counting losses by ~bw per trade). Pine was
+//                always correct on PnL math. After fix:
+//                  - True 5y filter OFF: +3223 pts (was claimed +9084 inflated)
+//                  - True 5y filter ON @15: +920 pts (filter too tight, NY -37)
+//                useMaxSlFilter default true → false to match engine canonical.
+//                User can opt-in for capital-aware live (set true + tune nyMaxSl).
+//
+// ENTRY TIMING (LIVE):
+//   - Signal fires at CLOSE of confirmation candle (alert pushed to phone)
+//   - Realistic live entry: OPEN of NEXT candle (1 bar after alert)
+//   - Backtest assumes entry @ close[N] (zero slippage for engine truth)
+//   - Live slippage ~0-2 pts vs backtest is normal
+// ═══════════════════════════════════════════════════════════════════════════
+indicator("PT Box e44 PULLBACK (5y +4301 · WR 35% · OOS 10/10 Q+ · 5.8× safer)", overlay = true,
+     max_boxes_count   = 500,
+     max_lines_count   = 500,
+     max_labels_count  = 500,
+     max_bars_back     = 500)
+
+// ─── Display toggles ──────────────────────────────────────────────────────
+g_disp = "Display"
+showAsia       = input.bool(true,  "Show Asia (mean-rev)",            group = g_disp)
+showLondon     = input.bool(true,  "Show London (breakout-pullback)", group = g_disp)
+showNY         = input.bool(true,  "Show NY (direct breakout)",       group = g_disp)
+showSignals    = input.bool(true,  "Show entry signals (labels)",     group = g_disp)
+showLevels     = input.bool(true,  "Show SL/TP lines (dynamic length)", group = g_disp)
+showExitMarker = input.bool(true,  "Show W/L exit markers",           group = g_disp)
+hideOldBoxes   = input.bool(false, "Hide boxes after session ends",   group = g_disp)
+showStatsPanel = input.bool(true,  "Show stats panel (top-right)",    group = g_disp)
+statsMode      = input.string("Today", "Stats mode", options = ["Today", "Cumulative"], group = g_disp)
+showInfoPanel  = input.bool(false, "Show config info panel (bottom)", group = g_disp)
+panelLookback  = input.int (90,    "Cumulative lookback (days)", minval = 1, maxval = 365, group = g_disp)
+boxOpacity     = input.int (92,    "Box fill transparency (90=dark, 95=subtle)", minval = 80, maxval = 99, group = g_disp)
+minimalLabels  = input.bool(false, "Minimal label mode (less crowded)", group = g_disp)
+
+// ─── 💰 Risk Management (LIVE filter — minimal divergence from engine) ────
+g_risk           = "💰 Risk Management (LIVE)"
+useMaxSlFilter   = input.bool(false, "Enable max-SL filter (skip wide-SL trades) — v12: OFF default to match engine canonical", group = g_risk)
+asiaMaxSlPts     = input.float(30,   "Asia max SL (pts) — only catch wonky outliers",    minval = 3, group = g_risk)
+londonMaxSlPts   = input.float(15,   "London max SL (pts) — breakout box-width based",   minval = 3, group = g_risk)
+nyMaxSlPts       = input.float(15,   "NY max SL (pts) — breakout box-width based",       minval = 3, group = g_risk)
+
+// ─── 🌊 e38 ATR Regime Filter (added 2026-05-05) ──────────────────────────
+// 5y backtest: ATR filter alone = +856 pts vs v11 baseline (+49% improvement).
+// OOS: train +545 / test +2066 / 9/10 test quarters positive / retention 496%.
+// Skips days where today's intraday H-L < rolling 30d 30th percentile (~30% of days).
+g_atr            = "🌊 e38 ATR Regime Filter"
+useAtrFilter     = input.bool(true,  "Enable ATR regime filter (e38)",                   group = g_atr)
+atrLookback      = input.int (30,    "ATR lookback (days)", minval = 5, maxval = 100,    group = g_atr)
+atrPercentile    = input.int (30,    "ATR percentile threshold (skip below)", minval = 5, maxval = 95, group = g_atr)
+
+// Daily true range (intraday H-L) per session-day, fetched at D timeframe
+dailyTR = request.security(syminfo.tickerid, "D", high - low, lookahead = barmerge.lookahead_off)
+
+// Compute rolling percentile of prior `atrLookback` days (no look-ahead)
+// Pine: ta.percentile_linear_interpolation gives us the threshold
+atrThresh = ta.percentile_linear_interpolation(dailyTR[1], atrLookback, atrPercentile)
+atrPass   = not useAtrFilter or na(atrThresh) or dailyTR >= atrThresh
+
+// atrPass is the gate: when false, all session entries below skip the new-trade branch.
+// Implementation in entry blocks: add `and atrPass` to entry conditions.
+
+// ─── 📅 Weekday Filter (backtest parity with Python canonical) ─────────────
+// Python `load_data` drops weekday >= 5 (Sat/Sun). For backtest cross-check,
+// enable this so Pine matches Python output exactly. For LIVE TRADING, keep
+// OFF to capture Sunday-evening gold market open (XAUUSD trades 18:00 ET Sun).
+g_weekday        = "📅 Weekday Filter (backtest parity)"
+useWeekdayFilter = input.bool(true, "Skip Sat/Sun (Python canonical match) — set OFF for live to trade Sunday open", group = g_weekday)
+weekdayET        = dayofweek(time, "America/New_York")
+isWeekendET      = weekdayET == dayofweek.saturday or weekdayET == dayofweek.sunday
+weekdayPass      = not useWeekdayFilter or not isWeekendET
+
+// ─── 🌟 e39 Asymmetric TP per ATR Regime (added 2026-05-05, on top of e38) ─
+// 5y: +3121 total (vs e38 +2611) = +510 pts. OOS PASS 9/10 test Q+.
+// Mechanism: high-vol days have momentum → wider TP captures upside +
+// reduces EOD drag (closed - 233 vs e38 but EOD -929→-186 net wins big).
+g_tpboost           = "🌟 e39 Asymmetric TP per ATR Regime"
+useTpBoost          = input.bool(true,  "Enable TP boost on high-ATR days (e39)",  group = g_tpboost)
+tpBoostPctile       = input.int (72,    "Trigger when ATR rank ≥ Nth pctile",      minval = 50, maxval = 95, group = g_tpboost)
+tpBoostMultiplier   = input.float(1.30, "TP multiplier on trigger days",            minval = 1.0, maxval = 2.0, step = 0.05, group = g_tpboost)
+
+// Compute today's ATR rank vs prior `atrLookback` days (uses dailyTR from e38 block above)
+atrRank = ta.percentrank(dailyTR[1], atrLookback)
+tpBoostActive = useTpBoost and not na(atrRank) and atrRank >= tpBoostPctile
+tpMultEff = tpBoostActive ? tpBoostMultiplier : 1.0
+// Apply tpMultEff to each session's TP via runtime override:
+//   asiaTpEff   = asiaTp2Mult   * tpMultEff
+//   londonTpEff = londonTp2Mult * tpMultEff
+//   nyTpEff     = nyTp2Mult     * tpMultEff
+capUsd           = input.float(200,  "Account capital (USD)",                            group = g_risk)
+riskPerTradeUsd  = input.float(4,    "Max risk per trade (USD) — 2% rule",               group = g_risk)
+showLotSuggest   = input.bool(true,  "Show suggested lot in entry label",                group = g_risk)
+
+// ─── 🔀 e44 ENTRY MODE TOGGLE (Breakout vs Pullback) ──────────────────────
+// e41 BREAKOUT: enter at breakout candle close (wide SL ~14pt avg, WR 60%)
+// e44 PULLBACK: wait for retest after breakout, enter on rejection at S/R flip
+//                (tight SL ~4pt avg, WR 35%, +8% PnL, 5.8× safer per trade)
+// 5y backtest: BREAKOUT +3983 / PULLBACK +4301 (10/10 OOS Q+, retention 341%)
+g_mode           = "🔀 Entry Mode (e41 vs e44)"
+entryMode        = "PULLBACK"   // hardwired in this file
+pbRetestTol      = input.float (3.0, "PULLBACK: retest tolerance (pts)", minval=0.5, maxval=10, step=0.5, group=g_mode)
+pbSlBuffer       = input.float (2.0, "PULLBACK: SL buffer below retest (pts)", minval=0.5, maxval=5, step=0.5, group=g_mode)
+pbTpMult         = input.float (2.0, "PULLBACK: TP × actual_risk (1:N R:R)", minval=1.0, maxval=4.0, step=0.5, group=g_mode)
+pbMaxWaitBars    = input.int   (60,  "PULLBACK: max wait bars for retest", minval=10, maxval=180, group=g_mode)
+
+// ─── e36 Asia (DIRECT model + 18:00/90m + body0% + SL=0.7 + TP=1.5R) ───────
+// e36 BREAKTHROUGH: Switch from mean-rev to DIRECT model
+// 5y fixed: +1667 (was +266 mean-rev), Δ +1401 swing
+// 62% WR, 531 trades, R:R 1:1.5
+g_asia            = "🟢 Asia (e36 DIRECT @ 18:00/90m)"
+asiaBoxStartH     = input.int  (19,  "Box start hour (ET) — e41: 19:00 (was 18:00)", minval = 0, maxval = 23, group = g_asia)
+asiaBoxStartM     = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_asia)
+asiaBoxDur        = input.int  (90,  "Box duration (min)",  minval = 1, maxval = 180, group = g_asia)
+asiaSessionEndH   = input.int  (24,  "Session end hour (ET) — e37 extended (24=midnight)", minval = 0, maxval = 24, group = g_asia)
+asiaSlBuffer      = input.float(1.0, "SL buffer (pts) — legacy mean-rev", group = g_asia)
+asiaMaxAttempt    = input.int  (5,   "Max attempts/day — e44 PB optimum: 5", group = g_asia)
+asiaSlBoxMult     = input.float(0.7, "Asia SL = X × box_width (e36)", group = g_asia)
+asiaTp1Mult       = input.float(1.0, "Asia TP1 = X × SL", group = g_asia)
+asiaTp2Mult       = input.float(1.5, "Asia TP2 = X × SL (e36 optimum)", group = g_asia)
+asiaBodyClosePct  = input.float(0.0, "Asia body close confirm (% box width)", minval = 0.0, maxval = 1.0, step = 0.05, group = g_asia)
+asiaUseDirectModel = input.bool(true,"Asia DIRECT breakout (e36) instead of mean-rev fade", group = g_asia)
+asiaMinSl         = input.float(3.0, "Asia min SL (pts)", group = g_asia)
+
+// ─── e35 London (DIRECT breakout @ 00:00/60m + body30% + TP=2.5R) ──────────
+// Hypothesis: London also benefits from Wyckoff pre-session + direct model
+// Test 5y: pullback model -601, DIRECT model 00:00/60m + body30 + TP2.5 = +800 ⭐
+// Same e33-pattern that worked for NY transferred to London
+g_london          = "🔵 London (e35 direct + 00:00/60m + body30%)"
+londonBoxStartH   = input.int  (0,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_london)
+londonBoxStartM   = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_london)
+londonBoxDur      = input.int  (60,  "Box duration (min)",  minval = 1, maxval = 120, group = g_london)
+londonSessionEndH = input.int  (8,   "Session end hour (ET) — e37 extended", group = g_london)
+londonSlBoxMult   = input.float(0.9, "SL = X × box_width — e41: 0.9 (was 0.5)", minval = 0.1, maxval = 2.0, step = 0.05, group = g_london)
+londonTp1Mult     = input.float(1.5, "TP1 = X × SL", group = g_london)
+londonTp2Mult     = input.float(2.0, "TP2 = X × SL (e36 optimum)", group = g_london)
+londonMinSl       = input.float(3.0, "Min SL (pts)", group = g_london)
+londonMaxAttempt  = input.int  (5,   "Max attempts/day — e44 PB optimum: 5", group = g_london)
+londonBodyClosePct = input.float(0.20,"London body close confirm (% box width) — e36", minval = 0.0, maxval = 1.0, step = 0.05, group = g_london)
+londonUseDirectModel = input.bool(true,"London DIRECT breakout (e35) instead of pullback", group = g_london)
+
+// ─── e33 NY (07:00/60m + ANY pattern + body30% + TP=2.5R) ──────────────────
+// Iteration journey:
+//   baseline (any pat, 9:03/5m, TP=6R):    +1108
+//   e27e (strict + body50%):               +1422 (Δ +314)
+//   e30 (+ timing 9:07/10m):               +1662 (Δ +240)
+//   e31 (+ TP=2.5R from grid search):      +2964 (Δ +1302)
+//   e32 (+ pre-NY 07:00/60m box):          +3691 (Δ +727)
+//   e33 (+ any pattern + body30%):         +4025 (Δ +334) ⭐
+// Total 5y: +2917 swing (+263% vs original baseline)
+// 57.8% WR, 881 trades — Wyckoff Phase B + relaxed pattern at big box
+g_ny             = "🟡 NY (e33 07:00/60m + any + body30% + TP2.5)"
+nyBoxStartH      = input.int  (7,   "Box start hour (ET)", minval = 0, maxval = 23, group = g_ny)
+nyBoxStartM      = input.int  (0,   "Box start minute",    minval = 0, maxval = 59, group = g_ny)
+nyBoxDur         = input.int  (60,  "Box duration (min)",  minval = 1, maxval = 120, group = g_ny)
+nySessionEndH    = input.int  (13,  "Session end hour (ET) — e41: 13 (was 12)", group = g_ny)
+nySlBoxMult      = input.float(0.5, "SL = X × box_width", group = g_ny)
+nyTp1Mult        = input.float(1.5, "TP1 = X × SL", group = g_ny)
+nyTp2Mult        = input.float(2.5, "TP2 = X × SL (e31 optimum)", group = g_ny)
+nyMinSl          = input.float(3.0, "Min SL (pts)", group = g_ny)
+nyMaxAttempt     = input.int  (5,   "Max attempts/day — e44 PB optimum: 5", group = g_ny)
+nyBodyClosePct   = input.float(0.30,"NY body close confirm (% box width) — e33 optimum", minval = 0.0, maxval = 1.0, step = 0.05, group = g_ny)
+nyStrictPattern  = input.bool (false,"NY strict pattern — e33: any pattern beats strict on 07:00/60m timing", group = g_ny)
+nyEntryDelay     = input.int  (25,   "NY entry delay after box close (min) — e40 killzone skip", minval = 0, maxval = 90, group = g_ny)
+
+// ─── Pattern detection ─────────────────────────────────────────────────────
+isBullPin(o, h, l, c) =>
+    rng       = h - l
+    body      = math.abs(c - o)
+    lowerWick = math.min(o, c) - l
+    rng > 0 and body / rng <= 0.30 and lowerWick / rng >= 0.50
+
+isBearPin(o, h, l, c) =>
+    rng       = h - l
+    body      = math.abs(c - o)
+    upperWick = h - math.max(o, c)
+    rng > 0 and body / rng <= 0.30 and upperWick / rng >= 0.50
+
+isBullEngulf(po, pc, o, c) => pc < po and c > o and o <= pc and c >= po
+isBearEngulf(po, pc, o, c) => pc > po and c < o and o >= pc and c <= po
+isInsideBar (ph, pl, h,  l) => h < ph and l > pl
+
+anyBullPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBullPin(o, h, l, c) or isBullEngulf(po, pc, o, c) or isInsideBar(ph, pl, h, l)
+
+anyBearPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBearPin(o, h, l, c) or isBearEngulf(po, pc, o, c) or isInsideBar(ph, pl, h, l)
+
+// e27e strict: drop inside_bar (weakest pattern, kills filter quality)
+strictBullPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBullPin(o, h, l, c) or isBullEngulf(po, pc, o, c)
+
+strictBearPattern(po, ph, pl, pc, o, h, l, c) =>
+    isBearPin(o, h, l, c) or isBearEngulf(po, pc, o, c)
+
+// NY pattern selector (toggle strict vs any)
+nyBullPattern(po, ph, pl, pc, o, h, l, c) =>
+    nyStrictPattern ? strictBullPattern(po, ph, pl, pc, o, h, l, c) : anyBullPattern(po, ph, pl, pc, o, h, l, c)
+
+nyBearPattern(po, ph, pl, pc, o, h, l, c) =>
+    nyStrictPattern ? strictBearPattern(po, ph, pl, pc, o, h, l, c) : anyBearPattern(po, ph, pl, pc, o, h, l, c)
+
+// ─── Time helpers ──────────────────────────────────────────────────────────
+minuteOfDayET() => hour(time, "America/New_York") * 60 + minute(time, "America/New_York")
+mod = minuteOfDayET()
+
+inLookback = (time_close > timenow - panelLookback * 86400000)
+
+// ─── Box state per session ─────────────────────────────────────────────────
+var float asiaBoxHi    = na
+var float asiaBoxLo    = na
+var int   asiaBoxBar   = na
+var box   asiaBoxObj   = na
+var bool  asiaBoxDrawn = false
+
+var float londonBoxHi    = na
+var float londonBoxLo    = na
+var int   londonBoxBar   = na
+var box   londonBoxObj   = na
+var bool  londonBoxDrawn = false
+
+var float nyBoxHi    = na
+var float nyBoxLo    = na
+var int   nyBoxBar   = na
+var box   nyBoxObj   = na
+var bool  nyBoxDrawn = false
+
+// ─── Box detection ─────────────────────────────────────────────────────────
+var float asiaBxHiTmp = na
+var float asiaBxLoTmp = na
+asiaStart      = asiaBoxStartH * 60 + asiaBoxStartM
+asiaEndW       = asiaStart + asiaBoxDur
+asiaInWin      = mod >= asiaStart and mod < asiaEndW
+asiaJustClosed = mod == asiaEndW
+if asiaInWin
+    asiaBxHiTmp := na(asiaBxHiTmp) ? high : math.max(asiaBxHiTmp, high)
+    asiaBxLoTmp := na(asiaBxLoTmp) ? low  : math.min(asiaBxLoTmp, low)
+if asiaJustClosed
+    asiaBoxHi   := asiaBxHiTmp
+    asiaBoxLo   := asiaBxLoTmp
+    asiaBoxBar  := bar_index
+    asiaBxHiTmp := na
+    asiaBxLoTmp := na
+
+var float londonBxHiTmp = na
+var float londonBxLoTmp = na
+londonStart      = londonBoxStartH * 60 + londonBoxStartM
+londonEndW       = londonStart + londonBoxDur
+londonInWin      = mod >= londonStart and mod < londonEndW
+londonJustClosed = mod == londonEndW
+if londonInWin
+    londonBxHiTmp := na(londonBxHiTmp) ? high : math.max(londonBxHiTmp, high)
+    londonBxLoTmp := na(londonBxLoTmp) ? low  : math.min(londonBxLoTmp, low)
+if londonJustClosed
+    londonBoxHi   := londonBxHiTmp
+    londonBoxLo   := londonBxLoTmp
+    londonBoxBar  := bar_index
+    londonBxHiTmp := na
+    londonBxLoTmp := na
+
+var float nyBxHiTmp = na
+var float nyBxLoTmp = na
+nyStart      = nyBoxStartH * 60 + nyBoxStartM
+nyEndW       = nyStart + nyBoxDur
+nyInWin      = mod >= nyStart and mod < nyEndW
+nyJustClosed = mod == nyEndW
+if nyInWin
+    nyBxHiTmp := na(nyBxHiTmp) ? high : math.max(nyBxHiTmp, high)
+    nyBxLoTmp := na(nyBxLoTmp) ? low  : math.min(nyBxLoTmp, low)
+if nyJustClosed
+    nyBoxHi   := nyBxHiTmp
+    nyBoxLo   := nyBxLoTmp
+    nyBoxBar  := bar_index
+    nyBxHiTmp := na
+    nyBxLoTmp := na
+
+// ─── Dynamic Box rendering (bar_index based, extend right per bar) ────────
+inAsiaSessionRange   = mod >= asiaStart   and mod < asiaSessionEndH   * 60
+inLondonSessionRange = mod >= londonStart and mod < londonSessionEndH * 60
+inNYSessionRange     = mod >= nyStart     and mod < nySessionEndH     * 60
+
+// Asia
+if showAsia and asiaJustClosed
+    asiaBoxObj := box.new(left = bar_index - asiaBoxDur, top = asiaBoxHi,
+         right = bar_index, bottom = asiaBoxLo,
+         border_color = color.green, bgcolor = color.new(color.green, boxOpacity),
+         border_width = 1, text = "Asia (mean-rev)", text_color = color.green, text_size = size.tiny)
+    asiaBoxDrawn := true
+if showAsia and asiaBoxDrawn and inAsiaSessionRange and not na(asiaBoxObj)
+    box.set_right(asiaBoxObj, bar_index)
+if asiaBoxDrawn and not inAsiaSessionRange and mod < asiaStart
+    asiaBoxDrawn := false
+    if hideOldBoxes and not na(asiaBoxObj)
+        box.delete(asiaBoxObj)
+
+// London
+if showLondon and londonJustClosed
+    londonBoxObj := box.new(left = bar_index - londonBoxDur, top = londonBoxHi,
+         right = bar_index, bottom = londonBoxLo,
+         border_color = color.blue, bgcolor = color.new(color.blue, boxOpacity),
+         border_width = 1, text = "London", text_color = color.blue, text_size = size.tiny)
+    londonBoxDrawn := true
+if showLondon and londonBoxDrawn and inLondonSessionRange and not na(londonBoxObj)
+    box.set_right(londonBoxObj, bar_index)
+if londonBoxDrawn and not inLondonSessionRange and mod < londonStart
+    londonBoxDrawn := false
+    if hideOldBoxes and not na(londonBoxObj)
+        box.delete(londonBoxObj)
+
+// NY
+if showNY and nyJustClosed
+    nyBoxObj := box.new(left = bar_index - nyBoxDur, top = nyBoxHi,
+         right = bar_index, bottom = nyBoxLo,
+         border_color = color.orange, bgcolor = color.new(color.orange, boxOpacity),
+         border_width = 1, text = "NY (direct)", text_color = color.orange, text_size = size.tiny)
+    nyBoxDrawn := true
+if showNY and nyBoxDrawn and inNYSessionRange and not na(nyBoxObj)
+    box.set_right(nyBoxObj, bar_index)
+if nyBoxDrawn and not inNYSessionRange and mod < nyStart
+    nyBoxDrawn := false
+    if hideOldBoxes and not na(nyBoxObj)
+        box.delete(nyBoxObj)
+
+// ─── Box edge dotted lines during active session ───────────────────────────
+plot(showAsia   and not na(asiaBoxHi)   and inAsiaSessionRange   ? asiaBoxHi   : na, "Asia Hi",   color = color.green,  style = plot.style_circles, linewidth = 1)
+plot(showAsia   and not na(asiaBoxLo)   and inAsiaSessionRange   ? asiaBoxLo   : na, "Asia Lo",   color = color.green,  style = plot.style_circles, linewidth = 1)
+plot(showLondon and not na(londonBoxHi) and inLondonSessionRange ? londonBoxHi : na, "London Hi", color = color.blue,   style = plot.style_circles, linewidth = 1)
+plot(showLondon and not na(londonBoxLo) and inLondonSessionRange ? londonBoxLo : na, "London Lo", color = color.blue,   style = plot.style_circles, linewidth = 1)
+plot(showNY     and not na(nyBoxHi)     and inNYSessionRange     ? nyBoxHi     : na, "NY Hi",     color = color.orange, style = plot.style_circles, linewidth = 1)
+plot(showNY     and not na(nyBoxLo)     and inNYSessionRange     ? nyBoxLo     : na, "NY Lo",     color = color.orange, style = plot.style_circles, linewidth = 1)
+
+// ─── Trade type with line + label refs (follow-current-bar labels) ─────────
+type Trade
+    float entry
+    float sl
+    float tp
+    int   dir
+    int   barOpen
+    line  slLine
+    line  tpLine
+    line  entryLine
+    label slLab
+    label tpLab
+    label enLab
+
+// ─── Per-session stats vars ────────────────────────────────────────────────
+var array<Trade> asiaOpen   = array.new<Trade>()
+var int   asiaTotalWin    = 0       // cumulative (lookback)
+var int   asiaTotalLoss   = 0
+var int   asiaChopDays    = 0
+var float asiaNetPL       = 0.0
+var int   asiaTodayWin    = 0       // today-only (resets midnight)
+var int   asiaTodayLoss   = 0
+var float asiaTodayPL     = 0.0
+var int   asiaTodayAtt    = 0
+var int   asiaBkDir       = 0
+var float asiaExtreme     = na
+var bool  asiaHadEntry    = false
+var bool  asiaSessionDone = false
+var int   asiaLastDay     = -1
+// e44 pullback state (Asia)
+var int   asiaPbState     = 0    // 0=WAIT_BREAKOUT, 1=WAIT_PULLBACK, 2=WAIT_REJECTION
+var int   asiaPbBkDir     = 0
+var int   asiaPbBkBar     = na
+var float asiaPbExtreme   = na
+
+var array<Trade> londonOpen = array.new<Trade>()
+var int   londonTotalWin = 0
+var int   londonTotalLoss= 0
+var int   londonChopDays = 0
+var float londonNetPL    = 0.0
+var int   londonTodayWin = 0
+var int   londonTodayLoss= 0
+var float londonTodayPL  = 0.0
+var int   londonTodayAtt = 0
+var int   londonBkDir    = 0
+var int   londonBkBar    = na
+var bool  londonHadEntry = false
+var int   londonLastDay  = -1
+// e44 pullback state (London)
+var int   londonPbState   = 0
+var int   londonPbBkDir   = 0
+var int   londonPbBkBar   = na
+var float londonPbExtreme = na
+
+var array<Trade> nyOpen = array.new<Trade>()
+var int   nyTotalWin   = 0
+var int   nyTotalLoss  = 0
+var int   nyChopDays   = 0
+var float nyNetPL      = 0.0
+var int   nyTodayWin   = 0
+var int   nyTodayLoss  = 0
+var float nyTodayPL    = 0.0
+var int   nyTodayAtt   = 0
+var bool  nyEntered    = false
+var bool  nyHadEntry   = false
+var int   nyLastDay    = -1
+// e44 pullback state (NY)
+var int   nyPbState    = 0
+var int   nyPbBkDir    = 0
+var int   nyPbBkBar    = na
+var float nyPbExtreme  = na
+
+// ─── New-day reset ─────────────────────────────────────────────────────────
+curDay   = dayofmonth(time, "America/New_York")
+newDayET = mod == 0
+
+// ─── Session-end forced close (Python canonical match) ─────────────────────
+// Python's per-day backtest forces EOD close on every still-open trade at the
+// last bar of the session. This keeps Pine's W/L counters in sync with the
+// canonical engine output. Without this, Pine may carry trades across midnight.
+forceSessionEndClose(arr, sessionTag) =>
+    int eod_w = 0
+    int eod_l = 0
+    float eod_pl = 0.0
+    if array.size(arr) > 0
+        i = 0
+        while i < array.size(arr)
+            t = array.get(arr, i)
+            float pnl_pts = t.dir == 1 ? close - t.entry : t.entry - close
+            eod_pl += pnl_pts
+            if pnl_pts > 0
+                eod_w += 1
+            else
+                eod_l += 1
+            // Log EOD force-close
+            log.info("EXIT|" + sessionTag + "|" + (t.dir == 1 ? "LONG" : "SHORT") + "|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|exit=" + str.tostring(close, "#.##") + "|reason=EOD|pnl=" + str.tostring(pnl_pts, "#.##"))
+            // Cleanup visuals
+            if not na(t.slLab)
+                label.delete(t.slLab)
+            if not na(t.tpLab)
+                label.delete(t.tpLab)
+            if not na(t.enLab)
+                label.delete(t.enLab)
+            if showExitMarker
+                isW = pnl_pts > 0
+                label.new(x = bar_index,
+                     y = isW ? high : low,
+                     text = (isW ? "✓ EOD " : "✗ EOD ") + sessionTag,
+                     color = isW ? color.aqua : color.fuchsia,
+                     textcolor = color.white,
+                     style = label.style_label_left, size = size.tiny)
+            array.remove(arr, i)
+    [eod_w, eod_l, eod_pl]
+
+// Force-close minute calculations (used after processOpenTrades below)
+asiaForceMin   = asiaSessionEndH   == 24 ? 1439 : asiaSessionEndH   * 60 - 1
+londonForceMin = londonSessionEndH * 60 - 1
+nyForceMin     = nySessionEndH     * 60 - 1
+// (Force-close trigger blocks moved AFTER processOpenTrades — see below)
+
+if newDayET
+    if asiaLastDay != -1 and not asiaHadEntry
+        asiaChopDays += 1
+    asiaLastDay     := curDay
+    asiaBkDir       := 0
+    asiaExtreme     := na
+    asiaTodayAtt    := 0
+    asiaPbState     := 0
+    asiaPbBkDir     := 0
+    asiaPbBkBar     := na
+    asiaPbExtreme   := na
+    asiaTodayWin    := 0
+    asiaTodayLoss   := 0
+    asiaTodayPL     := 0.0
+    asiaHadEntry    := false
+    asiaSessionDone := false
+    if londonLastDay != -1 and not londonHadEntry
+        londonChopDays += 1
+    londonLastDay   := curDay
+    londonBkDir     := 0
+    londonBkBar     := na
+    londonTodayAtt  := 0
+    londonPbState   := 0
+    londonPbBkDir   := 0
+    londonPbBkBar   := na
+    londonPbExtreme := na
+    londonTodayWin  := 0
+    londonTodayLoss := 0
+    londonTodayPL   := 0.0
+    londonHadEntry  := false
+    if nyLastDay != -1 and not nyHadEntry
+        nyChopDays   += 1
+    nyLastDay       := curDay
+    nyEntered       := false
+    nyTodayAtt      := 0
+    nyPbState       := 0
+    nyPbBkDir       := 0
+    nyPbBkBar       := na
+    nyPbExtreme     := na
+    nyTodayWin      := 0
+    nyTodayLoss     := 0
+    nyTodayPL       := 0.0
+    nyHadEntry      := false
+
+    // Defensive: reset box state to prevent cross-day leak
+    // Bug observed in replay mode: tmp accumulators sometimes carry
+    // stale value from previous day if exact "box close" minute (e.g. 9:08 ET)
+    // is missed due to data gap, holiday, or replay quirk.
+    asiaBxHiTmp := na
+    asiaBxLoTmp := na
+    asiaBoxHi   := na
+    asiaBoxLo   := na
+    asiaBoxBar  := na
+
+    londonBxHiTmp := na
+    londonBxLoTmp := na
+    londonBoxHi   := na
+    londonBoxLo   := na
+    londonBoxBar  := na
+
+    nyBxHiTmp := na
+    nyBxLoTmp := na
+    nyBoxHi   := na
+    nyBoxLo   := na
+    nyBoxBar  := na
+
+// ─── Process open trades: extend SL/TP lines + move labels + check exit ───
+processOpenTrades(arr, sessionTag) =>
+    int win    = 0
+    int loss   = 0
+    float pl   = 0.0
+    if array.size(arr) > 0
+        i = 0
+        while i < array.size(arr)
+            t = array.get(arr, i)
+            // Extend SL/TP/entry lines to current bar (dynamic length)
+            if not na(t.slLine)
+                line.set_x2(t.slLine, bar_index)
+            if not na(t.tpLine)
+                line.set_x2(t.tpLine, bar_index)
+            if not na(t.entryLine)
+                line.set_x2(t.entryLine, bar_index)
+            // Move labels to current bar (always visible at right edge)
+            if not na(t.slLab)
+                label.set_x(t.slLab, bar_index)
+            if not na(t.tpLab)
+                label.set_x(t.tpLab, bar_index)
+            if not na(t.enLab)
+                label.set_x(t.enLab, bar_index)
+            // Check exit
+            exited = false
+            isWin = false
+            float exitPxLog = na
+            string exitReasonLog = na
+            if t.dir == 1
+                if low <= t.sl
+                    loss += 1
+                    pl   += t.sl - t.entry
+                    exited := true
+                    exitPxLog := t.sl
+                    exitReasonLog := "SL"
+                else if high >= t.tp
+                    win  += 1
+                    pl   += t.tp - t.entry
+                    exited := true
+                    isWin := true
+                    exitPxLog := t.tp
+                    exitReasonLog := "TP"
+            else
+                if high >= t.sl
+                    loss += 1
+                    pl   += t.entry - t.sl
+                    exited := true
+                    exitPxLog := t.sl
+                    exitReasonLog := "SL"
+                else if low <= t.tp
+                    win  += 1
+                    pl   += t.entry - t.tp
+                    exited := true
+                    isWin := true
+                    exitPxLog := t.tp
+                    exitReasonLog := "TP"
+            // Log exit
+            if exited
+                log.info("EXIT|" + sessionTag + "|" + (t.dir == 1 ? "LONG" : "SHORT") + "|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|exit=" + str.tostring(exitPxLog, "#.##") + "|reason=" + exitReasonLog + "|pnl=" + str.tostring(t.dir == 1 ? exitPxLog - t.entry : t.entry - exitPxLog, "#.##"))
+            if exited
+                // Lock lines at exit bar (no further extension)
+                if not na(t.slLine)
+                    line.set_x2(t.slLine, bar_index)
+                if not na(t.tpLine)
+                    line.set_x2(t.tpLine, bar_index)
+                // De-clutter: delete SL/TP/Entry labels on exit
+                // (lines stay for historical review; W/L marker added below)
+                if not na(t.slLab)
+                    label.delete(t.slLab)
+                if not na(t.tpLab)
+                    label.delete(t.tpLab)
+                if not na(t.enLab)
+                    label.delete(t.enLab)
+                // W/L exit marker (small, frozen at exit bar)
+                if showExitMarker
+                    markerColor = isWin ? color.lime : color.red
+                    markerText  = isWin ? "✓ W " + sessionTag : "✗ L " + sessionTag
+                    label.new(x = bar_index,
+                         y = isWin ? (t.dir == 1 ? high : low) : (t.dir == 1 ? low : high),
+                         text = markerText,
+                         color = markerColor, textcolor = color.white,
+                         style = isWin ? label.style_label_left : label.style_label_left,
+                         size = size.tiny)
+                array.remove(arr, i)
+                continue
+            i += 1
+    [win, loss, pl]
+
+[asiaW,   asiaL,   asiaP]   = processOpenTrades(asiaOpen,   "A")
+[londonW, londonL, londonP] = processOpenTrades(londonOpen, "L")
+[nyW,     nyL,     nyP]     = processOpenTrades(nyOpen,     "NY")
+
+// Cumulative (lookback-gated)
+if inLookback
+    asiaTotalWin   += asiaW
+    asiaTotalLoss  += asiaL
+    asiaNetPL      += asiaP
+    londonTotalWin += londonW
+    londonTotalLoss+= londonL
+    londonNetPL    += londonP
+    nyTotalWin     += nyW
+    nyTotalLoss    += nyL
+    nyNetPL        += nyP
+
+// Today (always — resets midnight)
+asiaTodayWin    += asiaW
+asiaTodayLoss   += asiaL
+asiaTodayPL     += asiaP
+londonTodayWin  += londonW
+londonTodayLoss += londonL
+londonTodayPL   += londonP
+nyTodayWin      += nyW
+nyTodayLoss     += nyL
+nyTodayPL       += nyP
+
+// ─── Force-close at LAST in-session bar (Python-canonical EOD behavior) ────
+// Python's per-day loop: trade window is [box_end, session_end_h*60). Last
+// in-window bar at minute (session_end_h*60 - 1). We force-close trades that
+// DIDN'T hit SL/TP at that bar — at THAT bar's close price.
+// Runs AFTER processOpenTrades so natural SL/TP at the last bar takes priority.
+if mod == asiaForceMin and array.size(asiaOpen) > 0
+    [aw, al, ap] = forceSessionEndClose(asiaOpen, "A")
+    asiaTotalWin   += aw
+    asiaTotalLoss  += al
+    asiaNetPL      += ap
+    asiaTodayWin   += aw
+    asiaTodayLoss  += al
+    asiaTodayPL    += ap
+
+if mod == londonForceMin and array.size(londonOpen) > 0
+    [lw, ll, lp] = forceSessionEndClose(londonOpen, "L")
+    londonTotalWin  += lw
+    londonTotalLoss += ll
+    londonNetPL     += lp
+    londonTodayWin  += lw
+    londonTodayLoss += ll
+    londonTodayPL   += lp
+
+if mod == nyForceMin and array.size(nyOpen) > 0
+    [nw_, nl_, np_] = forceSessionEndClose(nyOpen, "NY")
+    nyTotalWin   += nw_
+    nyTotalLoss  += nl_
+    nyNetPL      += np_
+    nyTodayWin   += nw_
+    nyTodayLoss  += nl_
+    nyTodayPL    += np_
+
+// ─── Entry helpers ─────────────────────────────────────────────────────────
+// Creates SL line (red, dashed, width 3), TP line (green, solid, width 3),
+// entry midline (white, dotted, width 1), and FOLLOW-CURRENT-BAR labels
+// showing price + pt distance + ⚠️ warning if SL distance abnormally wide
+mkEntryViz(slPx, tpPx, entryPx, slCol, tpCol) =>
+    slL  = showLevels ? line.new(bar_index, slPx,   bar_index, slPx,    color = slCol,                       width = 3, style = line.style_dashed) : na
+    tpL  = showLevels ? line.new(bar_index, tpPx,   bar_index, tpPx,    color = tpCol,                       width = 3, style = line.style_solid)  : na
+    // Hide entry midline in minimal mode
+    entL = (showLevels and not minimalLabels) ? line.new(bar_index, entryPx, bar_index, entryPx, color = color.new(color.white, 30), width = 1, style = line.style_dotted) : na
+
+    // Clean right-edge labels: price only, follow current bar via processOpenTrades
+    slLab = showLevels ? label.new(x = bar_index, y = slPx,
+         text      = "SL " + str.tostring(slPx, "#.##"),
+         color     = slCol,
+         textcolor = color.white,
+         style     = label.style_label_left,
+         size      = size.small) : na
+    tpLab = showLevels ? label.new(x = bar_index, y = tpPx,
+         text      = "TP " + str.tostring(tpPx, "#.##"),
+         color     = tpCol,
+         textcolor = color.white,
+         style     = label.style_label_left,
+         size      = size.small) : na
+    enLab = showLevels ? label.new(x = bar_index, y = entryPx,
+         text      = "@ " + str.tostring(entryPx, "#.##"),
+         color     = color.gray,
+         textcolor = color.white,
+         style     = label.style_label_left,
+         size      = size.small) : na
+    [slL, tpL, entL, slLab, tpLab, enLab]
+
+// Clean entry marker: just BUY/SELL arrow at bar, no text dump
+drawEntryMarker(isLong, col) =>
+    if showSignals
+        label.new(x = bar_index,
+             y = isLong ? low : high,
+             text = isLong ? "BUY" : "SELL",
+             color = col, textcolor = color.white,
+             style = isLong ? label.style_label_up : label.style_label_down,
+             size = size.normal)
+
+// ─── Risk filter helpers ───────────────────────────────────────────────────
+// Compute suggested lot size based on risk budget + SL distance
+// XAUUSD: 1 lot × 1pt = $100 PnL → suggested_lot = riskUsd / slPts / 100
+suggestedLot(slDist) =>
+    raw = riskPerTradeUsd / slDist / 100
+    math.max(0.01, math.round(raw * 100) / 100)  // round to 0.01 broker step
+
+// Build risk-info string for entry label
+riskInfo(slDist) =>
+    lossUsd = slDist * 0.02 * 100  // assuming current 0.02 lot
+    pctCap  = lossUsd / capUsd * 100
+    sugLot  = suggestedLot(slDist)
+    sugLotLossUsd = slDist * sugLot * 100
+    "💰 @ 0.02 lot = -$" + str.tostring(lossUsd, "#.##") + " (" + str.tostring(pctCap, "#.#") + "% cap)" +
+         (showLotSuggest ? "\n📐 Sug lot " + str.tostring(sugLot, "#.##") + " = -$" + str.tostring(sugLotLossUsd, "#.##") : "")
+
+// Compact SKIP marker when SL exceeds session cap
+drawSkipLabel(slDist, sessionTag, ypos, isLong) =>
+    if showSignals
+        label.new(x = bar_index, y = ypos,
+             text  = "SKIP",
+             color = color.new(color.red, 30), textcolor = color.white,
+             style = isLong ? label.style_label_up : label.style_label_down,
+             size  = size.tiny)
+
+// (e41 Asia BREAKOUT block removed — this is e44 PULLBACK-only file)
+
+// ─── LEGACY Asia A2-fail mean-reversion (only if asiaUseDirectModel = false) ─
+if showAsia and not asiaUseDirectModel and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
+    asiaSessionDone := asiaTodayAtt >= asiaMaxAttempt or
+                       (asiaTodayAtt > 0 and asiaW > 0) or
+                       asiaL >= 2 ? true : asiaSessionDone
+
+if showAsia and not asiaUseDirectModel and inAsiaSessionRange and not na(asiaBoxHi) and not asiaSessionDone
+    if asiaBkDir == 0
+        if close > asiaBoxHi
+            asiaBkDir   := 1
+            asiaExtreme := high
+        else if close < asiaBoxLo
+            asiaBkDir   := -1
+            asiaExtreme := low
+    else if asiaBkDir == 1
+        asiaExtreme := math.max(asiaExtreme, high)
+        if close < asiaBoxHi and close > asiaBoxLo
+            if asiaTodayAtt < asiaMaxAttempt
+                boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
+                slPx   = asiaExtreme + asiaSlBuffer
+                tpPx   = boxMid
+                slDist = math.abs(close - slPx)
+                if useMaxSlFilter and slDist > asiaMaxSlPts
+                    drawSkipLabel(slDist, "Asia", high, false)
+                else
+                    asiaTodayAtt += 1
+                    asiaHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
+                    array.push(asiaOpen, Trade.new(close, slPx, tpPx, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(false, color.green)
+                    alert("🔴 SELL Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx) + " | Lot " + str.tostring(suggestedLot(slDist), "#.##"), alert.freq_once_per_bar)
+            asiaBkDir   := 0
+            asiaExtreme := na
+    else if asiaBkDir == -1
+        asiaExtreme := math.min(asiaExtreme, low)
+        if close > asiaBoxLo and close < asiaBoxHi
+            if asiaTodayAtt < asiaMaxAttempt
+                boxMid = (asiaBoxHi + asiaBoxLo) / 2.0
+                slPx   = asiaExtreme - asiaSlBuffer
+                tpPx   = boxMid
+                slDist = math.abs(close - slPx)
+                if useMaxSlFilter and slDist > asiaMaxSlPts
+                    drawSkipLabel(slDist, "Asia", low, true)
+                else
+                    asiaTodayAtt += 1
+                    asiaHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tpPx, close, color.red, color.green)
+                    array.push(asiaOpen, Trade.new(close, slPx, tpPx, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(true, color.green)
+                    alert("🟢 BUY Asia Fade @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP " + str.tostring(tpPx) + " | Lot " + str.tostring(suggestedLot(slDist), "#.##"), alert.freq_once_per_bar)
+            asiaBkDir   := 0
+            asiaExtreme := na
+
+// ─── London entry: e35 DIRECT model (default) OR pullback (legacy) ─────────
+// e35: direct breakout + body close + pattern at breakout candle = +800 5y fixed
+// (vs pullback model -601 5y fixed). Toggle via londonUseDirectModel input.
+
+// (e41 London BREAKOUT block removed — e44 PULLBACK-only file)
+
+// LEGACY: London PULLBACK model (only if londonUseDirectModel = false)
+if showLondon and not londonUseDirectModel and inLondonSessionRange and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt
+    if londonBkDir == 0
+        if close > londonBoxHi
+            londonBkDir := 1
+            londonBkBar := bar_index
+        else if close < londonBoxLo
+            londonBkDir := -1
+            londonBkBar := bar_index
+    else if londonBkDir == 1 and bar_index > londonBkBar
+        if low <= londonBoxHi and close > londonBoxHi
+            if anyBullPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+                bw     = londonBoxHi - londonBoxLo
+                slDist = math.max(londonMinSl, londonSlBoxMult * bw)
+                slPx   = low - slDist
+                tp1Px  = close + londonTp1Mult * slDist
+                tp2Px  = close + londonTp2Mult * slDist * tpMultEff
+                slDistFromEntry = math.abs(close - slPx)
+                if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
+                    drawSkipLabel(slDistFromEntry, "London", low, true)
+                    londonTodayAtt += 1  // count toward max attempts to prevent cascade
+                else
+                    londonTodayAtt += 1
+                    londonHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+                    array.push(londonOpen, Trade.new(close, slPx, tp2Px, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(true, color.blue)
+                    alert("🟢 BUY London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
+                londonBkDir := 0
+    else if londonBkDir == -1 and bar_index > londonBkBar
+        if high >= londonBoxLo and close < londonBoxLo
+            if anyBearPattern(open[1], high[1], low[1], close[1], open, high, low, close)
+                bw     = londonBoxHi - londonBoxLo
+                slDist = math.max(londonMinSl, londonSlBoxMult * bw)
+                slPx   = high + slDist
+                tp1Px  = close - londonTp1Mult * slDist
+                tp2Px  = close - londonTp2Mult * slDist * tpMultEff
+                slDistFromEntry = math.abs(close - slPx)
+                if useMaxSlFilter and slDistFromEntry > londonMaxSlPts
+                    drawSkipLabel(slDistFromEntry, "London", high, false)
+                    londonTodayAtt += 1  // count toward max attempts to prevent cascade
+                else
+                    londonTodayAtt += 1
+                    londonHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx, tp2Px, close, color.red, color.green)
+                    array.push(londonOpen, Trade.new(close, slPx, tp2Px, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(false, color.blue)
+                    alert("🔴 SELL London @ " + str.tostring(close) + " | SL " + str.tostring(slPx) + " | TP1 " + str.tostring(tp1Px) + " | TP2 " + str.tostring(tp2Px) + " | Lot " + str.tostring(suggestedLot(slDistFromEntry), "#.##"), alert.freq_once_per_bar)
+                londonBkDir := 0
+
+// ─── NY entry: direct breakout + pattern-at-breakout ───────────────────────
+// (e41 NY BREAKOUT block removed — e44 PULLBACK-only file)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// e44 PULLBACK ENTRY MODE — separate state machine per session
+// Activated when entryMode == "PULLBACK". Blocks above (BREAKOUT) are gated.
+// State: 0=WAIT_BREAKOUT → 1=WAIT_PULLBACK → 2=WAIT_REJECTION → IN_TRADE
+// 5y backtest: +4301 (vs e41 +3983), avgSL 4.2pt, worst -$74 (5.8× safer)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Asia PULLBACK ─────────────────────────────────────────────────────────
+if entryMode == "PULLBACK" and showAsia and inAsiaSessionRange and not na(asiaBoxHi) and asiaTodayAtt < asiaMaxAttempt and atrPass and weekdayPass and array.size(asiaOpen) == 0
+    if asiaPbState == 0   // WAIT_BREAKOUT
+        if close > asiaBoxHi
+            asiaPbBkDir   := 1
+            asiaPbBkBar   := bar_index
+            asiaPbExtreme := low
+            asiaPbState   := 1
+        else if close < asiaBoxLo
+            asiaPbBkDir   := -1
+            asiaPbBkBar   := bar_index
+            asiaPbExtreme := high
+            asiaPbState   := 1
+    else if asiaPbState == 1   // WAIT_PULLBACK
+        if bar_index - asiaPbBkBar > pbMaxWaitBars
+            asiaPbState := 0
+        else if asiaPbBkDir == 1
+            asiaPbExtreme := math.min(asiaPbExtreme, low)
+            if low <= asiaBoxHi + pbRetestTol
+                asiaPbState := 2
+        else
+            asiaPbExtreme := math.max(asiaPbExtreme, high)
+            if high >= asiaBoxLo - pbRetestTol
+                asiaPbState := 2
+    else if asiaPbState == 2   // WAIT_REJECTION
+        if bar_index - asiaPbBkBar > pbMaxWaitBars
+            asiaPbState := 0
+        else if asiaPbBkDir == 1
+            asiaPbExtreme := math.min(asiaPbExtreme, low)
+            if low < asiaBoxLo
+                asiaPbState := 0
+            else if isBullPin(open, high, low, close) or isBullEngulf(open[1], close[1], open, close)
+                slPx_pb = asiaPbExtreme - pbSlBuffer
+                slDist_pb = close - slPx_pb
+                if slDist_pb > 0
+                    tpPx_pb = close + pbTpMult * slDist_pb
+                    asiaTodayAtt += 1
+                    asiaHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_pb, tpPx_pb, close, color.red, color.green)
+                    array.push(asiaOpen, Trade.new(close, slPx_pb, tpPx_pb, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(true, color.aqua)
+                    alert("🌊 BUY Asia Pullback @ " + str.tostring(close) + " | SL " + str.tostring(slPx_pb) + " | TP " + str.tostring(tpPx_pb) + " | risk " + str.tostring(slDist_pb, "#.##") + "pt", alert.freq_once_per_bar)
+                    log.info("ENTRY|Asia-PB|LONG|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
+                    asiaPbState := 0
+        else
+            asiaPbExtreme := math.max(asiaPbExtreme, high)
+            if high > asiaBoxHi
+                asiaPbState := 0
+            else if isBearPin(open, high, low, close) or isBearEngulf(open[1], close[1], open, close)
+                slPx_pb = asiaPbExtreme + pbSlBuffer
+                slDist_pb = slPx_pb - close
+                if slDist_pb > 0
+                    tpPx_pb = close - pbTpMult * slDist_pb
+                    asiaTodayAtt += 1
+                    asiaHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_pb, tpPx_pb, close, color.red, color.green)
+                    array.push(asiaOpen, Trade.new(close, slPx_pb, tpPx_pb, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(false, color.aqua)
+                    alert("🌊 SELL Asia Pullback @ " + str.tostring(close) + " | SL " + str.tostring(slPx_pb) + " | TP " + str.tostring(tpPx_pb) + " | risk " + str.tostring(slDist_pb, "#.##") + "pt", alert.freq_once_per_bar)
+                    log.info("ENTRY|Asia-PB|SHORT|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
+                    asiaPbState := 0
+
+// ─── London PULLBACK ───────────────────────────────────────────────────────
+if entryMode == "PULLBACK" and showLondon and inLondonSessionRange and not na(londonBoxHi) and londonTodayAtt < londonMaxAttempt and atrPass and weekdayPass and array.size(londonOpen) == 0
+    if londonPbState == 0
+        if close > londonBoxHi
+            londonPbBkDir := 1
+            londonPbBkBar := bar_index
+            londonPbExtreme := low
+            londonPbState := 1
+        else if close < londonBoxLo
+            londonPbBkDir := -1
+            londonPbBkBar := bar_index
+            londonPbExtreme := high
+            londonPbState := 1
+    else if londonPbState == 1
+        if bar_index - londonPbBkBar > pbMaxWaitBars
+            londonPbState := 0
+        else if londonPbBkDir == 1
+            londonPbExtreme := math.min(londonPbExtreme, low)
+            if low <= londonBoxHi + pbRetestTol
+                londonPbState := 2
+        else
+            londonPbExtreme := math.max(londonPbExtreme, high)
+            if high >= londonBoxLo - pbRetestTol
+                londonPbState := 2
+    else if londonPbState == 2
+        if bar_index - londonPbBkBar > pbMaxWaitBars
+            londonPbState := 0
+        else if londonPbBkDir == 1
+            londonPbExtreme := math.min(londonPbExtreme, low)
+            if low < londonBoxLo
+                londonPbState := 0
+            else if isBullPin(open, high, low, close) or isBullEngulf(open[1], close[1], open, close)
+                slPx_pb = londonPbExtreme - pbSlBuffer
+                slDist_pb = close - slPx_pb
+                if slDist_pb > 0
+                    tpPx_pb = close + pbTpMult * slDist_pb
+                    londonTodayAtt += 1
+                    londonHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_pb, tpPx_pb, close, color.red, color.green)
+                    array.push(londonOpen, Trade.new(close, slPx_pb, tpPx_pb, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(true, color.aqua)
+                    alert("🌊 BUY London Pullback @ " + str.tostring(close) + " | SL " + str.tostring(slPx_pb) + " | TP " + str.tostring(tpPx_pb) + " | risk " + str.tostring(slDist_pb, "#.##") + "pt", alert.freq_once_per_bar)
+                    log.info("ENTRY|London-PB|LONG|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
+                    londonPbState := 0
+        else
+            londonPbExtreme := math.max(londonPbExtreme, high)
+            if high > londonBoxHi
+                londonPbState := 0
+            else if isBearPin(open, high, low, close) or isBearEngulf(open[1], close[1], open, close)
+                slPx_pb = londonPbExtreme + pbSlBuffer
+                slDist_pb = slPx_pb - close
+                if slDist_pb > 0
+                    tpPx_pb = close - pbTpMult * slDist_pb
+                    londonTodayAtt += 1
+                    londonHadEntry := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_pb, tpPx_pb, close, color.red, color.green)
+                    array.push(londonOpen, Trade.new(close, slPx_pb, tpPx_pb, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(false, color.aqua)
+                    alert("🌊 SELL London Pullback @ " + str.tostring(close) + " | SL " + str.tostring(slPx_pb) + " | TP " + str.tostring(tpPx_pb) + " | risk " + str.tostring(slDist_pb, "#.##") + "pt", alert.freq_once_per_bar)
+                    log.info("ENTRY|London-PB|SHORT|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
+                    londonPbState := 0
+
+// ─── NY PULLBACK ───────────────────────────────────────────────────────────
+if entryMode == "PULLBACK" and showNY and inNYSessionRange and not na(nyBoxHi) and nyTodayAtt < nyMaxAttempt and atrPass and weekdayPass and (mod >= nyEndW + nyEntryDelay) and array.size(nyOpen) == 0
+    if nyPbState == 0
+        if close > nyBoxHi
+            nyPbBkDir := 1
+            nyPbBkBar := bar_index
+            nyPbExtreme := low
+            nyPbState := 1
+        else if close < nyBoxLo
+            nyPbBkDir := -1
+            nyPbBkBar := bar_index
+            nyPbExtreme := high
+            nyPbState := 1
+    else if nyPbState == 1
+        if bar_index - nyPbBkBar > pbMaxWaitBars
+            nyPbState := 0
+        else if nyPbBkDir == 1
+            nyPbExtreme := math.min(nyPbExtreme, low)
+            if low <= nyBoxHi + pbRetestTol
+                nyPbState := 2
+        else
+            nyPbExtreme := math.max(nyPbExtreme, high)
+            if high >= nyBoxLo - pbRetestTol
+                nyPbState := 2
+    else if nyPbState == 2
+        if bar_index - nyPbBkBar > pbMaxWaitBars
+            nyPbState := 0
+        else if nyPbBkDir == 1
+            nyPbExtreme := math.min(nyPbExtreme, low)
+            if low < nyBoxLo
+                nyPbState := 0
+            else if isBullPin(open, high, low, close) or isBullEngulf(open[1], close[1], open, close)
+                slPx_pb = nyPbExtreme - pbSlBuffer
+                slDist_pb = close - slPx_pb
+                if slDist_pb > 0
+                    tpPx_pb = close + pbTpMult * slDist_pb
+                    nyTodayAtt += 1
+                    nyHadEntry := true
+                    nyEntered := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_pb, tpPx_pb, close, color.red, color.green)
+                    array.push(nyOpen, Trade.new(close, slPx_pb, tpPx_pb, 1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(true, color.aqua)
+                    alert("🌊 BUY NY Pullback @ " + str.tostring(close) + " | SL " + str.tostring(slPx_pb) + " | TP " + str.tostring(tpPx_pb) + " | risk " + str.tostring(slDist_pb, "#.##") + "pt", alert.freq_once_per_bar)
+                    log.info("ENTRY|NY-PB|LONG|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
+                    nyPbState := 0
+        else
+            nyPbExtreme := math.max(nyPbExtreme, high)
+            if high > nyBoxHi
+                nyPbState := 0
+            else if isBearPin(open, high, low, close) or isBearEngulf(open[1], close[1], open, close)
+                slPx_pb = nyPbExtreme + pbSlBuffer
+                slDist_pb = slPx_pb - close
+                if slDist_pb > 0
+                    tpPx_pb = close - pbTpMult * slDist_pb
+                    nyTodayAtt += 1
+                    nyHadEntry := true
+                    nyEntered := true
+                    [slL, tpL, entL, slLab, tpLab, enLab] = mkEntryViz(slPx_pb, tpPx_pb, close, color.red, color.green)
+                    array.push(nyOpen, Trade.new(close, slPx_pb, tpPx_pb, -1, bar_index, slL, tpL, entL, slLab, tpLab, enLab))
+                    drawEntryMarker(false, color.aqua)
+                    alert("🌊 SELL NY Pullback @ " + str.tostring(close) + " | SL " + str.tostring(slPx_pb) + " | TP " + str.tostring(tpPx_pb) + " | risk " + str.tostring(slDist_pb, "#.##") + "pt", alert.freq_once_per_bar)
+                    log.info("ENTRY|NY-PB|SHORT|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
+                    nyPbState := 0
+
+// ─── Stats Panel (always visible, updates every bar so works during replay) ─
+if showStatsPanel
+    var table stats = table.new(position.top_right, 4, 14,
+         bgcolor      = color.new(color.black, 70),
+         border_color = color.new(color.purple, 50),
+         border_width = 1)
+
+    // Pick stats source based on mode
+    isToday   = statsMode == "Today"
+    asiaW_d   = isToday ? asiaTodayWin    : asiaTotalWin
+    asiaL_d   = isToday ? asiaTodayLoss   : asiaTotalLoss
+    asiaPL_d  = isToday ? asiaTodayPL     : asiaNetPL
+    londonW_d = isToday ? londonTodayWin  : londonTotalWin
+    londonL_d = isToday ? londonTodayLoss : londonTotalLoss
+    londonPL_d= isToday ? londonTodayPL   : londonNetPL
+    nyW_d     = isToday ? nyTodayWin      : nyTotalWin
+    nyL_d     = isToday ? nyTodayLoss     : nyTotalLoss
+    nyPL_d    = isToday ? nyTodayPL       : nyNetPL
+    modeLabel = isToday ? "TODAY" : str.tostring(panelLookback) + "d"
+
+    table.cell(stats, 0, 0, "PT BOX",  text_color = color.yellow, bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 1, 0, "ASIA",    text_color = color.lime,   bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 2, 0, "LONDON",  text_color = color.aqua,   bgcolor = color.new(color.purple, 60), text_size = size.small)
+    table.cell(stats, 3, 0, "NY",      text_color = color.orange, bgcolor = color.new(color.purple, 60), text_size = size.small)
+
+    // Win/Loss: gray when 0 (no trades), green/red when actually present
+    table.cell(stats, 0, 1, "Win", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 1, str.tostring(asiaW_d),   text_color = asiaW_d   > 0 ? color.lime : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 1, str.tostring(londonW_d), text_color = londonW_d > 0 ? color.lime : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 1, str.tostring(nyW_d),     text_color = nyW_d     > 0 ? color.lime : color.gray, text_size = size.tiny)
+
+    table.cell(stats, 0, 2, "Loss", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 2, str.tostring(asiaL_d),   text_color = asiaL_d   > 0 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 2, str.tostring(londonL_d), text_color = londonL_d > 0 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 2, str.tostring(nyL_d),     text_color = nyL_d     > 0 ? color.red : color.gray, text_size = size.tiny)
+
+    // Chop in TODAY mode = is today's session already chopped (session passed, no entry)
+    asiaChopShow   = isToday ? (mod >= asiaSessionEndH   * 60 and not asiaHadEntry   ? 1 : 0) : asiaChopDays
+    londonChopShow = isToday ? (mod >= londonSessionEndH * 60 and not londonHadEntry ? 1 : 0) : londonChopDays
+    nyChopShow     = isToday ? (mod >= nySessionEndH     * 60 and not nyHadEntry     ? 1 : 0) : nyChopDays
+    table.cell(stats, 0, 3, isToday ? "Chop Today" : "Chop Days", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 3, str.tostring(asiaChopShow),   text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 2, 3, str.tostring(londonChopShow), text_color = color.yellow, text_size = size.tiny)
+    table.cell(stats, 3, 3, str.tostring(nyChopShow),     text_color = color.yellow, text_size = size.tiny)
+
+    asiaWR   = asiaW_d   + asiaL_d   > 0 ? 100.0 * asiaW_d   / (asiaW_d   + asiaL_d)   : 0.0
+    londonWR = londonW_d + londonL_d > 0 ? 100.0 * londonW_d / (londonW_d + londonL_d) : 0.0
+    nyWR     = nyW_d     + nyL_d     > 0 ? 100.0 * nyW_d     / (nyW_d     + nyL_d)     : 0.0
+    // Win Rate: gray if no trades, green if >=50%, red if <50%
+    asiaWRcol   = (asiaW_d   + asiaL_d)   == 0 ? color.gray : (asiaWR   >= 50 ? color.lime : color.red)
+    londonWRcol = (londonW_d + londonL_d) == 0 ? color.gray : (londonWR >= 50 ? color.lime : color.red)
+    nyWRcol     = (nyW_d     + nyL_d)     == 0 ? color.gray : (nyWR     >= 50 ? color.lime : color.red)
+    table.cell(stats, 0, 4, "Win Rate", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 4, str.tostring(asiaWR,   "#.#") + "%", text_color = asiaWRcol,   text_size = size.tiny)
+    table.cell(stats, 2, 4, str.tostring(londonWR, "#.#") + "%", text_color = londonWRcol, text_size = size.tiny)
+    table.cell(stats, 3, 4, str.tostring(nyWR,     "#.#") + "%", text_color = nyWRcol,     text_size = size.tiny)
+
+    // Net P&L: explicit +/- prefix, gray when 0 (no trades), green if profit, red if loss
+    asiaPLstr   = asiaPL_d   == 0 ? "0.0"   : (asiaPL_d   > 0 ? "+" + str.tostring(asiaPL_d,   "#.#") : str.tostring(asiaPL_d,   "#.#"))
+    londonPLstr = londonPL_d == 0 ? "0.0"   : (londonPL_d > 0 ? "+" + str.tostring(londonPL_d, "#.#") : str.tostring(londonPL_d, "#.#"))
+    nyPLstr     = nyPL_d     == 0 ? "0.0"   : (nyPL_d     > 0 ? "+" + str.tostring(nyPL_d,     "#.#") : str.tostring(nyPL_d,     "#.#"))
+    asiaPLcol   = asiaPL_d   == 0 ? color.gray : (asiaPL_d   > 0 ? color.lime : color.red)
+    londonPLcol = londonPL_d == 0 ? color.gray : (londonPL_d > 0 ? color.lime : color.red)
+    nyPLcol     = nyPL_d     == 0 ? color.gray : (nyPL_d     > 0 ? color.lime : color.red)
+    table.cell(stats, 0, 5, "Net P&L (pts)", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 5, asiaPLstr,   text_color = asiaPLcol,   text_size = size.tiny)
+    table.cell(stats, 2, 5, londonPLstr, text_color = londonPLcol, text_size = size.tiny)
+    table.cell(stats, 3, 5, nyPLstr,     text_color = nyPLcol,     text_size = size.tiny)
+
+    table.cell(stats, 0, 6, "RR (TP/SL)", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 6, "1:" + str.tostring(pbTpMult, "#.#"), text_color = color.aqua, text_size = size.tiny)
+    table.cell(stats, 2, 6, "1:" + str.tostring(pbTpMult, "#.#"), text_color = color.aqua, text_size = size.tiny)
+    table.cell(stats, 3, 6, "1:" + str.tostring(pbTpMult, "#.#"), text_color = color.aqua, text_size = size.tiny)
+
+    table.cell(stats, 0, 7, "SL/TP", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 7, "retest-" + str.tostring(pbSlBuffer, "#.#") + "pt / " + str.tostring(pbTpMult, "#.#") + "R", text_color = color.aqua, text_size = size.tiny)
+    table.cell(stats, 2, 7, "retest-" + str.tostring(pbSlBuffer, "#.#") + "pt / " + str.tostring(pbTpMult, "#.#") + "R", text_color = color.aqua, text_size = size.tiny)
+    table.cell(stats, 3, 7, "retest-" + str.tostring(pbSlBuffer, "#.#") + "pt / " + str.tostring(pbTpMult, "#.#") + "R", text_color = color.aqua, text_size = size.tiny)
+
+    table.cell(stats, 0, 8, "Max Attempt", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 8, str.tostring(asiaMaxAttempt)   + "x", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 8, str.tostring(londonMaxAttempt) + "x", text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 8, str.tostring(nyMaxAttempt)     + "x", text_color = color.white, text_size = size.tiny)
+
+    table.cell(stats, 0, 9, "Today Attempt", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 9, str.tostring(asiaTodayAtt)   + "/" + str.tostring(asiaMaxAttempt),   text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 2, 9, str.tostring(londonTodayAtt) + "/" + str.tostring(londonMaxAttempt), text_color = color.white, text_size = size.tiny)
+    table.cell(stats, 3, 9, str.tostring(nyTodayAtt)     + "/" + str.tostring(nyMaxAttempt),     text_color = color.white, text_size = size.tiny)
+
+    asiaDirStr   = asiaBkDir   == 1 ? "LONG" : asiaBkDir   == -1 ? "SHORT" : "—"
+    londonDirStr = londonBkDir == 1 ? "LONG" : londonBkDir == -1 ? "SHORT" : "—"
+    nyDirStr     = nyEntered ? "FIRED" : "—"
+    table.cell(stats, 0, 10, "Breakout Dir", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 10, asiaDirStr,   text_color = asiaBkDir   == 1 ? color.lime : asiaBkDir   == -1 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 10, londonDirStr, text_color = londonBkDir == 1 ? color.lime : londonBkDir == -1 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 10, nyDirStr,     text_color = nyEntered ? color.orange : color.gray, text_size = size.tiny)
+
+    asiaInTrade   = array.size(asiaOpen)   > 0
+    londonInTrade = array.size(londonOpen) > 0
+    nyInTrade     = array.size(nyOpen)     > 0
+    table.cell(stats, 0, 11, "In Trade", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 11, asiaInTrade   ? "YES" : "NO", text_color = asiaInTrade   ? color.lime : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 11, londonInTrade ? "YES" : "NO", text_color = londonInTrade ? color.lime : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 11, nyInTrade     ? "YES" : "NO", text_color = nyInTrade     ? color.lime : color.gray, text_size = size.tiny)
+
+    table.cell(stats, 0, 12, "Config",  text_color = color.gray,   text_size = size.tiny)
+    table.cell(stats, 1, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
+    table.cell(stats, 2, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
+    table.cell(stats, 3, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
+
+    table.cell(stats, 0, 13, "5y Ref",  text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 13, "-19",     text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 13, "+679",    text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 3, 13, "+1306",   text_color = color.lime, text_size = size.tiny)
+
+// ─── Optional info panel (bottom-right) ────────────────────────────────────
+if showInfoPanel and barstate.islast
+    var table info = table.new(position.bottom_right, 2, 5,
+         bgcolor = color.new(color.black, 80), border_color = color.gray, border_width = 1)
+    table.cell(info, 0, 0, "PT Box e41",        text_color = color.yellow, bgcolor = color.new(color.black, 70))
+    table.cell(info, 1, 0, "+3983 5y / +3228 OOS", text_color = color.lime, bgcolor = color.new(color.black, 70))
+    table.cell(info, 0, 1, "Asia 19-00 ET",     text_color = color.green)
+    table.cell(info, 1, 1, "DIRECT 90m SL0.7 TP1.5R", text_color = color.white)
+    table.cell(info, 0, 2, "London 0-8 ET",     text_color = color.blue)
+    table.cell(info, 1, 2, "DIRECT 60m SL0.9 TP2R",   text_color = color.white)
+    table.cell(info, 0, 3, "NY 7-13 ET (delay25)", text_color = color.orange)
+    table.cell(info, 1, 3, "DIRECT 60m SL0.5 TP2.5R", text_color = color.white)
+    table.cell(info, 0, 4, "Lot @ $200 cap",    text_color = color.gray)
+    table.cell(info, 1, 4, "0.02",              text_color = color.aqua)
