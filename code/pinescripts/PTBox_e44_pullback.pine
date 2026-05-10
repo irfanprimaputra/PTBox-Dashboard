@@ -1252,9 +1252,9 @@ if showStatsPanel
     table.cell(stats, 3, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
 
     table.cell(stats, 0, 13, "5y Ref",  text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 13, "-19",     text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 2, 13, "+679",    text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 3, 13, "+1306",   text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 1, 13, "+572",    text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 2, 13, "+1307",   text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 3, 13, "+2422",   text_color = color.lime, text_size = size.tiny)
 
 // ─── Optional info panel (bottom-right) ────────────────────────────────────
 if showInfoPanel and barstate.islast
