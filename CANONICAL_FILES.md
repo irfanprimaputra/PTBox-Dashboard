@@ -7,7 +7,7 @@
 
 **maxAttempt = 5 (2026-05-06 SYNC):** Pine default 1→5 to match Python backtest peak edge. At max5: $1,813/yr at 0.02 lot, worst single trade -$116. Better both PnL AND safety vs max1.
 
-**Last updated:** 2026-05-10 (Pine v14 BE TRAIL DEPLOYED — Phase 17 V5 winner stack on e44 PB. WR 35→51%. Phase 38 Trump-2 regime overlay.)
+**Last updated:** 2026-05-10 (Pine v14 + MT5 EA v14.1 LIVE DEPLOYED — BE Trail stack. Phase 39 Compound REJECTED. 6× iron law confirmed.)
 
 ⚠️ **MAJOR CORRECTION 2026-05-05:** Engine had loss accounting bug under-counting
 losses by ~bw per trade. True 5y PnL = **+3223** (was claimed +9084 inflated).
@@ -80,6 +80,60 @@ Need new long-window (60-90 day) OOS run on engine v11+ before re-citing retenti
 ✅ pages/2_🚀_Phase7_Results.py            ← Phase 7 timeline + OOS callout
 ✅ pages/3_📊_Trade_Analytics.py           ← uses ptbox_e37_trades.csv
 ```
+
+---
+
+## ❌ Phase 39 — Compound Sizing (Opsi B) REJECTED
+
+**Date:** 2026-05-10
+**Status:** REJECTED — Pine UNCHANGED. 6× IRON LAW confirmed.
+**Files:**
+```
+✅ scripts/run_phase39_compound_sizing.py     ← 8-variant sweep
+✅ data/phase39_compound_sizing.json
+✅ Vault: ...Phase-39-Compound-Sizing-REJECTED.md
+```
+
+**Result:** ALL 8 variants fail Phase A gate (PnL Δ ≥ +30%). BEST = +2.2% boost ($37/yr extra). Tier-up rare karena P(3 consecutive wins at 42% WR) = 7.4% per cluster.
+
+**Memo iterasi 2026-05-07 estimate +50% boost SALAH** — assumed every 3rd consecutive triggers immediate, ignored streak rarity at moderate WR.
+
+**6× IRON LAW**: descriptive sizing/filter concepts often FAIL forward (e23/P16/e45/P21/P29/P39).
+
+**Real income paths (validated):**
+- Bump lot 0.02 → 0.03: +$860/yr
+- Pro → Zero account: +$370-700/yr
+- V2 Asia Tight SL (Phase 24): +$92/yr + 86% safer worst
+- BE Trail v14 (deployed): +$48/yr + WR 35→51%
+
+---
+
+## 🤖 MT5 EA v14.1 — Pine v14 mirror (auto-execute)
+
+**Date:** 2026-05-10
+**Status:** LIVE PRODUCTION (95% Pine parity)
+**Files:**
+```
+✅ code/mql5/PTBox_e44_v14.mq5                    ← 528 lines
+✅ Vault: ...Setup/MT5-EA-v14-Setup.md             ← deploy + troubleshoot
+```
+
+**v14.1 Pine parity gap close:**
+- maxAttempt 1 → 5 per session (was missing 80% setups)
+- ATR filter (e38) skip <30th pctile
+- TP boost (e39) 1.3× when ATR ≥72nd
+- NY delay 25min (e40)
+- Pattern detection: engulf+pin+hammer+inside (was engulf+pin only)
+- Per-day ATR cache, attempt counter (replaces hadEntry bool)
+
+**Reflection options (3 modes):**
+1. **Standalone** ⭐ recommended — MT5 EA + Pine v14 jalan parallel same logic, $0 cost
+2. Manual mirror — Pine alert HP → user manual click
+3. PineConnector bridge — $5-19/mo full auto webhook
+
+**Setup:** copy `~/Downloads/PTBox_e44_v14.mq5` to MT5 Experts folder → F4 MetaEditor → F7 compile → drag to XAUUSD M1 chart → set Broker_GMTOffset → ☺ active.
+
+**Test demo 3 sesi (Asia + London + NY) sebelum live attach.**
 
 ---
 
