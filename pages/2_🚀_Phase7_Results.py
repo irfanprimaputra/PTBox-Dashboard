@@ -67,7 +67,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine integration · ✅ OOS PASSED 316% retention · 500+ variants · Current best: <b style="color: {COLORS['success']};">e37 (live-ready)</b>
+        Engine v11+ · 4-layer stack (e38 ATR + e39 TP + e40 NY delay + e41 session params) · 280+ iterations · Modes: <b style="color: {COLORS['success']};">e41 BREAKOUT +3983</b> + <b style="color: rgb(20, 184, 166);">e44 PULLBACK +4301</b> (Pine v14 toggle) · <span style="color: rgb(34, 197, 94); font-weight: 600;">🛡️ Pine v14 BE TRAIL ACTIVE</span> WR 35→51% · <span style="color: {COLORS['text_secondary']}; font-size: 0.85em;">Phase 38 Trump-2 regime split (NO_MOVE 60→19%, income 5-12× boost)</span>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -89,49 +89,51 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ Current Best · e37 (e36 + extended session windows) — OOS PASSED ✅ 316% retention
+        ⭐ LIVE: e41 BREAKOUT (Asia 19:00 + Lon SL 0.9 + NY end 13 + ATR + TP boost + NY delay) · 🌊 PARALLEL: e44 PULLBACK + 🛡️ BE TRAIL v14 (Pine v14, WR 35→51% mental boost)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
             <div style="font-size: 3.5rem; font-weight: 800; color: {COLORS['success']}; line-height: 1; letter-spacing: -0.03em;">
-                +3223 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
+                +3983 <span style="font-size: 1.1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
-                Fixed-config 5y (2021-2026) · projected WF +3500-3800
+                e41 5y total (closed +4145 / EOD -162) · 1589 trades · WR 60.9%
             </div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 3rem; font-weight: 800; color: {COLORS['success']}; line-height: 1;">
-                +{oos_total:.0f} <span style="font-size: 1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts OOS</span>
+                +3228 <span style="font-size: 1rem; color: {COLORS['text_secondary']}; font-weight: 500;">pts OOS</span>
             </div>
             <div style="margin-top: 0.4rem; color: {COLORS['text_secondary']}; font-size: 0.85rem;">
-                Locked params on UNSEEN 2024-2026 (2.3y)
+                Test 2024-2026 (+1374/yr) — e41 4-layer stack
+            </div>
+        </div>
+        <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
+            <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['success']};">
+                560%
+            </div>
+            <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
+                OOS retention (test &gt; train · 9/10 Q+)<br>
+                ⚠ regime-dependent (2024-26 gold bull)
             </div>
         </div>
         <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
             <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                316%
+                ~$1467/yr
             </div>
             <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
-                OOS retention (10/10 Q ✅)
-            </div>
-        </div>
-        <div style="border-left: 1px solid {COLORS['border']}; padding-left: 1.75rem;">
-            <div style="font-size: 1.5rem; font-weight: 700; color: {COLORS['text']};">
-                ~$129/yr
-            </div>
-            <div style="margin-top: 0.2rem; color: {COLORS['text_secondary']}; font-size: 0.8rem;">
-                $200 cap, lot 0.02 (e37 v12 corrected, raw edge)
+                $200 cap, lot 0.02 ($2/pt) · realistic incl EOD<br>
+                +127% over e37 base (was $647/yr)
             </div>
         </div>
     </div>
     <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid {COLORS['border']}; color: {COLORS['text_secondary']}; font-size: 0.82rem;">
-        ⚠️ <b style="color: {COLORS['warning']};">2026-05-05 ENGINE BUGFIX (Pine v12):</b> Loss accounting bug under-counted losses by ~bw per trade. Previous +9084 claim was inflated.<br>
-        🟢 Asia: 18:00/90m DIRECT + filter OFF = <b>+855</b> (was claimed +1839)<br>
-        🔵 London: 00:00/60m DIRECT + filter OFF = <b>+1186</b> (was claimed +3220)<br>
-        🟡 NY: 07:00/60m + filter OFF = <b>+1182</b> (was claimed +4025)<br>
-        True 5y: <b>+3223 pts</b> (corrected, raw edge, no max-SL filter)<br>
-        With cap-aware filter @30pt: +1782 5y. OOS validation needs re-run.
+        ⭐ <b style="color: {COLORS['success']};">2026-05-05 e41 ITERATION CHAIN (Pine v12.3):</b> 4 stacked layers on engine v11+ baseline.<br>
+        ① <b>e38 ATR filter</b>: skip days where today's range &lt; 30th pctile of last 30d (Δ +856)<br>
+        ② <b>e39 TP boost</b>: TP×1.30 when ATR rank ≥72nd pctile (Δ +510)<br>
+        ③ <b>e40 NY delay</b>: 25min entry delay after box close (skip 8:30-8:55 macro noise) (Δ +196)<br>
+        ④ <b>e41 session params</b>: Asia start 19:00 + London SL 0.9×bw + NY end 13 ET (Δ +666)<br>
+        Per-session 5y: 🟢 Asia +1024 (263 tr, 68% WR) | 🔵 London +1238 (628, 58%) | 🟡 NY +1883 (698, 61%)
     </div>
 </div>
 """, unsafe_allow_html=True)
