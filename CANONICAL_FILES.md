@@ -7,7 +7,7 @@
 
 **maxAttempt = 5 (2026-05-06 SYNC):** Pine default 1→5 to match Python backtest peak edge. At max5: $1,813/yr at 0.02 lot, worst single trade -$116. Better both PnL AND safety vs max1.
 
-**Last updated:** 2026-05-10 (Pine v14 + MT5 EA v14.1 LIVE DEPLOYED — BE Trail stack. Phase 39 Compound REJECTED. 6× iron law confirmed.)
+**Last updated:** 2026-05-10 (Pine v15 LIVE — BE Trail + V2 Asia Tight SL. Phase 40 stop rules backtested + live plan saved. 7× iron law confirmed.)
 
 ⚠️ **MAJOR CORRECTION 2026-05-05:** Engine had loss accounting bug under-counting
 losses by ~bw per trade. True 5y PnL = **+3223** (was claimed +9084 inflated).
@@ -80,6 +80,42 @@ Need new long-window (60-90 day) OOS run on engine v11+ before re-citing retenti
 ✅ pages/2_🚀_Phase7_Results.py            ← Phase 7 timeline + OOS callout
 ✅ pages/3_📊_Trade_Analytics.py           ← uses ptbox_e37_trades.csv
 ```
+
+---
+
+## 🛑 Phase 40 — Stop Rules Backtest + Live Plan
+
+**Date:** 2026-05-10
+**Status:** Pine v15 LIVE. Stop rules validated. Live plan documented.
+**Files:**
+```
+✅ scripts/run_phase40_stop_rules_sim.py
+✅ data/phase40_stop_rules_sim.json
+✅ Vault: ...Backtest-Results/Phase-40-Stop-Rules-Backtest.md
+✅ Vault: ...Setup/PT-Box-Live-Plan-Modal-Kecil.md
+```
+
+**Phase 40 Verdict (5y, lot 0.02):**
+- ⭐ **Weekly stop -$100** = -2% income only (BEST balance)
+- Daily stop -$50 = -7% (decent safety)
+- Daily stop -$30 = -23% (too tight)
+- ❌ Max 3 consecutive loss = -39% (DISASTER)
+- ❌ Flip skip = -31% (worst day GETS WORSE -$209)
+
+**7× IRON LAW**: filter/stop rules sering FAIL forward (e23/P16/e45/P21/P29/P39/**P40**).
+
+**Final live plan modal $115:**
+```
+LOT 0.01 sampai modal $400
+DAILY STOP -$25 / WEEKLY STOP -$50
+NO consec loss rule, NO flip skip rule
+```
+
+**Pine v15 deployed:**
+- Asia: 🛡️ V2 Tight SL (Phase 24 winner — worst -$10)
+- London: e44 PB (unchanged)
+- NY: e44 PB (unchanged)
+- + BE Trail v14 (all 3 sessions)
 
 ---
 

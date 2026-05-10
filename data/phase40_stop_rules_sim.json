@@ -1,0 +1,127 @@
+{
+  "lot": 0.02,
+  "usd_per_pt": 2.0,
+  "results": [
+    {
+      "scenario": "Baseline (no stops)",
+      "n": 6574,
+      "skipped": 0,
+      "pnl_usd": 8601.42,
+      "usd_per_yr": 1720.28,
+      "wr": 42.09,
+      "worst_day": -130.04,
+      "worst_week": -102.76,
+      "max_dd": -391.39
+    },
+    {
+      "scenario": "Daily stop -$30",
+      "n": 6002,
+      "skipped": 572,
+      "pnl_usd": 6652.75,
+      "usd_per_yr": 1330.55,
+      "wr": 41.74,
+      "worst_day": -53.1,
+      "worst_week": -156.55,
+      "max_dd": -378.65
+    },
+    {
+      "scenario": "Daily stop -$50",
+      "n": 6419,
+      "skipped": 155,
+      "pnl_usd": 7965.03,
+      "usd_per_yr": 1593.01,
+      "wr": 42.09,
+      "worst_day": -90.8,
+      "worst_week": -126.98,
+      "max_dd": -344.78
+    },
+    {
+      "scenario": "Weekly stop -$50",
+      "n": 5998,
+      "skipped": 576,
+      "pnl_usd": 7837.45,
+      "usd_per_yr": 1567.49,
+      "wr": 42.08,
+      "worst_day": -130.04,
+      "worst_week": -69.79,
+      "max_dd": -391.39
+    },
+    {
+      "scenario": "Weekly stop -$100",
+      "n": 6512,
+      "skipped": 62,
+      "pnl_usd": 8425.11,
+      "usd_per_yr": 1685.02,
+      "wr": 42.05,
+      "worst_day": -130.04,
+      "worst_week": -119.46,
+      "max_dd": -391.39
+    },
+    {
+      "scenario": "Daily -$30 + Weekly -$50",
+      "n": 5558,
+      "skipped": 1016,
+      "pnl_usd": 6284.27,
+      "usd_per_yr": 1256.85,
+      "wr": 41.87,
+      "worst_day": -53.1,
+      "worst_week": -77.59,
+      "max_dd": -378.65
+    },
+    {
+      "scenario": "Daily -$50 + Weekly -$100",
+      "n": 6379,
+      "skipped": 195,
+      "pnl_usd": 7881.73,
+      "usd_per_yr": 1576.35,
+      "wr": 42.06,
+      "worst_day": -90.8,
+      "worst_week": -126.98,
+      "max_dd": -344.78
+    },
+    {
+      "scenario": "Max 3 consecutive loss",
+      "n": 4938,
+      "skipped": 1636,
+      "pnl_usd": 5224.62,
+      "usd_per_yr": 1044.92,
+      "wr": 41.21,
+      "worst_day": -121.11,
+      "worst_week": -212.95,
+      "max_dd": -313.04
+    },
+    {
+      "scenario": "Max 5 consecutive loss",
+      "n": 6221,
+      "skipped": 353,
+      "pnl_usd": 7782.48,
+      "usd_per_yr": 1556.5,
+      "wr": 41.94,
+      "worst_day": -155.84,
+      "worst_week": -102.76,
+      "max_dd": -421.31
+    },
+    {
+      "scenario": "Flip skip (skip opposite dir)",
+      "n": 4737,
+      "skipped": 1837,
+      "pnl_usd": 5964.1,
+      "usd_per_yr": 1192.82,
+      "wr": 41.36,
+      "worst_day": -209.04,
+      "worst_week": -124.69,
+      "max_dd": -485.23
+    },
+    {
+      "scenario": "FULL: Daily -$50 + Weekly -$100 + Flip",
+      "n": 4671,
+      "skipped": 1903,
+      "pnl_usd": 5776.72,
+      "usd_per_yr": 1155.34,
+      "wr": 41.32,
+      "worst_day": -95.94,
+      "worst_week": -116.43,
+      "max_dd": -328.38
+    }
+  ]
+}
