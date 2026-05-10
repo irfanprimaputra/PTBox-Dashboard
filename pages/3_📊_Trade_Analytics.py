@@ -29,11 +29,17 @@ if trades is None or len(trades) == 0:
     st.stop()
 
 st.success(f"""
-**✅ e37 TRADE DATA (live config)** — Asia 18:00/90m DIRECT, London 00:00/60m DIRECT, NY 07:00/60m DIRECT.
-Period: 2021 → 2026 (5 years). **Total PnL +9084 pts · WR 60.2% · OOS validated 316% retention.**
+**✅ e37 v11+ CANONICAL TRADE DATA (post-bugfix)** — 2433 trades over 5y (2021-2026).
 
-Per-session: Asia +1839 (594 trades, 61% WR) · London +3220 (958, 62% WR) · NY +4025 (881, 58% WR).
-Use filters below to slice by session, year, direction, day-of-week patterns.
+Per session: 🟢 Asia 594 (61% WR) · 🔵 London 958 (62% WR) · 🟡 NY 881 (58% WR). **True 5y closed PnL +3223 pts** (corrected from inflated +9084).
+
+⚠ **Note:** This CSV represents e37 baseline (no ATR filter, no TP boost, no NY delay). CURRENT modes:
+- **e41 BREAKOUT** (live default): 5y +3983 / WR 61% / wide SL / Δ +127% vs e37
+- **e44 PULLBACK** (Pine v15 LIVE): 5y +4301 / WR 35→51% (with v14 BE Trail) / tight SL 4.2pt / worst -$74 (or **-$10 Asia** with V2 Tight SL)
+- 🛡️ Pine v15 stack: BE Trail v14 (Phase 17 V5) + V2 Asia Tight SL (Phase 24)
+- 8 dead variants confirmed (Phase 36/39/40/42 + filter sweeps). TP 1:2 RR optimal.
+
+For e41 trade-level data run `python scripts/run_e41_validation.py <csv>`. For e44 pullback: `python scripts/run_e44_pullback.py`.
 """)
 
 # --- Sidebar filters ---

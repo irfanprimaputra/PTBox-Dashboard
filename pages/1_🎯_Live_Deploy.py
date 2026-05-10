@@ -48,12 +48,12 @@ SESSIONS = [
 # ───────────────────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
-    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box v14 · e41 BREAKOUT + e44 PULLBACK + 🛡️ BE Trail</h1>
+    <h1 style="font-size: 2rem; margin: 0;">🎯 Live Deploy — PT Box v15 · BE Trail + 🛡️ V2 Asia Tight SL</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        <b style="color: rgb(34, 197, 94);">Pine v14 (TradingView)</b> · <b style="color: rgb(96, 165, 250);">MT5 EA v14.1 (auto-execute, 95% Pine parity)</b> · Trade journal
+        <b style="color: rgb(34, 197, 94);">Pine v15 (TradingView)</b> · <b style="color: rgb(96, 165, 250);">MT5 EA v14.1 (deferred VPS)</b> · Modal $200 · Lot 0.02
     </p>
     <div style="margin-top: 0.6rem; padding: 0.6rem 0.9rem; background: rgba(34, 197, 94, 0.08); border-left: 3px solid rgb(34, 197, 94); border-radius: 4px; font-size: 0.85rem; color: {COLORS['text']};">
-        🛡️ <b>BE Trail v14 ACTIVE</b> · WR 34.9% → 51.2% (+16.2pt) · Worst trade SAMA -$74 · 🤖 MT5 EA standalone (Pine reflection optional)
+        🛡️ <b>BE Trail v14 + V2 Asia Tight SL</b> · WR 35→51% · Asia worst -$74→<b style="color: rgb(34, 197, 94);">-$10</b> (86% safer) · Daily stop -$50 / Weekly -$100
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -375,7 +375,7 @@ with c1:
                 border-radius: 12px; padding: 1.25rem 1.5rem; min-height: 140px;">
         <h4 style="margin: 0 0 0.5rem 0; color: {COLORS['text']};">📜 Pinescript Source</h4>
         <p style="color: {COLORS['text_secondary']}; font-size: 0.85rem;">
-            Pine v5 indicator full source di GitHub.
+            Pine v15 indicator full source di GitHub.
         </p>
         <a href="https://github.com/irfanprimaputra/PTBox-Dashboard/blob/main/code/pinescripts/PTBox_e37.pine"
            target="_blank" style="color: {COLORS['accent_blue']};">→ Open PTBox_e37.pine</a>

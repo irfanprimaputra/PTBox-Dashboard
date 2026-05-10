@@ -67,7 +67,7 @@ st.markdown(f"""
 <div style="margin-bottom: 1.5rem;">
     <h1 style="font-size: 2rem; margin: 0;">🚀 Phase 7 — Final Results</h1>
     <p style="color: {COLORS['text_secondary']}; margin: 0.25rem 0 0 0;">
-        Engine v11+ · 4-layer stack (e38 ATR + e39 TP + e40 NY delay + e41 session params) · 280+ iterations · Modes: <b style="color: {COLORS['success']};">e41 BREAKOUT +3983</b> + <b style="color: rgb(20, 184, 166);">e44 PULLBACK +4301</b> (Pine v14 toggle) · <span style="color: rgb(34, 197, 94); font-weight: 600;">🛡️ Pine v14 BE TRAIL ACTIVE</span> WR 35→51% · <span style="color: {COLORS['text_secondary']}; font-size: 0.85em;">Phase 38 Trump-2 regime split (NO_MOVE 60→19%, income 5-12× boost)</span>
+        Engine v11+ · 4-layer stack (e38 ATR + e39 TP + e40 NY delay + e41 session params) · <b>42 phases · 300+ iterations</b> · Modes: <b style="color: {COLORS['success']};">e41 BREAKOUT +3983</b> + <b style="color: rgb(20, 184, 166);">e44 PULLBACK +4301</b> · <span style="color: rgb(34, 197, 94); font-weight: 600;">🛡️ Pine v15 LIVE: BE Trail + V2 Asia Tight SL</span> WR 35→51% · Asia worst -$74→-$10 · <span style="color: {COLORS['text_secondary']}; font-size: 0.85em;">Phase 40 stop rules + Phase 42 wider TP REJECTED. TP 1:2 confirmed optimal. 8 dead variants.</span>
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -89,7 +89,7 @@ st.markdown(f"""
     margin-bottom: 1.5rem;
 ">
     <div style="color: {COLORS['text_secondary']}; font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
-        ⭐ LIVE: e41 BREAKOUT (Asia 19:00 + Lon SL 0.9 + NY end 13 + ATR + TP boost + NY delay) · 🌊 PARALLEL: e44 PULLBACK + 🛡️ BE TRAIL v14 (Pine v14, WR 35→51% mental boost)
+        ⭐ LIVE Pine v15: e41 BREAKOUT + e44 PULLBACK + 🛡️ BE Trail + V2 Asia Tight SL (Asia worst -$10, 86% safer than -$74 baseline) · WR 51% · TP 1:2 RR optimal (Phase 42 confirmed)
     </div>
     <div style="display: flex; align-items: baseline; gap: 2.5rem; flex-wrap: wrap;">
         <div>
