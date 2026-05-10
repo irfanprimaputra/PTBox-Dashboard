@@ -388,12 +388,14 @@ type Trade
 
 // ─── Per-session stats vars ────────────────────────────────────────────────
 var array<Trade> asiaOpen   = array.new<Trade>()
-var int   asiaTotalWin    = 0       // cumulative (lookback)
-var int   asiaTotalLoss   = 0
+var int   asiaTotalWin    = 0       // cumulative (lookback) — TP only
+var int   asiaTotalLoss   = 0       // SL only
+var int   asiaTotalBe     = 0       // BE Trail saves (NEW)
 var int   asiaChopDays    = 0
 var float asiaNetPL       = 0.0
-var int   asiaTodayWin    = 0       // today-only (resets midnight)
-var int   asiaTodayLoss   = 0
+var int   asiaTodayWin    = 0       // today-only (resets midnight) — TP
+var int   asiaTodayLoss   = 0       // SL
+var int   asiaTodayBe     = 0       // BE Trail saves today (NEW)
 var float asiaTodayPL     = 0.0
 var int   asiaTodayAtt    = 0
 var int   asiaBkDir       = 0
@@ -410,10 +412,12 @@ var float asiaPbExtreme   = na
 var array<Trade> londonOpen = array.new<Trade>()
 var int   londonTotalWin = 0
 var int   londonTotalLoss= 0
+var int   londonTotalBe  = 0       // BE Trail saves (NEW)
 var int   londonChopDays = 0
 var float londonNetPL    = 0.0
 var int   londonTodayWin = 0
 var int   londonTodayLoss= 0
+var int   londonTodayBe  = 0       // BE Trail saves today (NEW)
 var float londonTodayPL  = 0.0
 var int   londonTodayAtt = 0
 var int   londonBkDir    = 0
@@ -429,10 +433,12 @@ var float londonPbExtreme = na
 var array<Trade> nyOpen = array.new<Trade>()
 var int   nyTotalWin   = 0
 var int   nyTotalLoss  = 0
+var int   nyTotalBe    = 0       // BE Trail saves (NEW)
 var int   nyChopDays   = 0
 var float nyNetPL      = 0.0
 var int   nyTodayWin   = 0
 var int   nyTodayLoss  = 0
+var int   nyTodayBe    = 0       // BE Trail saves today (NEW)
 var float nyTodayPL    = 0.0
 var int   nyTodayAtt   = 0
 var bool  nyEntered    = false
@@ -505,6 +511,7 @@ if newDayET
     asiaPbExtreme   := na
     asiaTodayWin    := 0
     asiaTodayLoss   := 0
+    asiaTodayBe     := 0
     asiaTodayPL     := 0.0
     asiaHadEntry    := false
     asiaSessionDone := false
@@ -520,6 +527,7 @@ if newDayET
     londonPbExtreme := na
     londonTodayWin  := 0
     londonTodayLoss := 0
+    londonTodayBe   := 0
     londonTodayPL   := 0.0
     londonHadEntry  := false
     if nyLastDay != -1 and not nyHadEntry
@@ -533,6 +541,7 @@ if newDayET
     nyPbExtreme     := na
     nyTodayWin      := 0
     nyTodayLoss     := 0
+    nyTodayBe       := 0
     nyTodayPL       := 0.0
     nyHadEntry      := false
 
@@ -562,6 +571,7 @@ if newDayET
 processOpenTrades(arr, sessionTag) =>
     int win    = 0
     int loss   = 0
+    int be     = 0   // BE Trail saves (BE + TRAIL exits)
     float pl   = 0.0
     if array.size(arr) > 0
         i = 0
@@ -636,7 +646,10 @@ processOpenTrades(arr, sessionTag) =>
             if t.dir == 1
                 if low <= t.sl
                     pnlPts = t.sl - t.entry
-                    if pnlPts > 0
+                    // BE/TRAIL = NOT loss, NOT TP win — separate "saved" category
+                    if beExit or trailExit
+                        be += 1
+                    else if pnlPts > 0
                         win += 1
                     else
                         loss += 1
@@ -656,7 +669,9 @@ processOpenTrades(arr, sessionTag) =>
             else
                 if high >= t.sl
                     pnlPts = t.entry - t.sl
-                    if pnlPts > 0
+                    if beExit or trailExit
+                        be += 1
+                    else if pnlPts > 0
                         win += 1
                     else
                         loss += 1
@@ -705,33 +720,39 @@ processOpenTrades(arr, sessionTag) =>
                 array.remove(arr, i)
                 continue
             i += 1
-    [win, loss, pl]
+    [win, loss, pl, be]
 
-[asiaW,   asiaL,   asiaP]   = processOpenTrades(asiaOpen,   "A")
-[londonW, londonL, londonP] = processOpenTrades(londonOpen, "L")
-[nyW,     nyL,     nyP]     = processOpenTrades(nyOpen,     "NY")
+[asiaW,   asiaL,   asiaP,   asiaBe]   = processOpenTrades(asiaOpen,   "A")
+[londonW, londonL, londonP, londonBe] = processOpenTrades(londonOpen, "L")
+[nyW,     nyL,     nyP,     nyBe]     = processOpenTrades(nyOpen,     "NY")
 
 // Cumulative (lookback-gated)
 if inLookback
     asiaTotalWin   += asiaW
     asiaTotalLoss  += asiaL
+    asiaTotalBe    += asiaBe
     asiaNetPL      += asiaP
     londonTotalWin += londonW
     londonTotalLoss+= londonL
+    londonTotalBe  += londonBe
     londonNetPL    += londonP
     nyTotalWin     += nyW
     nyTotalLoss    += nyL
+    nyTotalBe      += nyBe
     nyNetPL        += nyP
 
 // Today (always — resets midnight)
 asiaTodayWin    += asiaW
 asiaTodayLoss   += asiaL
+asiaTodayBe     += asiaBe
 asiaTodayPL     += asiaP
 londonTodayWin  += londonW
 londonTodayLoss += londonL
+londonTodayBe   += londonBe
 londonTodayPL   += londonP
 nyTodayWin      += nyW
 nyTodayLoss     += nyL
+nyTodayBe       += nyBe
 nyTodayPL       += nyP
 
 // ─── Force-close at LAST in-session bar (Python-canonical EOD behavior) ────
@@ -1141,9 +1162,9 @@ if entryMode == "PULLBACK" and showNY and inNYSessionRange and not na(nyBoxHi) a
                     log.info("ENTRY|NY-PB|SHORT|" + str.format_time(time, "yyyy-MM-dd HH:mm", "America/New_York") + "|entry=" + str.tostring(close, "#.##") + "|sl=" + str.tostring(slPx_pb, "#.##") + "|tp=" + str.tostring(tpPx_pb, "#.##") + "|risk=" + str.tostring(slDist_pb, "#.##"))
                     nyPbState := 0
 
-// ─── Stats Panel (always visible, updates every bar so works during replay) ─
+// ─── Stats Panel — LIVE TRADE FOCUSED (BE Trail aware, drop static config) ─
 if showStatsPanel
-    var table stats = table.new(position.top_right, 4, 14,
+    var table stats = table.new(position.top_right, 4, 9,
          bgcolor      = color.new(color.black, 70),
          border_color = color.new(color.purple, 50),
          border_width = 1)
@@ -1152,109 +1173,91 @@ if showStatsPanel
     isToday   = statsMode == "Today"
     asiaW_d   = isToday ? asiaTodayWin    : asiaTotalWin
     asiaL_d   = isToday ? asiaTodayLoss   : asiaTotalLoss
+    asiaBe_d  = isToday ? asiaTodayBe     : asiaTotalBe
     asiaPL_d  = isToday ? asiaTodayPL     : asiaNetPL
     londonW_d = isToday ? londonTodayWin  : londonTotalWin
     londonL_d = isToday ? londonTodayLoss : londonTotalLoss
+    londonBe_d= isToday ? londonTodayBe   : londonTotalBe
     londonPL_d= isToday ? londonTodayPL   : londonNetPL
     nyW_d     = isToday ? nyTodayWin      : nyTotalWin
     nyL_d     = isToday ? nyTodayLoss     : nyTotalLoss
+    nyBe_d    = isToday ? nyTodayBe       : nyTotalBe
     nyPL_d    = isToday ? nyTodayPL       : nyNetPL
-    modeLabel = isToday ? "TODAY" : str.tostring(panelLookback) + "d"
 
+    // Header row
     table.cell(stats, 0, 0, "PT BOX",  text_color = color.yellow, bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 1, 0, "ASIA",    text_color = color.lime,   bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 2, 0, "LONDON",  text_color = color.aqua,   bgcolor = color.new(color.purple, 60), text_size = size.small)
     table.cell(stats, 3, 0, "NY",      text_color = color.orange, bgcolor = color.new(color.purple, 60), text_size = size.small)
 
-    // Win/Loss: gray when 0 (no trades), green/red when actually present
-    table.cell(stats, 0, 1, "Win", text_color = color.gray, text_size = size.tiny)
+    // Row 1: TP Win (full TP hit)
+    table.cell(stats, 0, 1, "TP Win", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 1, str.tostring(asiaW_d),   text_color = asiaW_d   > 0 ? color.lime : color.gray, text_size = size.tiny)
     table.cell(stats, 2, 1, str.tostring(londonW_d), text_color = londonW_d > 0 ? color.lime : color.gray, text_size = size.tiny)
     table.cell(stats, 3, 1, str.tostring(nyW_d),     text_color = nyW_d     > 0 ? color.lime : color.gray, text_size = size.tiny)
 
-    table.cell(stats, 0, 2, "Loss", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 2, str.tostring(asiaL_d),   text_color = asiaL_d   > 0 ? color.red : color.gray, text_size = size.tiny)
-    table.cell(stats, 2, 2, str.tostring(londonL_d), text_color = londonL_d > 0 ? color.red : color.gray, text_size = size.tiny)
-    table.cell(stats, 3, 2, str.tostring(nyL_d),     text_color = nyL_d     > 0 ? color.red : color.gray, text_size = size.tiny)
+    // Row 2: BE/Trail saves (NEW — BE Trail value tracker)
+    table.cell(stats, 0, 2, "🛡️ BE/Trail", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 2, str.tostring(asiaBe_d),   text_color = asiaBe_d   > 0 ? color.aqua : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 2, str.tostring(londonBe_d), text_color = londonBe_d > 0 ? color.aqua : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 2, str.tostring(nyBe_d),     text_color = nyBe_d     > 0 ? color.aqua : color.gray, text_size = size.tiny)
 
-    // Chop in TODAY mode = is today's session already chopped (session passed, no entry)
-    asiaChopShow   = isToday ? (mod >= asiaSessionEndH   * 60 and not asiaHadEntry   ? 1 : 0) : asiaChopDays
-    londonChopShow = isToday ? (mod >= londonSessionEndH * 60 and not londonHadEntry ? 1 : 0) : londonChopDays
-    nyChopShow     = isToday ? (mod >= nySessionEndH     * 60 and not nyHadEntry     ? 1 : 0) : nyChopDays
-    table.cell(stats, 0, 3, isToday ? "Chop Today" : "Chop Days", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 3, str.tostring(asiaChopShow),   text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 2, 3, str.tostring(londonChopShow), text_color = color.yellow, text_size = size.tiny)
-    table.cell(stats, 3, 3, str.tostring(nyChopShow),     text_color = color.yellow, text_size = size.tiny)
+    // Row 3: SL Loss (full SL hit, no BE)
+    table.cell(stats, 0, 3, "SL Loss", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 3, str.tostring(asiaL_d),   text_color = asiaL_d   > 0 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 3, str.tostring(londonL_d), text_color = londonL_d > 0 ? color.red : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 3, str.tostring(nyL_d),     text_color = nyL_d     > 0 ? color.red : color.gray, text_size = size.tiny)
 
-    asiaWR   = asiaW_d   + asiaL_d   > 0 ? 100.0 * asiaW_d   / (asiaW_d   + asiaL_d)   : 0.0
-    londonWR = londonW_d + londonL_d > 0 ? 100.0 * londonW_d / (londonW_d + londonL_d) : 0.0
-    nyWR     = nyW_d     + nyL_d     > 0 ? 100.0 * nyW_d     / (nyW_d     + nyL_d)     : 0.0
-    // Win Rate: gray if no trades, green if >=50%, red if <50%
-    asiaWRcol   = (asiaW_d   + asiaL_d)   == 0 ? color.gray : (asiaWR   >= 50 ? color.lime : color.red)
-    londonWRcol = (londonW_d + londonL_d) == 0 ? color.gray : (londonWR >= 50 ? color.lime : color.red)
-    nyWRcol     = (nyW_d     + nyL_d)     == 0 ? color.gray : (nyWR     >= 50 ? color.lime : color.red)
+    // Row 4: Win Rate (TP+BE counted as non-loss)
+    asiaWinTotal   = asiaW_d   + asiaBe_d
+    londonWinTotal = londonW_d + londonBe_d
+    nyWinTotal     = nyW_d     + nyBe_d
+    asiaWR   = asiaWinTotal   + asiaL_d   > 0 ? 100.0 * asiaWinTotal   / (asiaWinTotal   + asiaL_d)   : 0.0
+    londonWR = londonWinTotal + londonL_d > 0 ? 100.0 * londonWinTotal / (londonWinTotal + londonL_d) : 0.0
+    nyWR     = nyWinTotal     + nyL_d     > 0 ? 100.0 * nyWinTotal     / (nyWinTotal     + nyL_d)     : 0.0
+    asiaWRcol   = (asiaWinTotal   + asiaL_d)   == 0 ? color.gray : (asiaWR   >= 50 ? color.lime : color.red)
+    londonWRcol = (londonWinTotal + londonL_d) == 0 ? color.gray : (londonWR >= 50 ? color.lime : color.red)
+    nyWRcol     = (nyWinTotal     + nyL_d)     == 0 ? color.gray : (nyWR     >= 50 ? color.lime : color.red)
     table.cell(stats, 0, 4, "Win Rate", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 4, str.tostring(asiaWR,   "#.#") + "%", text_color = asiaWRcol,   text_size = size.tiny)
     table.cell(stats, 2, 4, str.tostring(londonWR, "#.#") + "%", text_color = londonWRcol, text_size = size.tiny)
     table.cell(stats, 3, 4, str.tostring(nyWR,     "#.#") + "%", text_color = nyWRcol,     text_size = size.tiny)
 
-    // Net P&L: explicit +/- prefix, gray when 0 (no trades), green if profit, red if loss
-    asiaPLstr   = asiaPL_d   == 0 ? "0.0"   : (asiaPL_d   > 0 ? "+" + str.tostring(asiaPL_d,   "#.#") : str.tostring(asiaPL_d,   "#.#"))
-    londonPLstr = londonPL_d == 0 ? "0.0"   : (londonPL_d > 0 ? "+" + str.tostring(londonPL_d, "#.#") : str.tostring(londonPL_d, "#.#"))
-    nyPLstr     = nyPL_d     == 0 ? "0.0"   : (nyPL_d     > 0 ? "+" + str.tostring(nyPL_d,     "#.#") : str.tostring(nyPL_d,     "#.#"))
+    // Row 5: Net P&L (pts + $ at lot 0.02)
+    asiaPLstr   = asiaPL_d   == 0 ? "0" : (asiaPL_d   > 0 ? "+" + str.tostring(asiaPL_d,   "#.#") + "pt" : str.tostring(asiaPL_d,   "#.#") + "pt")
+    londonPLstr = londonPL_d == 0 ? "0" : (londonPL_d > 0 ? "+" + str.tostring(londonPL_d, "#.#") + "pt" : str.tostring(londonPL_d, "#.#") + "pt")
+    nyPLstr     = nyPL_d     == 0 ? "0" : (nyPL_d     > 0 ? "+" + str.tostring(nyPL_d,     "#.#") + "pt" : str.tostring(nyPL_d,     "#.#") + "pt")
     asiaPLcol   = asiaPL_d   == 0 ? color.gray : (asiaPL_d   > 0 ? color.lime : color.red)
     londonPLcol = londonPL_d == 0 ? color.gray : (londonPL_d > 0 ? color.lime : color.red)
     nyPLcol     = nyPL_d     == 0 ? color.gray : (nyPL_d     > 0 ? color.lime : color.red)
-    table.cell(stats, 0, 5, "Net P&L (pts)", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 0, 5, "Net PnL", text_color = color.gray, text_size = size.tiny)
     table.cell(stats, 1, 5, asiaPLstr,   text_color = asiaPLcol,   text_size = size.tiny)
     table.cell(stats, 2, 5, londonPLstr, text_color = londonPLcol, text_size = size.tiny)
     table.cell(stats, 3, 5, nyPLstr,     text_color = nyPLcol,     text_size = size.tiny)
 
-    table.cell(stats, 0, 6, "RR (TP/SL)", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 6, "1:" + str.tostring(pbTpMult, "#.#"), text_color = color.aqua, text_size = size.tiny)
-    table.cell(stats, 2, 6, "1:" + str.tostring(pbTpMult, "#.#"), text_color = color.aqua, text_size = size.tiny)
-    table.cell(stats, 3, 6, "1:" + str.tostring(pbTpMult, "#.#"), text_color = color.aqua, text_size = size.tiny)
+    // Row 6: USD @ 0.02 lot (live $ value)
+    asiaUsdStr   = "$" + str.tostring(asiaPL_d   * 2, "+#.##;-#.##")
+    londonUsdStr = "$" + str.tostring(londonPL_d * 2, "+#.##;-#.##")
+    nyUsdStr     = "$" + str.tostring(nyPL_d     * 2, "+#.##;-#.##")
+    table.cell(stats, 0, 6, "$ @ 0.02", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 6, asiaUsdStr,   text_color = asiaPLcol,   text_size = size.tiny)
+    table.cell(stats, 2, 6, londonUsdStr, text_color = londonPLcol, text_size = size.tiny)
+    table.cell(stats, 3, 6, nyUsdStr,     text_color = nyPLcol,     text_size = size.tiny)
 
-    table.cell(stats, 0, 7, "SL/TP", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 7, "retest-" + str.tostring(pbSlBuffer, "#.#") + "pt / " + str.tostring(pbTpMult, "#.#") + "R", text_color = color.aqua, text_size = size.tiny)
-    table.cell(stats, 2, 7, "retest-" + str.tostring(pbSlBuffer, "#.#") + "pt / " + str.tostring(pbTpMult, "#.#") + "R", text_color = color.aqua, text_size = size.tiny)
-    table.cell(stats, 3, 7, "retest-" + str.tostring(pbSlBuffer, "#.#") + "pt / " + str.tostring(pbTpMult, "#.#") + "R", text_color = color.aqua, text_size = size.tiny)
+    // Row 7: Today Attempt (live status — how many attempts left today)
+    table.cell(stats, 0, 7, "Att Today", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 7, str.tostring(asiaTodayAtt)   + "/" + str.tostring(asiaMaxAttempt),   text_color = asiaTodayAtt   >= asiaMaxAttempt   ? color.red : color.white, text_size = size.tiny)
+    table.cell(stats, 2, 7, str.tostring(londonTodayAtt) + "/" + str.tostring(londonMaxAttempt), text_color = londonTodayAtt >= londonMaxAttempt ? color.red : color.white, text_size = size.tiny)
+    table.cell(stats, 3, 7, str.tostring(nyTodayAtt)     + "/" + str.tostring(nyMaxAttempt),     text_color = nyTodayAtt     >= nyMaxAttempt     ? color.red : color.white, text_size = size.tiny)
 
-    table.cell(stats, 0, 8, "Max Attempt", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 8, str.tostring(asiaMaxAttempt)   + "x", text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 8, str.tostring(londonMaxAttempt) + "x", text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 8, str.tostring(nyMaxAttempt)     + "x", text_color = color.white, text_size = size.tiny)
-
-    table.cell(stats, 0, 9, "Today Attempt", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 9, str.tostring(asiaTodayAtt)   + "/" + str.tostring(asiaMaxAttempt),   text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 2, 9, str.tostring(londonTodayAtt) + "/" + str.tostring(londonMaxAttempt), text_color = color.white, text_size = size.tiny)
-    table.cell(stats, 3, 9, str.tostring(nyTodayAtt)     + "/" + str.tostring(nyMaxAttempt),     text_color = color.white, text_size = size.tiny)
-
-    asiaDirStr   = asiaBkDir   == 1 ? "LONG" : asiaBkDir   == -1 ? "SHORT" : "—"
-    londonDirStr = londonBkDir == 1 ? "LONG" : londonBkDir == -1 ? "SHORT" : "—"
-    nyDirStr     = nyEntered ? "FIRED" : "—"
-    table.cell(stats, 0, 10, "Breakout Dir", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 10, asiaDirStr,   text_color = asiaBkDir   == 1 ? color.lime : asiaBkDir   == -1 ? color.red : color.gray, text_size = size.tiny)
-    table.cell(stats, 2, 10, londonDirStr, text_color = londonBkDir == 1 ? color.lime : londonBkDir == -1 ? color.red : color.gray, text_size = size.tiny)
-    table.cell(stats, 3, 10, nyDirStr,     text_color = nyEntered ? color.orange : color.gray, text_size = size.tiny)
-
+    // Row 8: In Trade NOW (real-time live status)
     asiaInTrade   = array.size(asiaOpen)   > 0
     londonInTrade = array.size(londonOpen) > 0
     nyInTrade     = array.size(nyOpen)     > 0
-    table.cell(stats, 0, 11, "In Trade", text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 11, asiaInTrade   ? "YES" : "NO", text_color = asiaInTrade   ? color.lime : color.gray, text_size = size.tiny)
-    table.cell(stats, 2, 11, londonInTrade ? "YES" : "NO", text_color = londonInTrade ? color.lime : color.gray, text_size = size.tiny)
-    table.cell(stats, 3, 11, nyInTrade     ? "YES" : "NO", text_color = nyInTrade     ? color.lime : color.gray, text_size = size.tiny)
-
-    table.cell(stats, 0, 12, "Config",  text_color = color.gray,   text_size = size.tiny)
-    table.cell(stats, 1, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
-    table.cell(stats, 2, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
-    table.cell(stats, 3, 12, "e44 PB",  text_color = color.aqua,   text_size = size.tiny)
-
-    table.cell(stats, 0, 13, "5y Ref",  text_color = color.gray, text_size = size.tiny)
-    table.cell(stats, 1, 13, "+572",    text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 2, 13, "+1307",   text_color = color.lime, text_size = size.tiny)
-    table.cell(stats, 3, 13, "+2422",   text_color = color.lime, text_size = size.tiny)
+    table.cell(stats, 0, 8, "In Trade", text_color = color.gray, text_size = size.tiny)
+    table.cell(stats, 1, 8, asiaInTrade   ? "YES" : "—", text_color = asiaInTrade   ? color.yellow : color.gray, text_size = size.tiny)
+    table.cell(stats, 2, 8, londonInTrade ? "YES" : "—", text_color = londonInTrade ? color.yellow : color.gray, text_size = size.tiny)
+    table.cell(stats, 3, 8, nyInTrade     ? "YES" : "—", text_color = nyInTrade     ? color.yellow : color.gray, text_size = size.tiny)
 
 // ─── Optional info panel (bottom-right) ────────────────────────────────────
 if showInfoPanel and barstate.islast
