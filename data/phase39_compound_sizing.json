@@ -1,0 +1,267 @@
+{
+  "phase": 39,
+  "description": "Aggressive Compound Sizing (Opsi B) engine sim",
+  "config_swept": [
+    [
+      "FLAT_baseline",
+      0.02,
+      0.0,
+      0.02,
+      99,
+      "session",
+      true
+    ],
+    [
+      "Opsi_B_default",
+      0.02,
+      0.01,
+      0.03,
+      3,
+      "session",
+      true
+    ],
+    [
+      "Opsi_B_aggressive_2",
+      0.02,
+      0.01,
+      0.03,
+      2,
+      "session",
+      true
+    ],
+    [
+      "Opsi_B_conservative_4",
+      0.02,
+      0.01,
+      0.03,
+      4,
+      "session",
+      true
+    ],
+    [
+      "Opsi_B_step2_max4",
+      0.02,
+      0.02,
+      0.04,
+      3,
+      "session",
+      true
+    ],
+    [
+      "Opsi_B_max5",
+      0.02,
+      0.01,
+      0.05,
+      3,
+      "session",
+      true
+    ],
+    [
+      "Opsi_B_global_streak",
+      0.02,
+      0.01,
+      0.03,
+      3,
+      "global",
+      true
+    ],
+    [
+      "Opsi_B_no_loss_reset",
+      0.02,
+      0.01,
+      0.03,
+      3,
+      "session",
+      false
+    ]
+  ],
+  "summaries": [
+    {
+      "scenario": "FLAT_baseline",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8601.42,
+      "usd_per_yr": 1720.28,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.48,
+      "avg_win_usd": 13.38,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1144.38,
+        "London": 2613.67,
+        "NY": 4843.37
+      },
+      "tier_distribution": {
+        "0.02": 100.0
+      }
+    },
+    {
+      "scenario": "Opsi_B_default",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8660.58,
+      "usd_per_yr": 1732.12,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.49,
+      "avg_win_usd": 13.41,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1141.46,
+        "London": 2622.56,
+        "NY": 4896.55
+      },
+      "tier_distribution": {
+        "0.02": 99.8,
+        "0.03": 0.2
+      }
+    },
+    {
+      "scenario": "Opsi_B_aggressive_2",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8649.5,
+      "usd_per_yr": 1729.9,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.55,
+      "avg_win_usd": 13.49,
+      "max_drawdown_usd": -408.81,
+      "per_session_usd": {
+        "Asia": 1126.13,
+        "London": 2654.59,
+        "NY": 4868.78
+      },
+      "tier_distribution": {
+        "0.02": 98.6,
+        "0.03": 1.4
+      }
+    },
+    {
+      "scenario": "Opsi_B_conservative_4",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8602.47,
+      "usd_per_yr": 1720.49,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.48,
+      "avg_win_usd": 13.38,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1144.38,
+        "London": 2613.67,
+        "NY": 4844.42
+      },
+      "tier_distribution": {
+        "0.02": 100.0,
+        "0.03": 0.0
+      }
+    },
+    {
+      "scenario": "Opsi_B_step2_max4",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8719.74,
+      "usd_per_yr": 1743.95,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.49,
+      "avg_win_usd": 13.43,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1138.55,
+        "London": 2631.46,
+        "NY": 4949.74
+      },
+      "tier_distribution": {
+        "0.02": 99.8,
+        "0.04": 0.2
+      }
+    },
+    {
+      "scenario": "Opsi_B_max5",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8660.58,
+      "usd_per_yr": 1732.12,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.49,
+      "avg_win_usd": 13.41,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1141.46,
+        "London": 2622.56,
+        "NY": 4896.55
+      },
+      "tier_distribution": {
+        "0.02": 99.8,
+        "0.03": 0.2
+      }
+    },
+    {
+      "scenario": "Opsi_B_global_streak",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8788.08,
+      "usd_per_yr": 1757.62,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.56,
+      "avg_win_usd": 13.56,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1223.26,
+        "London": 2622.56,
+        "NY": 4942.26
+      },
+      "tier_distribution": {
+        "0.02": 97.8,
+        "0.03": 2.2
+      }
+    },
+    {
+      "scenario": "Opsi_B_no_loss_reset",
+      "n_trades": 6574,
+      "wr_pct": 42.09,
+      "total_usd": 8634.69,
+      "usd_per_yr": 1726.94,
+      "worst_trade_usd": -73.8,
+      "avg_loss_usd": -7.49,
+      "avg_win_usd": 13.41,
+      "max_drawdown_usd": -391.39,
+      "per_session_usd": {
+        "Asia": 1141.46,
+        "London": 2596.5,
+        "NY": 4896.72
+      },
+      "tier_distribution": {
+        "0.02": 99.8,
+        "0.03": 0.2
+      }
+    }
+  ],
+  "phase_a_verdict": "FAIL",
+  "gate_results": [
+    {
+      "gate": "WR identical",
+      "pass": true,
+      "detail": "flat=42.09% opsi=42.09%"
+    },
+    {
+      "gate": "PnL \u0394 \u2265 +30%",
+      "pass": false,
+      "detail": "\u0394=+0.7% (flat=$8601 \u2192 opsi=$8661)"
+    },
+    {
+      "gate": "Worst trade \u2264 -$140",
+      "pass": true,
+      "detail": "worst=$-74"
+    },
+    {
+      "gate": "DD within 1.5\u00d7 flat",
+      "pass": true,
+      "detail": "flat_dd=391 opsi_dd=391 ratio=1.00\u00d7"
+    },
+    {
+      "gate": "No session net-negative",
+      "pass": true,
+      "detail": "negative=none"
+    }
+  ]
+}
