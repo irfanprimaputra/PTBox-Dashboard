@@ -1,0 +1,68 @@
+{
+  "V3a: TP 1:5 no bias": {
+    "pnl_pts": -150.18,
+    "usd_per_yr_002": -60.07,
+    "n": 292,
+    "wr": 34.59,
+    "be_saves": 57,
+    "trail_exits": 91,
+    "tp_hits": 0,
+    "sl_hits": 144,
+    "worst": -3.0
+  },
+  "V3b: TP 1:10 no bias": {
+    "pnl_pts": -150.18,
+    "usd_per_yr_002": -60.07,
+    "n": 292,
+    "wr": 34.59,
+    "be_saves": 57,
+    "trail_exits": 91,
+    "tp_hits": 0,
+    "sl_hits": 144,
+    "worst": -3.0
+  },
+  "V3c: TP 1:15 no bias": {
+    "pnl_pts": -150.18,
+    "usd_per_yr_002": -60.07,
+    "n": 292,
+    "wr": 34.59,
+    "be_saves": 57,
+    "trail_exits": 91,
+    "tp_hits": 0,
+    "sl_hits": 144,
+    "worst": -3.0
+  },
+  "V3d: TP 1:5 + HTF bias": {
+    "pnl_pts": -69.97,
+    "usd_per_yr_002": -27.99,
+    "n": 191,
+    "wr": 36.13,
+    "be_saves": 44,
+    "trail_exits": 61,
+    "tp_hits": 0,
+    "sl_hits": 86,
+    "worst": -3.0
+  },
+  "V3e: TP 1:10 + HTF bias": {
+    "pnl_pts": -69.97,
+    "usd_per_yr_002": -27.99,
+    "n": 191,
+    "wr": 36.13,
+    "be_saves": 44,
+    "trail_exits": 61,
+    "tp_hits": 0,
+    "sl_hits": 86,
+    "worst": -3.0
+  },
+  "V3f: TP 1:15 + HTF bias": {
+    "pnl_pts": -69.97,
+    "usd_per_yr_002": -27.99,
+    "n": 191,
+    "wr": 36.13,
+    "be_saves": 44,
+    "trail_exits": 61,
+    "tp_hits": 0,
+    "sl_hits": 86,
+    "worst": -3.0
+  }
+}

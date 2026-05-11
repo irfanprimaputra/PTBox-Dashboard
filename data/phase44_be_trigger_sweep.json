@@ -1,0 +1,391 @@
+{
+  "triggers": [
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    1.75,
+    2.0
+  ],
+  "results": {
+    "0.5": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": -367.83,
+          "n": 1837,
+          "wins": 477,
+          "losses": 1360,
+          "worst": -10.97,
+          "be_saves": 810,
+          "be_premature": 3,
+          "trail_exits": 243,
+          "tp_hits": 160,
+          "sl_hits": 624,
+          "wr": 25.97,
+          "avg_sl": 3.12
+        },
+        "London": {
+          "pnl_closed": -155.9,
+          "n": 3849,
+          "wins": 1207,
+          "losses": 2642,
+          "worst": -19.29,
+          "be_saves": 1609,
+          "be_premature": 0,
+          "trail_exits": 579,
+          "tp_hits": 423,
+          "sl_hits": 1238,
+          "wr": 31.36,
+          "avg_sl": 2.95
+        },
+        "NY": {
+          "pnl_closed": -860.44,
+          "n": 3447,
+          "wins": 925,
+          "losses": 2522,
+          "worst": -27.91,
+          "be_saves": 1486,
+          "be_premature": 20,
+          "trail_exits": 507,
+          "tp_hits": 301,
+          "sl_hits": 1153,
+          "wr": 26.83,
+          "avg_sl": 3.74
+        }
+      },
+      "total_pnl": -1384.17,
+      "usd_per_yr_002": -553.67,
+      "total_n": 9133,
+      "total_wr": 28.57,
+      "be_saves": 3905,
+      "trail_exits": 1329,
+      "tp_hits": 884,
+      "worst": -27.91
+    },
+    "0.75": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": -151.33,
+          "n": 1523,
+          "wins": 577,
+          "losses": 946,
+          "worst": -25.79,
+          "be_saves": 380,
+          "be_premature": 5,
+          "trail_exits": 300,
+          "tp_hits": 185,
+          "sl_hits": 658,
+          "wr": 37.89,
+          "avg_sl": 3.15
+        },
+        "London": {
+          "pnl_closed": 240.06,
+          "n": 3523,
+          "wins": 1496,
+          "losses": 2027,
+          "worst": -19.29,
+          "be_saves": 794,
+          "be_premature": 9,
+          "trail_exits": 728,
+          "tp_hits": 543,
+          "sl_hits": 1458,
+          "wr": 42.46,
+          "avg_sl": 2.97
+        },
+        "NY": {
+          "pnl_closed": -159.25,
+          "n": 3133,
+          "wins": 1246,
+          "losses": 1887,
+          "worst": -27.91,
+          "be_saves": 708,
+          "be_premature": 28,
+          "trail_exits": 695,
+          "tp_hits": 402,
+          "sl_hits": 1328,
+          "wr": 39.77,
+          "avg_sl": 3.81
+        }
+      },
+      "total_pnl": -70.52,
+      "usd_per_yr_002": -28.21,
+      "total_n": 8179,
+      "total_wr": 40.58,
+      "be_saves": 1882,
+      "trail_exits": 1723,
+      "tp_hits": 1130,
+      "worst": -27.91
+    },
+    "1.0": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": -24.94,
+          "n": 1326,
+          "wins": 623,
+          "losses": 703,
+          "worst": -25.79,
+          "be_saves": 118,
+          "be_premature": 11,
+          "trail_exits": 321,
+          "tp_hits": 203,
+          "sl_hits": 684,
+          "wr": 46.98,
+          "avg_sl": 3.18
+        },
+        "London": {
+          "pnl_closed": 494.5,
+          "n": 3277,
+          "wins": 1655,
+          "losses": 1622,
+          "worst": -19.29,
+          "be_saves": 286,
+          "be_premature": 23,
+          "trail_exits": 785,
+          "tp_hits": 621,
+          "sl_hits": 1585,
+          "wr": 50.5,
+          "avg_sl": 2.99
+        },
+        "NY": {
+          "pnl_closed": 62.78,
+          "n": 2926,
+          "wins": 1396,
+          "losses": 1530,
+          "worst": -27.91,
+          "be_saves": 274,
+          "be_premature": 50,
+          "trail_exits": 761,
+          "tp_hits": 467,
+          "sl_hits": 1424,
+          "wr": 47.71,
+          "avg_sl": 3.84
+        }
+      },
+      "total_pnl": 532.34,
+      "usd_per_yr_002": 212.94,
+      "total_n": 7529,
+      "total_wr": 48.8,
+      "be_saves": 678,
+      "trail_exits": 1867,
+      "tp_hits": 1291,
+      "worst": -27.91
+    },
+    "1.25": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": 61.65,
+          "n": 1214,
+          "wins": 509,
+          "losses": 705,
+          "worst": -25.79,
+          "be_saves": 10,
+          "be_premature": 21,
+          "trail_exits": 288,
+          "tp_hits": 221,
+          "sl_hits": 695,
+          "wr": 41.93,
+          "avg_sl": 3.19
+        },
+        "London": {
+          "pnl_closed": 567.02,
+          "n": 3074,
+          "wins": 1408,
+          "losses": 1666,
+          "worst": -21.83,
+          "be_saves": 18,
+          "be_premature": 39,
+          "trail_exits": 730,
+          "tp_hits": 678,
+          "sl_hits": 1648,
+          "wr": 45.8,
+          "avg_sl": 3.0
+        },
+        "NY": {
+          "pnl_closed": 130.55,
+          "n": 2754,
+          "wins": 1200,
+          "losses": 1554,
+          "worst": -27.91,
+          "be_saves": 68,
+          "be_premature": 76,
+          "trail_exits": 684,
+          "tp_hits": 516,
+          "sl_hits": 1486,
+          "wr": 43.57,
+          "avg_sl": 3.86
+        }
+      },
+      "total_pnl": 759.22,
+      "usd_per_yr_002": 303.69,
+      "total_n": 7042,
+      "total_wr": 44.26,
+      "be_saves": 96,
+      "trail_exits": 1702,
+      "tp_hits": 1415,
+      "worst": -27.91
+    },
+    "1.5": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": 135.94,
+          "n": 1128,
+          "wins": 428,
+          "losses": 700,
+          "worst": -25.79,
+          "be_saves": 4,
+          "be_premature": 52,
+          "trail_exits": 169,
+          "tp_hits": 259,
+          "sl_hits": 696,
+          "wr": 37.94,
+          "avg_sl": 3.2
+        },
+        "London": {
+          "pnl_closed": 653.9,
+          "n": 2904,
+          "wins": 1215,
+          "losses": 1689,
+          "worst": -23.71,
+          "be_saves": 10,
+          "be_premature": 91,
+          "trail_exits": 456,
+          "tp_hits": 759,
+          "sl_hits": 1679,
+          "wr": 41.84,
+          "avg_sl": 3.02
+        },
+        "NY": {
+          "pnl_closed": 504.65,
+          "n": 2599,
+          "wins": 1061,
+          "losses": 1538,
+          "worst": -27.91,
+          "be_saves": 38,
+          "be_premature": 161,
+          "trail_exits": 444,
+          "tp_hits": 617,
+          "sl_hits": 1500,
+          "wr": 40.82,
+          "avg_sl": 3.89
+        }
+      },
+      "total_pnl": 1294.49,
+      "usd_per_yr_002": 517.8,
+      "total_n": 6631,
+      "total_wr": 40.78,
+      "be_saves": 52,
+      "trail_exits": 1069,
+      "tp_hits": 1635,
+      "worst": -27.91
+    },
+    "1.75": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": 130.03,
+          "n": 1079,
+          "wins": 378,
+          "losses": 701,
+          "worst": -25.79,
+          "be_saves": 2,
+          "be_premature": 108,
+          "trail_exits": 90,
+          "tp_hits": 288,
+          "sl_hits": 699,
+          "wr": 35.03,
+          "avg_sl": 3.2
+        },
+        "London": {
+          "pnl_closed": 620.31,
+          "n": 2741,
+          "wins": 1049,
+          "losses": 1692,
+          "worst": -23.71,
+          "be_saves": 4,
+          "be_premature": 264,
+          "trail_exits": 205,
+          "tp_hits": 844,
+          "sl_hits": 1688,
+          "wr": 38.27,
+          "avg_sl": 3.03
+        },
+        "NY": {
+          "pnl_closed": 517.39,
+          "n": 2480,
+          "wins": 939,
+          "losses": 1541,
+          "worst": -27.91,
+          "be_saves": 29,
+          "be_premature": 326,
+          "trail_exits": 245,
+          "tp_hits": 694,
+          "sl_hits": 1512,
+          "wr": 37.86,
+          "avg_sl": 3.91
+        }
+      },
+      "total_pnl": 1267.73,
+      "usd_per_yr_002": 507.09,
+      "total_n": 6300,
+      "total_wr": 37.56,
+      "be_saves": 35,
+      "trail_exits": 540,
+      "tp_hits": 1826,
+      "worst": -27.91
+    },
+    "2.0": {
+      "sessions": {
+        "Asia": {
+          "pnl_closed": 134.17,
+          "n": 1021,
+          "wins": 326,
+          "losses": 695,
+          "worst": -25.79,
+          "be_saves": 2,
+          "be_premature": 326,
+          "trail_exits": 0,
+          "tp_hits": 326,
+          "sl_hits": 693,
+          "wr": 31.93,
+          "avg_sl": 3.2
+        },
+        "London": {
+          "pnl_closed": 443.99,
+          "n": 2604,
+          "wins": 918,
+          "losses": 1686,
+          "worst": -23.71,
+          "be_saves": 4,
+          "be_premature": 918,
+          "trail_exits": 0,
+          "tp_hits": 918,
+          "sl_hits": 1682,
+          "wr": 35.25,
+          "avg_sl": 3.05
+        },
+        "NY": {
+          "pnl_closed": 411.39,
+          "n": 2340,
+          "wins": 800,
+          "losses": 1540,
+          "worst": -27.91,
+          "be_saves": 26,
+          "be_premature": 800,
+          "trail_exits": 0,
+          "tp_hits": 800,
+          "sl_hits": 1514,
+          "wr": 34.19,
+          "avg_sl": 3.91
+        }
+      },
+      "total_pnl": 989.55,
+      "usd_per_yr_002": 395.82,
+      "total_n": 5965,
+      "total_wr": 34.27,
+      "be_saves": 32,
+      "trail_exits": 0,
+      "tp_hits": 2044,
+      "worst": -27.91
+    }
+  }
+}

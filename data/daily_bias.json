@@ -1,0 +1,903 @@
+{
+  "today": {
+    "date": "2026-04-10",
+    "score": 33,
+    "verdict": "SELL BIAS",
+    "action": "Prefer SELL signals. BUY signals at reduced lot.",
+    "factors": {
+      "trend_3d": -1,
+      "today_open_vs_pdc": 1.1,
+      "today_open_vs_pdm": "above",
+      "zone_in_5d_range": "PREMIUM",
+      "position_pct": 70.4,
+      "pd_close_type": "BULLISH",
+      "round_50_proximity": false,
+      "nearest_round_50": 4750,
+      "dist_to_round": 17.47
+    },
+    "levels": {
+      "today_open": 4767.471,
+      "today_high": 4771.259,
+      "today_low": 4730.634,
+      "today_close": 4761.67,
+      "pdh": 4801.313,
+      "pdl": 4703.397,
+      "pdm": 4752.355,
+      "pdc": 4766.37,
+      "range_5d_high": 4857.305,
+      "range_5d_low": 4553.807
+    }
+  },
+  "history_30d": [
+    {
+      "date": "2026-02-27",
+      "score": 35,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": 0,
+        "today_open_vs_pdc": 0.81,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 75.4,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5200,
+        "dist_to_round": 15.01
+      },
+      "levels": {
+        "today_open": 5184.988,
+        "today_high": 5281.438,
+        "today_low": 5168.427,
+        "today_close": 5279.234,
+        "pdh": 5205.838,
+        "pdl": 5130.458,
+        "pdm": 5168.147999999999,
+        "pdc": 5184.179,
+        "range_5d_high": 5249.648,
+        "range_5d_low": 4986.758
+      }
+    },
+    {
+      "date": "2026-03-02",
+      "score": 67,
+      "verdict": "BUY BIAS",
+      "action": "Prefer BUY signals. SELL signals at reduced lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": 86.6,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 144.9,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5350,
+        "dist_to_round": 15.83
+      },
+      "levels": {
+        "today_open": 5365.834,
+        "today_high": 5419.206,
+        "today_low": 5260.212,
+        "today_close": 5367.166,
+        "pdh": 5281.438,
+        "pdl": 5168.427,
+        "pdm": 5224.9325,
+        "pdc": 5279.234,
+        "range_5d_high": 5281.438,
+        "range_5d_low": 5093.289
+      }
+    },
+    {
+      "date": "2026-03-03",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": -1.28,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 83.6,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5350,
+        "dist_to_round": 15.89
+      },
+      "levels": {
+        "today_open": 5365.887,
+        "today_high": 5375.662,
+        "today_low": 4995.884,
+        "today_close": 5174.641,
+        "pdh": 5419.206,
+        "pdl": 5260.212,
+        "pdm": 5339.709000000001,
+        "pdc": 5367.166,
+        "range_5d_high": 5419.206,
+        "range_5d_low": 5093.289
+      }
+    },
+    {
+      "date": "2026-03-04",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 0.72,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 42.4,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5200,
+        "dist_to_round": 24.64
+      },
+      "levels": {
+        "today_open": 5175.356,
+        "today_high": 5206.085,
+        "today_low": 5108.653,
+        "today_close": 5180.453,
+        "pdh": 5375.662,
+        "pdl": 4995.884,
+        "pdm": 5185.773,
+        "pdc": 5174.641,
+        "range_5d_high": 5419.206,
+        "range_5d_low": 4995.884
+      }
+    },
+    {
+      "date": "2026-03-05",
+      "score": 43,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -2.31,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 43.1,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5200,
+        "dist_to_round": 21.86
+      },
+      "levels": {
+        "today_open": 5178.143,
+        "today_high": 5186.847,
+        "today_low": 5050.714,
+        "today_close": 5130.937,
+        "pdh": 5206.085,
+        "pdl": 5108.653,
+        "pdm": 5157.369000000001,
+        "pdc": 5180.453,
+        "range_5d_high": 5419.206,
+        "range_5d_low": 4995.884
+      }
+    },
+    {
+      "date": "2026-03-06",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 0.5,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 32.0,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5150,
+        "dist_to_round": 18.56
+      },
+      "levels": {
+        "today_open": 5131.437,
+        "today_high": 5176.778,
+        "today_low": 5062.445,
+        "today_close": 5174.279,
+        "pdh": 5186.847,
+        "pdl": 5050.714,
+        "pdm": 5118.7805,
+        "pdc": 5130.937,
+        "range_5d_high": 5419.206,
+        "range_5d_low": 4995.884
+      }
+    },
+    {
+      "date": "2026-03-09",
+      "score": 55,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 0,
+        "today_open_vs_pdc": -83.83,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": 22.3,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5100,
+        "dist_to_round": 9.55
+      },
+      "levels": {
+        "today_open": 5090.449,
+        "today_high": 5187.223,
+        "today_low": 5060.444,
+        "today_close": 5157.798,
+        "pdh": 5176.778,
+        "pdl": 5062.445,
+        "pdm": 5119.6115,
+        "pdc": 5174.279,
+        "range_5d_high": 5419.206,
+        "range_5d_low": 4995.884
+      }
+    },
+    {
+      "date": "2026-03-10",
+      "score": 67,
+      "verdict": "BUY BIAS",
+      "action": "Prefer BUY signals. SELL signals at reduced lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": -1.73,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 42.2,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5150,
+        "dist_to_round": 6.07
+      },
+      "levels": {
+        "today_open": 5156.068,
+        "today_high": 5238.543,
+        "today_low": 5154.439,
+        "today_close": 5203.46,
+        "pdh": 5187.223,
+        "pdl": 5060.444,
+        "pdm": 5123.833500000001,
+        "pdc": 5157.798,
+        "range_5d_high": 5375.662,
+        "range_5d_low": 4995.884
+      }
+    },
+    {
+      "date": "2026-03-11",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": -0.48,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 81.1,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 5200,
+        "dist_to_round": 2.98
+      },
+      "levels": {
+        "today_open": 5202.983,
+        "today_high": 5210.876,
+        "today_low": 5125.408,
+        "today_close": 5152.96,
+        "pdh": 5238.543,
+        "pdl": 5154.439,
+        "pdm": 5196.491,
+        "pdc": 5203.46,
+        "range_5d_high": 5238.543,
+        "range_5d_low": 5050.714
+      }
+    },
+    {
+      "date": "2026-03-12",
+      "score": 45,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 0,
+        "today_open_vs_pdc": -0.65,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 54.1,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 5150,
+        "dist_to_round": 2.31
+      },
+      "levels": {
+        "today_open": 5152.306,
+        "today_high": 5191.801,
+        "today_low": 5054.784,
+        "today_close": 5115.337,
+        "pdh": 5210.876,
+        "pdl": 5125.408,
+        "pdm": 5168.142,
+        "pdc": 5152.96,
+        "range_5d_high": 5238.543,
+        "range_5d_low": 5050.714
+      }
+    },
+    {
+      "date": "2026-03-13",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 0.33,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 33.1,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5100,
+        "dist_to_round": 15.67
+      },
+      "levels": {
+        "today_open": 5115.667,
+        "today_high": 5121.993,
+        "today_low": 5009.558,
+        "today_close": 5021.136,
+        "pdh": 5191.801,
+        "pdl": 5054.784,
+        "pdm": 5123.2925,
+        "pdc": 5115.337,
+        "range_5d_high": 5238.543,
+        "range_5d_low": 5054.784
+      }
+    },
+    {
+      "date": "2026-03-16",
+      "score": 43,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -0.9,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": 4.7,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5000,
+        "dist_to_round": 20.24
+      },
+      "levels": {
+        "today_open": 5020.238,
+        "today_high": 5038.178,
+        "today_low": 4970.044,
+        "today_close": 5027.713,
+        "pdh": 5121.993,
+        "pdl": 5009.558,
+        "pdm": 5065.7755,
+        "pdc": 5021.136,
+        "range_5d_high": 5238.543,
+        "range_5d_low": 5009.558
+      }
+    },
+    {
+      "date": "2026-03-17",
+      "score": 53,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 0.16,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": 21.5,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5050,
+        "dist_to_round": 22.13
+      },
+      "levels": {
+        "today_open": 5027.87,
+        "today_high": 5044.585,
+        "today_low": 4973.378,
+        "today_close": 4991.447,
+        "pdh": 5038.178,
+        "pdl": 4970.044,
+        "pdm": 5004.111,
+        "pdc": 5027.713,
+        "range_5d_high": 5238.543,
+        "range_5d_low": 4970.044
+      }
+    },
+    {
+      "date": "2026-03-18",
+      "score": 43,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 0.68,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": 9.2,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 5000,
+        "dist_to_round": 7.88
+      },
+      "levels": {
+        "today_open": 4992.124,
+        "today_high": 5016.422,
+        "today_low": 4804.218,
+        "today_close": 4851.001,
+        "pdh": 5044.585,
+        "pdl": 4973.378,
+        "pdm": 5008.9815,
+        "pdc": 4991.447,
+        "range_5d_high": 5210.876,
+        "range_5d_low": 4970.044
+      }
+    },
+    {
+      "date": "2026-03-19",
+      "score": 43,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -1.77,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": 11.6,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 4850,
+        "dist_to_round": 0.77
+      },
+      "levels": {
+        "today_open": 4849.227,
+        "today_high": 4853.809,
+        "today_low": 4502.558,
+        "today_close": 4725.619,
+        "pdh": 5016.422,
+        "pdl": 4804.218,
+        "pdm": 4910.32,
+        "pdc": 4851.001,
+        "range_5d_high": 5191.801,
+        "range_5d_low": 4804.218
+      }
+    },
+    {
+      "date": "2026-03-20",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -0.99,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 35.9,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4700,
+        "dist_to_round": 24.63
+      },
+      "levels": {
+        "today_open": 4724.627,
+        "today_high": 4734.809,
+        "today_low": 4477.106,
+        "today_close": 4497.528,
+        "pdh": 4853.809,
+        "pdl": 4502.558,
+        "pdm": 4678.1835,
+        "pdc": 4725.619,
+        "range_5d_high": 5121.993,
+        "range_5d_low": 4502.558
+      }
+    },
+    {
+      "date": "2026-03-23",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -129.23,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": -19.2,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4350,
+        "dist_to_round": 18.3
+      },
+      "levels": {
+        "today_open": 4368.299,
+        "today_high": 4512.971,
+        "today_low": 4098.402,
+        "today_close": 4347.337,
+        "pdh": 4734.809,
+        "pdl": 4477.106,
+        "pdm": 4605.9575,
+        "pdc": 4497.528,
+        "range_5d_high": 5044.585,
+        "range_5d_low": 4477.106
+      }
+    },
+    {
+      "date": "2026-03-24",
+      "score": 43,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 1.11,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "DISCOUNT",
+        "position_pct": 26.4,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 4350,
+        "dist_to_round": 1.56
+      },
+      "levels": {
+        "today_open": 4348.444,
+        "today_high": 4602.62,
+        "today_low": 4319.47,
+        "today_close": 4570.266,
+        "pdh": 4512.971,
+        "pdl": 4098.402,
+        "pdm": 4305.6865,
+        "pdc": 4347.337,
+        "range_5d_high": 5044.585,
+        "range_5d_low": 4098.402
+      }
+    },
+    {
+      "date": "2026-03-25",
+      "score": 67,
+      "verdict": "BUY BIAS",
+      "action": "Prefer BUY signals. SELL signals at reduced lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": -1.76,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 51.2,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4550,
+        "dist_to_round": 18.5
+      },
+      "levels": {
+        "today_open": 4568.502,
+        "today_high": 4585.764,
+        "today_low": 4486.854,
+        "today_close": 4516.495,
+        "pdh": 4602.62,
+        "pdl": 4319.47,
+        "pdm": 4461.045,
+        "pdc": 4570.266,
+        "range_5d_high": 5016.422,
+        "range_5d_low": 4098.402
+      }
+    },
+    {
+      "date": "2026-03-26",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": 0.64,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 55.4,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4500,
+        "dist_to_round": 17.14
+      },
+      "levels": {
+        "today_open": 4517.137,
+        "today_high": 4524.168,
+        "today_low": 4350.993,
+        "today_close": 4437.441,
+        "pdh": 4585.764,
+        "pdl": 4486.854,
+        "pdm": 4536.309,
+        "pdc": 4516.495,
+        "range_5d_high": 4853.809,
+        "range_5d_low": 4098.402
+      }
+    },
+    {
+      "date": "2026-03-27",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -0.71,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 53.2,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4450,
+        "dist_to_round": 13.27
+      },
+      "levels": {
+        "today_open": 4436.727,
+        "today_high": 4555.538,
+        "today_low": 4404.258,
+        "today_close": 4495.488,
+        "pdh": 4524.168,
+        "pdl": 4350.993,
+        "pdm": 4437.5805,
+        "pdc": 4437.441,
+        "range_5d_high": 4734.809,
+        "range_5d_low": 4098.402
+      }
+    },
+    {
+      "date": "2026-03-30",
+      "score": 45,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 0,
+        "today_open_vs_pdc": 0.79,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 78.9,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 4500,
+        "dist_to_round": 3.72
+      },
+      "levels": {
+        "today_open": 4496.281,
+        "today_high": 4619.597,
+        "today_low": 4482.611,
+        "today_close": 4556.99,
+        "pdh": 4555.538,
+        "pdl": 4404.258,
+        "pdm": 4479.897999999999,
+        "pdc": 4495.488,
+        "range_5d_high": 4602.62,
+        "range_5d_low": 4098.402
+      }
+    },
+    {
+      "date": "2026-03-31",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": 1.27,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 79.6,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4550,
+        "dist_to_round": 8.26
+      },
+      "levels": {
+        "today_open": 4558.257,
+        "today_high": 4724.318,
+        "today_low": 4529.296,
+        "today_close": 4681.971,
+        "pdh": 4619.597,
+        "pdl": 4482.611,
+        "pdm": 4551.103999999999,
+        "pdc": 4556.99,
+        "range_5d_high": 4619.597,
+        "range_5d_low": 4319.47
+      }
+    },
+    {
+      "date": "2026-04-01",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": -0.06,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 88.6,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4700,
+        "dist_to_round": 18.09
+      },
+      "levels": {
+        "today_open": 4681.911,
+        "today_high": 4800.399,
+        "today_low": 4650.276,
+        "today_close": 4676.362,
+        "pdh": 4724.318,
+        "pdl": 4529.296,
+        "pdm": 4626.807000000001,
+        "pdc": 4681.971,
+        "range_5d_high": 4724.318,
+        "range_5d_low": 4350.993
+      }
+    },
+    {
+      "date": "2026-04-02",
+      "score": 47,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": 1.88,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 72.8,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4700,
+        "dist_to_round": 21.76
+      },
+      "levels": {
+        "today_open": 4678.241,
+        "today_high": 4699.877,
+        "today_low": 4553.807,
+        "today_close": 4675.387,
+        "pdh": 4800.399,
+        "pdl": 4650.276,
+        "pdm": 4725.3375,
+        "pdc": 4676.362,
+        "range_5d_high": 4800.399,
+        "range_5d_low": 4350.993
+      }
+    },
+    {
+      "date": "2026-04-06",
+      "score": 35,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": 0,
+        "today_open_vs_pdc": -34.57,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 59.7,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4650,
+        "dist_to_round": 9.18
+      },
+      "levels": {
+        "today_open": 4640.817,
+        "today_high": 4706.779,
+        "today_low": 4616.299,
+        "today_close": 4649.602,
+        "pdh": 4699.877,
+        "pdl": 4553.807,
+        "pdm": 4626.842000000001,
+        "pdc": 4675.387,
+        "range_5d_high": 4800.399,
+        "range_5d_low": 4404.258
+      }
+    },
+    {
+      "date": "2026-04-07",
+      "score": 43,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": -0.03,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 52.5,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 4650,
+        "dist_to_round": 0.43
+      },
+      "levels": {
+        "today_open": 4649.57,
+        "today_high": 4857.305,
+        "today_low": 4607.303,
+        "today_close": 4797.707,
+        "pdh": 4706.779,
+        "pdl": 4616.299,
+        "pdm": 4661.539000000001,
+        "pdc": 4649.602,
+        "range_5d_high": 4800.399,
+        "range_5d_low": 4482.611
+      }
+    },
+    {
+      "date": "2026-04-08",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": 0.67,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 82.0,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": true,
+        "nearest_round_50": 4800,
+        "dist_to_round": 1.62
+      },
+      "levels": {
+        "today_open": 4798.381,
+        "today_high": 4843.922,
+        "today_low": 4698.489,
+        "today_close": 4711.506,
+        "pdh": 4857.305,
+        "pdl": 4607.303,
+        "pdm": 4732.304,
+        "pdc": 4797.707,
+        "range_5d_high": 4857.305,
+        "range_5d_low": 4529.296
+      }
+    },
+    {
+      "date": "2026-04-09",
+      "score": 57,
+      "verdict": "NEUTRAL",
+      "action": "Trade both directions equal lot.",
+      "factors": {
+        "trend_3d": 1,
+        "today_open_vs_pdc": 0.62,
+        "today_open_vs_pdm": "below",
+        "zone_in_5d_range": "EQUILIBRIUM",
+        "position_pct": 52.2,
+        "pd_close_type": "BEARISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4700,
+        "dist_to_round": 12.13
+      },
+      "levels": {
+        "today_open": 4712.126,
+        "today_high": 4801.313,
+        "today_low": 4703.397,
+        "today_close": 4766.37,
+        "pdh": 4843.922,
+        "pdl": 4698.489,
+        "pdm": 4771.2055,
+        "pdc": 4711.506,
+        "range_5d_high": 4857.305,
+        "range_5d_low": 4553.807
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "score": 33,
+      "verdict": "SELL BIAS",
+      "action": "Prefer SELL signals. BUY signals at reduced lot.",
+      "factors": {
+        "trend_3d": -1,
+        "today_open_vs_pdc": 1.1,
+        "today_open_vs_pdm": "above",
+        "zone_in_5d_range": "PREMIUM",
+        "position_pct": 70.4,
+        "pd_close_type": "BULLISH",
+        "round_50_proximity": false,
+        "nearest_round_50": 4750,
+        "dist_to_round": 17.47
+      },
+      "levels": {
+        "today_open": 4767.471,
+        "today_high": 4771.259,
+        "today_low": 4730.634,
+        "today_close": 4761.67,
+        "pdh": 4801.313,
+        "pdl": 4703.397,
+        "pdm": 4752.355,
+        "pdc": 4766.37,
+        "range_5d_high": 4857.305,
+        "range_5d_low": 4553.807
+      }
+    }
+  ]
+}

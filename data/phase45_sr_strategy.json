@@ -1,0 +1,49 @@
+{
+  "levels_computed": 1367,
+  "results": {
+    "V1": {
+      "variant": "V1",
+      "pnl_pts": -1179.11,
+      "usd_per_yr_002": -471.64,
+      "n": 2534,
+      "wr": 35.79,
+      "be_saves": 38,
+      "trail_exits": 384,
+      "tp_hits": 523,
+      "worst": -5.0
+    },
+    "V2": {
+      "variant": "V2",
+      "pnl_pts": -1514.82,
+      "usd_per_yr_002": -605.93,
+      "n": 4585,
+      "wr": 36.55,
+      "be_saves": 47,
+      "trail_exits": 671,
+      "tp_hits": 1005,
+      "worst": -5.0
+    },
+    "V3": {
+      "variant": "V3",
+      "pnl_pts": -1408.59,
+      "usd_per_yr_002": -563.43,
+      "n": 3252,
+      "wr": 35.89,
+      "be_saves": 28,
+      "trail_exits": 471,
+      "tp_hits": 696,
+      "worst": -5.0
+    },
+    "V4": {
+      "variant": "V4",
+      "pnl_pts": -260.77,
+      "usd_per_yr_002": -104.31,
+      "n": 2226,
+      "wr": 38.77,
+      "be_saves": 31,
+      "trail_exits": 373,
+      "tp_hits": 490,
+      "worst": -5.0
+    }
+  }
+}
