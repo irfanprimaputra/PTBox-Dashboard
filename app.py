@@ -218,13 +218,72 @@ for p in phases:
 
 # ─── Research Stats ─────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("### 📊 Research Stats")
+st.markdown("### 📊 Research Stats — Exact Breakdown")
 c1, c2, c3, c4, c5 = st.columns(5)
-with c1: metric_card("Total Iterations", "300+", sub="e1→e45 + Phase 1-42")
-with c2: metric_card("Phases Tested", "42", sub="research + deploy")
-with c3: metric_card("Live Stack", "Pine v15", sub="BE Trail + V2 Asia")
-with c4: metric_card("Assets Validated", "2", sub="XAUUSD + EURUSD")
-with c5: metric_card("Iron Law Confirmed", "7×", sub="P16/21/29/36/39/40/42")
+with c1: metric_card("Pine Versions", "15", sub="v1 → v15 (current LIVE)")
+with c2: metric_card("Engine Configs", "17", sub="e1, e10-e16, e20d, e23, e36-e45")
+with c3: metric_card("Phase Studies", "35", sub="Phase 4-42 (7 skip numbers)")
+with c4: metric_card("Sub-Variants", "136+", sub="multi-variant sweeps per phase")
+with c5: metric_card("Iron Law", "7×", sub="P16/21/29/36/39/40/42")
+
+st.markdown("")
+c6, c7, c8, c9, c10 = st.columns(5)
+with c6:  metric_card("Logged Iterations", "36", sub="ITERATIONS_LOG main rows")
+with c7:  metric_card("Live Deploys", "3", sub="BE Trail / V2 Asia / EOD edge")
+with c8:  metric_card("Rejected", "8", sub="dead variants kill list")
+with c9:  metric_card("Assets Validated", "2", sub="XAUUSD + EURUSD")
+with c10: metric_card("TOTAL TESTS", "250+", sub="all experiments combined")
+
+# ─── Sub-Variants Breakdown ─────────────────────────────────────────────────
+with st.expander("📋 Detailed sub-variants breakdown (transparency)"):
+    st.markdown("""
+**Per-phase variant counts (direct tests):**
+
+| Phase | Variants | Purpose |
+|-------|---------:|---------|
+| Phase 16 | 10 | S1-S10 session-behaviour filter sweep |
+| Phase 17 | 6 | V0-V6 BE Trail sweep (V5 winner → DEPLOYED) |
+| Phase 21 | 6 | B1-B6 early-exit sweep |
+| Phase 24 | 8 | Asia BO + tight SL variants (V2 winner → DEPLOYED) |
+| Phase 29 | 7 | SLOW_GRIND time-cap variants |
+| Phase 31 | 6 | Mentor 5min box durations |
+| Phase 32 | 19 | WIN vs LOSS feature comparison |
+| Phase 33 | 12 | Candle pattern classifier |
+| Phase 34 | 3 | Mentor LuxAlgo session windows |
+| Phase 35 | 6 | 24h no-session variants |
+| Phase 36 | 7 | Cap SL + bigger TP combos |
+| Phase 39 | 8 | Compound sizing Opsi B variants |
+| Phase 40 | 11 | Stop rule discipline variants |
+| Phase 42 | 7 | Wider TP sweep |
+| Other (P4-P42) | ~20 | Single-variant tests |
+| **TOTAL SUB-VARIANTS** | **136** | direct tests |
+
+**Engine configurations (e-iterations):**
+
+| Branch | Description |
+|--------|-------------|
+| e1-e9 | Initial exploration (archived) |
+| e10-e16 | Tier-3 sweep iterations |
+| e20d | v10 baseline (superseded) |
+| e23 | SMC filter (REJECTED) |
+| e36 | Asia DIRECT model breakthrough |
+| e37 | Canonical baseline (engine v11+) |
+| e38 | + ATR regime filter |
+| e39 | + TP boost on high-ATR |
+| e40 | + NY entry delay 25min |
+| e41 | + session params (BREAKOUT mode LIVE) |
+| e42 | Tier-5 entry refinement (saturation reached) |
+| e43 | SL tighten test |
+| e44 | PULLBACK mode (LIVE alternative) |
+| e45 | + SMC enhancements (REJECTED) |
+
+**Pine versions:**
+v1-v8 (archived), v9 (today mode), v10 (Asia bug fix), v11 (max attempt sync), v12 (engine bug fix), v13 (e44 PB toggle), **v14 (BE Trail) → v15 (V2 Asia Tight SL) LIVE**.
+
+**Total experimental configurations:** 15 Pine + 17 engine + 35 phases + 136 sub-variants = **~250 individual tests**
+
+**Plus** EURUSD multi-asset port + macro days + regime split + trajectory classifier = **300+ total experiments**.
+    """)
 
 
 # ─── Navigation ──────────────────────────────────────────────────────────────
