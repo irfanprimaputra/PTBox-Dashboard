@@ -1,0 +1,223 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════
+// PT BOX v16 — HTF VISUAL LAYER
+// Companion to Pine v15 (PT Box entry signals). VISUAL AID only — no entry signal.
+//
+// Shows:
+//   - PDH/PDL/PDM/PDC horizontal lines (extend right)
+//   - 5-day range high/low + 50% midline (premium/discount divider)
+//   - Round $50/$100 levels (liquidity magnets)
+//   - Daily bias score (top-right table, 6-factor)
+//   - D1 trend label (auto-detect from last 3 daily closes)
+//
+// USAGE:
+//   - Attach SAMA chart sebagai Pine v15
+//   - Use as MENTAL FILTER for PT Box signals
+//   - High conviction trade = signal matches HTF bias
+//   - Skip/half-lot = signal counter to HTF bias
+//
+// PT Box v15 = mechanical execution (M1 timing)
+// PT Box v16 = strategic context (HTF awareness)
+// ═══════════════════════════════════════════════════════════════════════════
+
+indicator("PT Box v16 HTF Visual (SMC layer)", overlay = true,
+     max_lines_count = 50, max_labels_count = 30)
+
+// ─── DISPLAY TOGGLES ─────────────────────────────────────────────────────
+g_disp = "📺 Display"
+showPDLevels    = input.bool(true,  "Show PDH/PDL/PDM/PDC lines", group = g_disp)
+show5DayRange   = input.bool(true,  "Show 5-day range high/low",  group = g_disp)
+show50Midline   = input.bool(true,  "Show 50% midline (premium/discount)", group = g_disp)
+showRoundLevels = input.bool(true,  "Show round $50/$100 levels",  group = g_disp)
+showBiasTable   = input.bool(true,  "Show daily bias table (top-right)", group = g_disp)
+showD1TrendLabel= input.bool(true,  "Show D1 trend arrow on chart", group = g_disp)
+
+g_style = "🎨 Style"
+colorBull      = input.color(color.new(color.lime, 30),  "Bull color", group = g_style)
+colorBear      = input.color(color.new(color.red, 30),   "Bear color", group = g_style)
+colorNeutral   = input.color(color.new(color.gray, 50),  "Neutral color", group = g_style)
+colorPremium   = input.color(color.new(color.red, 70),   "Premium zone",  group = g_style)
+colorDiscount  = input.color(color.new(color.lime, 70),  "Discount zone", group = g_style)
+
+g_round = "💰 Round Levels"
+roundInterval = input.int(50, "Round $ interval ($50 / $100)", options = [50, 100], group = g_round)
+roundLevelsCount = input.int(6, "Levels to show above/below", minval = 2, maxval = 10, group = g_round)
+
+// ─── DAILY DATA (via request.security) ───────────────────────────────────
+[d1_open, d1_high, d1_low, d1_close] = request.security(syminfo.tickerid, "D",
+     [open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+
+// 5-day rolling range (request weekly-ish proxy)
+[d5_high, d5_low] = request.security(syminfo.tickerid, "D",
+     [ta.highest(high, 5)[1], ta.lowest(low, 5)[1]], lookahead = barmerge.lookahead_on)
+
+// 3-day trend
+[d_close_3ago] = request.security(syminfo.tickerid, "D",
+     [close[3]], lookahead = barmerge.lookahead_on)
+
+// ─── COMPUTE BIAS ────────────────────────────────────────────────────────
+// Today open = first M1 bar of day, approximated as first known price today
+var float today_open = na
+if dayofmonth(time) != dayofmonth(time[1])
+    today_open := open
+
+pdh = d1_high
+pdl = d1_low
+pdc = d1_close
+pdm = (pdh + pdl) / 2
+range5_high = d5_high
+range5_low  = d5_low
+mid_50 = (range5_high + range5_low) / 2
+
+// 3-day trend
+trend3d_bull = not na(d_close_3ago) and pdc > d_close_3ago * 1.005
+trend3d_bear = not na(d_close_3ago) and pdc < d_close_3ago * 0.995
+
+// Position in 5-day range
+position_pct = (range5_high != range5_low) ? (close - range5_low) / (range5_high - range5_low) * 100 : 50
+zone_premium = position_pct > 70
+zone_discount = position_pct < 30
+
+// Bias score 0-100
+bias_score = 50
+bias_score := bias_score + (trend3d_bull ? 12 : (trend3d_bear ? -12 : 0))
+bias_score := bias_score + (close > pdc ? 10 : -10)
+bias_score := bias_score + (close > pdm ? 5 : -5)
+bias_score := bias_score + (zone_premium ? -10 : (zone_discount ? 10 : 0))
+bias_score := math.max(0, math.min(100, bias_score))
+
+bias_verdict = bias_score >= 70 ? "STRONG BUY" :
+               bias_score >= 60 ? "BUY BIAS" :
+               bias_score >= 40 ? "NEUTRAL" :
+               bias_score >= 30 ? "SELL BIAS" : "STRONG SELL"
+
+bias_color = bias_score >= 70 ? color.lime :
+             bias_score >= 60 ? color.new(color.lime, 30) :
+             bias_score >= 40 ? color.gray :
+             bias_score >= 30 ? color.new(color.red, 30) : color.red
+
+// ─── DRAW LINES (PDH/PDL/PDM/PDC) ───────────────────────────────────────
+var line lnPDH = na
+var line lnPDL = na
+var line lnPDM = na
+var line lnPDC = na
+var label lblPDH = na
+var label lblPDL = na
+var label lblPDM = na
+var label lblPDC = na
+
+if showPDLevels and not na(pdh) and barstate.islast
+    line.delete(lnPDH)
+    line.delete(lnPDL)
+    line.delete(lnPDM)
+    line.delete(lnPDC)
+    label.delete(lblPDH)
+    label.delete(lblPDL)
+    label.delete(lblPDM)
+    label.delete(lblPDC)
+    lnPDH := line.new(bar_index - 500, pdh, bar_index + 50, pdh,
+         color = color.red, style = line.style_dashed, width = 1)
+    lblPDH := label.new(bar_index + 50, pdh, "PDH " + str.tostring(pdh, "#.##"),
+         color = color.new(color.red, 80), textcolor = color.red,
+         style = label.style_label_left, size = size.tiny)
+    lnPDL := line.new(bar_index - 500, pdl, bar_index + 50, pdl,
+         color = color.lime, style = line.style_dashed, width = 1)
+    lblPDL := label.new(bar_index + 50, pdl, "PDL " + str.tostring(pdl, "#.##"),
+         color = color.new(color.lime, 80), textcolor = color.lime,
+         style = label.style_label_left, size = size.tiny)
+    lnPDM := line.new(bar_index - 500, pdm, bar_index + 50, pdm,
+         color = color.gray, style = line.style_dotted, width = 1)
+    lblPDM := label.new(bar_index + 50, pdm, "PDM " + str.tostring(pdm, "#.##"),
+         color = color.new(color.gray, 80), textcolor = color.gray,
+         style = label.style_label_left, size = size.tiny)
+    lnPDC := line.new(bar_index - 500, pdc, bar_index + 50, pdc,
+         color = color.aqua, style = line.style_solid, width = 1)
+    lblPDC := label.new(bar_index + 50, pdc, "PDC " + str.tostring(pdc, "#.##"),
+         color = color.new(color.aqua, 80), textcolor = color.aqua,
+         style = label.style_label_left, size = size.tiny)
+
+// ─── DRAW 5-DAY RANGE ───────────────────────────────────────────────────
+var line ln5H = na
+var line ln5L = na
+var line lnMid = na
+var label lbl5H = na
+var label lbl5L = na
+
+if show5DayRange and not na(range5_high) and barstate.islast
+    line.delete(ln5H)
+    line.delete(ln5L)
+    label.delete(lbl5H)
+    label.delete(lbl5L)
+    ln5H := line.new(bar_index - 500, range5_high, bar_index + 50, range5_high,
+         color = color.new(color.red, 50), style = line.style_dotted, width = 2)
+    lbl5H := label.new(bar_index + 50, range5_high, "5D H " + str.tostring(range5_high, "#.##"),
+         color = color.new(color.red, 70), textcolor = color.red,
+         style = label.style_label_left, size = size.tiny)
+    ln5L := line.new(bar_index - 500, range5_low, bar_index + 50, range5_low,
+         color = color.new(color.lime, 50), style = line.style_dotted, width = 2)
+    lbl5L := label.new(bar_index + 50, range5_low, "5D L " + str.tostring(range5_low, "#.##"),
+         color = color.new(color.lime, 70), textcolor = color.lime,
+         style = label.style_label_left, size = size.tiny)
+
+if show50Midline and not na(mid_50) and barstate.islast
+    line.delete(lnMid)
+    lnMid := line.new(bar_index - 500, mid_50, bar_index + 50, mid_50,
+         color = color.new(color.yellow, 50), style = line.style_solid, width = 1)
+
+// Background zones for premium/discount (last bar only, visual hint)
+bgcolor(showBiasTable and zone_premium ? color.new(color.red, 95) : na, title = "Premium zone")
+bgcolor(showBiasTable and zone_discount ? color.new(color.lime, 95) : na, title = "Discount zone")
+
+// ─── DRAW ROUND $50/$100 LEVELS ──────────────────────────────────────────
+if showRoundLevels and barstate.islast
+    nearest_round = math.round(close / roundInterval) * roundInterval
+    for i = -roundLevelsCount to roundLevelsCount
+        level = nearest_round + i * roundInterval
+        if level > 0
+            line.new(bar_index - 200, level, bar_index + 30, level,
+                 color = color.new(color.silver, 80),
+                 style = line.style_dotted, width = 1)
+
+// ─── DAILY BIAS TABLE (TOP RIGHT) ────────────────────────────────────────
+if showBiasTable and barstate.islast
+    var table biasTable = table.new(position.top_right, 2, 8,
+         bgcolor = color.new(color.black, 60),
+         border_color = color.new(color.purple, 40), border_width = 1)
+    table.cell(biasTable, 0, 0, "HTF BIAS",
+         text_color = color.yellow, bgcolor = color.new(color.purple, 60),
+         text_size = size.small)
+    table.cell(biasTable, 1, 0, str.tostring(bias_score) + "/100",
+         text_color = bias_color, bgcolor = color.new(color.purple, 60),
+         text_size = size.small)
+    table.cell(biasTable, 0, 1, "Verdict", text_color = color.gray, text_size = size.tiny)
+    table.cell(biasTable, 1, 1, bias_verdict, text_color = bias_color, text_size = size.tiny)
+    table.cell(biasTable, 0, 2, "3-Day Trend", text_color = color.gray, text_size = size.tiny)
+    table.cell(biasTable, 1, 2, trend3d_bull ? "BULL ↑" : trend3d_bear ? "BEAR ↓" : "NEUTRAL",
+         text_color = trend3d_bull ? color.lime : trend3d_bear ? color.red : color.gray,
+         text_size = size.tiny)
+    table.cell(biasTable, 0, 3, "vs PDC", text_color = color.gray, text_size = size.tiny)
+    table.cell(biasTable, 1, 3, close > pdc ? "ABOVE" : "BELOW",
+         text_color = close > pdc ? color.lime : color.red, text_size = size.tiny)
+    table.cell(biasTable, 0, 4, "vs PDM", text_color = color.gray, text_size = size.tiny)
+    table.cell(biasTable, 1, 4, close > pdm ? "ABOVE" : "BELOW",
+         text_color = close > pdm ? color.lime : color.red, text_size = size.tiny)
+    table.cell(biasTable, 0, 5, "5D Zone", text_color = color.gray, text_size = size.tiny)
+    zone_text = zone_premium ? "PREMIUM" : zone_discount ? "DISCOUNT" : "EQUILIBRIUM"
+    zone_color = zone_premium ? color.red : zone_discount ? color.lime : color.gray
+    table.cell(biasTable, 1, 5, zone_text, text_color = zone_color, text_size = size.tiny)
+    table.cell(biasTable, 0, 6, "Position %", text_color = color.gray, text_size = size.tiny)
+    table.cell(biasTable, 1, 6, str.tostring(position_pct, "#.#") + "%",
+         text_color = color.white, text_size = size.tiny)
+    table.cell(biasTable, 0, 7, "Round $", text_color = color.gray, text_size = size.tiny)
+    nearest_round = math.round(close / roundInterval) * roundInterval
+    table.cell(biasTable, 1, 7, "$" + str.tostring(nearest_round), text_color = color.silver, text_size = size.tiny)
+
+// ─── D1 TREND LABEL ──────────────────────────────────────────────────────
+if showD1TrendLabel and barstate.islast
+    var label trendLabel = na
+    label.delete(trendLabel)
+    trend_text = trend3d_bull ? "📈 D1 BULL TREND" : trend3d_bear ? "📉 D1 BEAR TREND" : "↔ D1 NEUTRAL"
+    trend_color = trend3d_bull ? color.lime : trend3d_bear ? color.red : color.gray
+    trendLabel := label.new(bar_index + 5, pdh + (pdh - pdl) * 0.1,
+         trend_text, color = color.new(trend_color, 70),
+         textcolor = color.white, style = label.style_label_left, size = size.small)
