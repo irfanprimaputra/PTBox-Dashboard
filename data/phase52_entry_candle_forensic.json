@@ -1,0 +1,456 @@
+{
+  "pattern_summary_overall": [
+    {
+      "pattern": "doji",
+      "n": 2428,
+      "wins": 1033,
+      "avg_pnl": 0.6627438220757775,
+      "tp": 689,
+      "sl": 1234,
+      "eod": 505,
+      "wr_pct": 42.5,
+      "pct_total": 36.9
+    },
+    {
+      "pattern": "counter_direction",
+      "n": 2223,
+      "wins": 943,
+      "avg_pnl": 0.5135852451641945,
+      "tp": 625,
+      "sl": 1151,
+      "eod": 447,
+      "wr_pct": 42.4,
+      "pct_total": 33.8
+    },
+    {
+      "pattern": "hammer",
+      "n": 1776,
+      "wins": 731,
+      "avg_pnl": 0.4454436936936948,
+      "tp": 472,
+      "sl": 918,
+      "eod": 386,
+      "wr_pct": 41.2,
+      "pct_total": 27.0
+    },
+    {
+      "pattern": "shooting_star",
+      "n": 1704,
+      "wins": 728,
+      "avg_pnl": 0.9508579812206551,
+      "tp": 483,
+      "sl": 865,
+      "eod": 356,
+      "wr_pct": 42.7,
+      "pct_total": 25.9
+    },
+    {
+      "pattern": "bull_engulf",
+      "n": 1358,
+      "wins": 548,
+      "avg_pnl": 0.4286546391752615,
+      "tp": 334,
+      "sl": 714,
+      "eod": 310,
+      "wr_pct": 40.4,
+      "pct_total": 20.7
+    },
+    {
+      "pattern": "bear_engulf",
+      "n": 1298,
+      "wins": 536,
+      "avg_pnl": 0.7863813559322153,
+      "tp": 340,
+      "sl": 672,
+      "eod": 286,
+      "wr_pct": 41.3,
+      "pct_total": 19.7
+    },
+    {
+      "pattern": "bull_pin",
+      "n": 1044,
+      "wins": 436,
+      "avg_pnl": 0.4653975095785534,
+      "tp": 285,
+      "sl": 537,
+      "eod": 222,
+      "wr_pct": 41.8,
+      "pct_total": 15.9
+    },
+    {
+      "pattern": "bear_pin",
+      "n": 1021,
+      "wins": 437,
+      "avg_pnl": 1.0420137120469957,
+      "tp": 309,
+      "sl": 510,
+      "eod": 202,
+      "wr_pct": 42.8,
+      "pct_total": 15.5
+    },
+    {
+      "pattern": "spinning_top",
+      "n": 892,
+      "wins": 399,
+      "avg_pnl": 0.9160078475336363,
+      "tp": 257,
+      "sl": 438,
+      "eod": 197,
+      "wr_pct": 44.7,
+      "pct_total": 13.6
+    },
+    {
+      "pattern": "strong_body_bull",
+      "n": 592,
+      "wins": 240,
+      "avg_pnl": 0.3584155405405352,
+      "tp": 146,
+      "sl": 300,
+      "eod": 146,
+      "wr_pct": 40.5,
+      "pct_total": 9.0
+    },
+    {
+      "pattern": "strong_body_bear",
+      "n": 565,
+      "wins": 266,
+      "avg_pnl": 1.5162743362832058,
+      "tp": 164,
+      "sl": 270,
+      "eod": 131,
+      "wr_pct": 47.1,
+      "pct_total": 8.6
+    },
+    {
+      "pattern": "bear_inside",
+      "n": 262,
+      "wins": 107,
+      "avg_pnl": 0.237656488549603,
+      "tp": 66,
+      "sl": 130,
+      "eod": 66,
+      "wr_pct": 40.8,
+      "pct_total": 4.0
+    },
+    {
+      "pattern": "bull_inside",
+      "n": 253,
+      "wins": 101,
+      "avg_pnl": -0.07154150197626445,
+      "tp": 65,
+      "sl": 139,
+      "eod": 49,
+      "wr_pct": 39.9,
+      "pct_total": 3.8
+    },
+    {
+      "pattern": "marubozu_bull",
+      "n": 245,
+      "wins": 105,
+      "avg_pnl": 0.31899999999998874,
+      "tp": 60,
+      "sl": 119,
+      "eod": 66,
+      "wr_pct": 42.9,
+      "pct_total": 3.7
+    },
+    {
+      "pattern": "marubozu_bear",
+      "n": 218,
+      "wins": 102,
+      "avg_pnl": 0.7654816513761593,
+      "tp": 61,
+      "sl": 106,
+      "eod": 51,
+      "wr_pct": 46.8,
+      "pct_total": 3.3
+    },
+    {
+      "pattern": "plain_body_direction",
+      "n": 12,
+      "wins": 4,
+      "avg_pnl": 1.0668333333333635,
+      "tp": 4,
+      "sl": 4,
+      "eod": 4,
+      "wr_pct": 33.3,
+      "pct_total": 0.2
+    }
+  ],
+  "pattern_summary_trump": [
+    {
+      "pattern": "doji",
+      "n": 746,
+      "wins": 301,
+      "avg_pnl": 1.0672573726541403,
+      "tp": 248,
+      "sl": 424,
+      "wr_pct": 40.3,
+      "pct": 16.3
+    },
+    {
+      "pattern": "counter_direction",
+      "n": 631,
+      "wins": 263,
+      "avg_pnl": 0.8754928684627614,
+      "tp": 222,
+      "sl": 351,
+      "wr_pct": 41.7,
+      "pct": 13.8
+    },
+    {
+      "pattern": "hammer",
+      "n": 541,
+      "wins": 219,
+      "avg_pnl": 0.8649112754158946,
+      "tp": 169,
+      "sl": 302,
+      "wr_pct": 40.5,
+      "pct": 11.8
+    },
+    {
+      "pattern": "shooting_star",
+      "n": 463,
+      "wins": 186,
+      "avg_pnl": 2.2124449244060544,
+      "tp": 152,
+      "sl": 260,
+      "wr_pct": 40.2,
+      "pct": 10.1
+    },
+    {
+      "pattern": "bull_engulf",
+      "n": 419,
+      "wins": 162,
+      "avg_pnl": 0.8989976133651634,
+      "tp": 123,
+      "sl": 244,
+      "wr_pct": 38.7,
+      "pct": 9.1
+    },
+    {
+      "pattern": "bear_engulf",
+      "n": 364,
+      "wins": 141,
+      "avg_pnl": 1.9059780219780553,
+      "tp": 113,
+      "sl": 205,
+      "wr_pct": 38.7,
+      "pct": 7.9
+    },
+    {
+      "pattern": "bull_pin",
+      "n": 324,
+      "wins": 128,
+      "avg_pnl": 0.7092376543209964,
+      "tp": 98,
+      "sl": 184,
+      "wr_pct": 39.5,
+      "pct": 7.1
+    },
+    {
+      "pattern": "bear_pin",
+      "n": 295,
+      "wins": 123,
+      "avg_pnl": 2.3663593220338752,
+      "tp": 108,
+      "sl": 162,
+      "wr_pct": 41.7,
+      "pct": 6.4
+    },
+    {
+      "pattern": "spinning_top",
+      "n": 273,
+      "wins": 119,
+      "avg_pnl": 1.6726630036629992,
+      "tp": 101,
+      "sl": 150,
+      "wr_pct": 43.6,
+      "pct": 6.0
+    },
+    {
+      "pattern": "strong_body_bull",
+      "n": 157,
+      "wins": 68,
+      "avg_pnl": 1.2740828025477384,
+      "tp": 52,
+      "sl": 82,
+      "wr_pct": 43.3,
+      "pct": 3.4
+    },
+    {
+      "pattern": "strong_body_bear",
+      "n": 130,
+      "wins": 53,
+      "avg_pnl": 3.6101461538462303,
+      "tp": 39,
+      "sl": 73,
+      "wr_pct": 40.8,
+      "pct": 2.8
+    },
+    {
+      "pattern": "bull_inside",
+      "n": 80,
+      "wins": 28,
+      "avg_pnl": -0.36636249999997406,
+      "tp": 23,
+      "sl": 52,
+      "wr_pct": 35.0,
+      "pct": 1.7
+    },
+    {
+      "pattern": "bear_inside",
+      "n": 68,
+      "wins": 23,
+      "avg_pnl": 0.016058823529379773,
+      "tp": 18,
+      "sl": 41,
+      "wr_pct": 33.8,
+      "pct": 1.5
+    },
+    {
+      "pattern": "marubozu_bull",
+      "n": 48,
+      "wins": 21,
+      "avg_pnl": 1.3088124999999213,
+      "tp": 17,
+      "sl": 25,
+      "wr_pct": 43.8,
+      "pct": 1.0
+    },
+    {
+      "pattern": "marubozu_bear",
+      "n": 40,
+      "wins": 13,
+      "avg_pnl": 0.7313250000000722,
+      "tp": 11,
+      "sl": 25,
+      "wr_pct": 32.5,
+      "pct": 0.9
+    },
+    {
+      "pattern": "plain_body_direction",
+      "n": 4,
+      "wins": 2,
+      "avg_pnl": 3.3792499999999563,
+      "tp": 2,
+      "sl": 0,
+      "wr_pct": 50.0,
+      "pct": 0.1
+    }
+  ],
+  "top_5_wr": [
+    {
+      "pattern": "strong_body_bear",
+      "n": 565,
+      "wins": 266,
+      "avg_pnl": 1.5162743362832058,
+      "tp": 164,
+      "sl": 270,
+      "eod": 131,
+      "wr_pct": 47.1,
+      "pct_total": 8.6
+    },
+    {
+      "pattern": "marubozu_bear",
+      "n": 218,
+      "wins": 102,
+      "avg_pnl": 0.7654816513761593,
+      "tp": 61,
+      "sl": 106,
+      "eod": 51,
+      "wr_pct": 46.8,
+      "pct_total": 3.3
+    },
+    {
+      "pattern": "spinning_top",
+      "n": 892,
+      "wins": 399,
+      "avg_pnl": 0.9160078475336363,
+      "tp": 257,
+      "sl": 438,
+      "eod": 197,
+      "wr_pct": 44.7,
+      "pct_total": 13.6
+    },
+    {
+      "pattern": "marubozu_bull",
+      "n": 245,
+      "wins": 105,
+      "avg_pnl": 0.31899999999998874,
+      "tp": 60,
+      "sl": 119,
+      "eod": 66,
+      "wr_pct": 42.9,
+      "pct_total": 3.7
+    },
+    {
+      "pattern": "bear_pin",
+      "n": 1021,
+      "wins": 437,
+      "avg_pnl": 1.0420137120469957,
+      "tp": 309,
+      "sl": 510,
+      "eod": 202,
+      "wr_pct": 42.8,
+      "pct_total": 15.5
+    }
+  ],
+  "bottom_5_wr": [
+    {
+      "pattern": "bull_inside",
+      "n": 253,
+      "wins": 101,
+      "avg_pnl": -0.07154150197626445,
+      "tp": 65,
+      "sl": 139,
+      "eod": 49,
+      "wr_pct": 39.9,
+      "pct_total": 3.8
+    },
+    {
+      "pattern": "bull_engulf",
+      "n": 1358,
+      "wins": 548,
+      "avg_pnl": 0.4286546391752615,
+      "tp": 334,
+      "sl": 714,
+      "eod": 310,
+      "wr_pct": 40.4,
+      "pct_total": 20.7
+    },
+    {
+      "pattern": "strong_body_bull",
+      "n": 592,
+      "wins": 240,
+      "avg_pnl": 0.3584155405405352,
+      "tp": 146,
+      "sl": 300,
+      "eod": 146,
+      "wr_pct": 40.5,
+      "pct_total": 9.0
+    },
+    {
+      "pattern": "bear_inside",
+      "n": 262,
+      "wins": 107,
+      "avg_pnl": 0.237656488549603,
+      "tp": 66,
+      "sl": 130,
+      "eod": 66,
+      "wr_pct": 40.8,
+      "pct_total": 4.0
+    },
+    {
+      "pattern": "hammer",
+      "n": 1776,
+      "wins": 731,
+      "avg_pnl": 0.4454436936936948,
+      "tp": 472,
+      "sl": 918,
+      "eod": 386,
+      "wr_pct": 41.2,
+      "pct_total": 27.0
+    }
+  ]
+}
